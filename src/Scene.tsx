@@ -252,7 +252,18 @@ const flareFragment = /* glsl */ `
 
   void main() {
     vec4 texColor = texture2D(uTexStar, vUv);
-    vec3 glow = mix(vec3(0.8157, 1.0, 0.6784), vec3(0.9765, 0.8, 0.8471), vColorMix);
+
+    vec3 colors[7] = vec3[7](
+      vec3(1.0, 1.0, 0.0),        // #FFFF00  pure yellow
+      vec3(1.0, 0.7059, 0.3529),  // #FFB45A  warm amber
+      vec3(1.0, 0.6980, 0.5020),  // #FFB280  salmon
+      vec3(1.0, 0.8, 0.6),        // #FFCC99  peach
+      vec3(1.0, 0.8627, 0.7255),  // #FFDCB9  champagne
+      vec3(1.0, 0.6, 0.6),        // #FF9999  light coral
+      vec3(1.0, 0.4118, 0.7059)   // #FF69B4  hot pink
+    );
+    int index = int(floor(vColorMix * 7.0));
+    vec3 glow = colors[index];
 
     float alphaFade = smoothstep(1.0, 0.80, vDepth);
     gl_FragColor = vec4(glow * 1.3, texColor.a * alphaFade);
