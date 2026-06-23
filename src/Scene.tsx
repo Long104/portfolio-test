@@ -349,15 +349,20 @@ const glowFragment = /* glsl */ `
     vec2 drift = vec2(
       fbm(vec2(uTime * 0.3, 0.0)) - 0.5,
       fbm(vec2(0.0, uTime * 0.35)) - 0.5
-    ) * 0.03;
+    ) * 0.01;
 
     float d = length(centered - drift) + edgeWobble;
 
     // ── Color Palette ──
+    // vec3 whiteCore = vec3(1.0, 1.0, 1.0);      // Incandescent heart
+    // vec3 yellow    = vec3(1.0, 0.65, 0.0);    // Amber-yellow — best visibility under additive
+    // vec3 midPink   = vec3(0.95, 0.18, 0.58);   // Cooling energy
+    // vec3 outerEdge = vec3(0.55, 0.08, 0.40);   // Deep magenta fade
+    // ── Color Palette ──
     vec3 whiteCore = vec3(1.0, 1.0, 1.0);      // Incandescent heart
-    vec3 yellow    = vec3(1.0, 0.65, 0.0);    // Amber-yellow — best visibility under additive
-    vec3 midPink   = vec3(0.996, 0.549, 0.580); // #FE8C94 pink-red
-    vec3 outerEdge = vec3(0.70, 0.15, 0.25);   // Warm deep red-pink (was purple)
+    vec3 yellow    = vec3(1.0, 0.40, 0.00);    // Pushed toward a fiery reddish-orange
+    vec3 midPink   = vec3(1.00, 0.05, 0.00);    // Pure, intense neon red
+    vec3 outerEdge = vec3(0.95, 0.00, 0.15);    // Deep crimson pink-red with minimal blue
 
 
     // ── Distance Banding (outside → inside) ──
