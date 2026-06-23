@@ -344,30 +344,34 @@ const glowFragment = /* glsl */ `
     vec2 noiseUV = centered * 4.0;
     float gasNoise = fbm(noiseUV - vec2(uTime * 0.2, uTime * 0.1));
 
-    // 1. Light Intensity Curves (dialed down core to prevent white blowout)
-    float coreGlow = exp(-dist * 12.0) * 1.5;
+    // 1. Light Intensity Curves
+    float coreGlow = exp(-dist * 14.0) * 2.2;
     float outerHalo = exp(-dist * 5.5) * 1.0;
     float finalGlow = coreGlow + outerHalo * (0.5 + gasNoise * 0.5);
 
-    // 2. Base Color Swatches
-    vec3 coreYellow = vec3(1.0, 0.82, 0.05);  // Vibrant rich yellow/gold
-    vec3 midPink    = vec3(1.0, 0.20, 0.60);  // Dynamic electric pink
-    vec3 outerEdge  = vec3(0.55, 0.05, 0.40); // Dark nebular border
+    // 2. Color Profiles
+    vec3 coreYellow = vec3(1.0, 0.78, 0.0);   // Rich amber gold
+    vec3 midPink    = vec3(1.0, 0.20, 0.60);  // Vibrant neon pink
+    vec3 outerEdge  = vec3(0.60, 0.08, 0.45); // Deep nebular magenta
 
-    // 3. Blend pink to dark edge base gradient
-    vec3 finalColor = mix(outerEdge, midPink, smoothstep(0.12, 0.45, finalGlow));
+    // Base gradient transition
+    vec3 finalColor = mix(outerEdge, midPink, smoothstep(0.15, 0.5, finalGlow));
 
-    // 4. Inner correction mask — noise-linked yellow injection
-    float innerCoreMask = smoothstep(0.16 + gasNoise * 0.05, 0.02, dist);
-    finalColor = mix(finalColor, coreYellow, innerCoreMask);
+    // 3. Pulsing yellow disc — fixed radius that breathes with noise
+    //    Slow pulse via sine wave + gas noise shimmer on the edge
+    float pulse = 0.5 + 0.5 * sin(uTime * 1.5);           // 0→1 slow breath
+    float yellowRadius = 0.06 + pulse * 0.02;              // radius oscillates 0.06→0.08
+    float yellowEdge = yellowRadius + gasNoise * 0.015;    // noise shimmers the boundary
+    float discMask = smoothstep(yellowEdge + 0.01, yellowEdge - 0.01, dist);
+    finalColor = mix(finalColor, coreYellow, discMask);
 
-    // 5. Cap brightness in center to prevent additive blowout
-    float intensityModifier = mix(finalGlow, min(finalGlow, 1.25), innerCoreMask);
+    // 4. Suppress brightness inside the disc so yellow survives additive blending
+    float intensityModifier = mix(finalGlow, 1.0, discMask);
 
     // Soft organic transparency falloff
     float alpha = smoothstep(0.02, 0.3, finalGlow * (1.0 - dist * 2.0));
 
-    gl_FragColor = vec4(finalColor * intensityModifier * 0.9, alpha);
+    gl_FragColor = vec4(finalColor * intensityModifier * 0.8, alpha);
 
     #include <colorspace_fragment>
   }
