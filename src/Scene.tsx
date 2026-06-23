@@ -322,31 +322,49 @@ const glowFragment = /* glsl */ `
                mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
   }
 
+  float fbm(vec2 p) {
+    float v = 0.0;
+    float a = 0.5;
+    vec2 shift = vec2(100.0);
+    mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5));
+    for (int i = 0; i < 3; ++i) {
+      v += a * noise(p);
+      p = rot * p * 2.5 + shift;
+      a *= 0.5;
+    }
+    return v;
+  }
+
   void main() {
     vec2 centered = vUv - vec2(0.5);
     centered.x *= uAspect;
     float dist = length(centered);
 
-    // Subtle realistic volumetric noise
-    float edgeNoise = noise(centered * 4.0 - vec2(uTime * 0.15)) * 0.05;
+    // Realistic volumetric gas noise
+    vec2 noiseUV = centered * 4.0;
+    float gasNoise = fbm(noiseUV - vec2(uTime * 0.2, uTime * 0.1));
 
-    // --- EXPANDED YELLOW CORE ---
-    float yellowZone = smoothstep(0.22 + edgeNoise, 0.10, dist);
-    float pinkZone   = smoothstep(0.42 + edgeNoise, 0.15, dist);
+    // 1. Light Intensity Curves for Additive Stacking
+    float coreGlow = exp(-dist * 16.0) * 2.5;
+    float outerHalo = exp(-dist * 6.0) * 1.0;
+    float finalGlow = coreGlow + outerHalo * (0.5 + gasNoise * 0.6);
 
-    // Highly saturated solid color profiles
-    vec3 solidYellow = vec3(1.0, 0.95, 0.1);   // Blazing golden yellow
-    vec3 brightPink  = vec3(1.0, 0.28, 0.60);  // Fluid middle pink
-    vec3 outerHalo   = vec3(0.85, 0.15, 0.48);  // Soft outer magenta
+    // 2. Base Colors — blue channel dropped to force yellow hue in core
+    vec3 coreYellow = vec3(1.0, 0.85, 0.0);   // Dominant gold/yellow center
+    vec3 midPink    = vec3(1.0, 0.25, 0.65);  // Vibrant neon pink
+    vec3 outerEdge  = vec3(0.65, 0.10, 0.50); // Deep nebular magenta
 
-    // Clean layer composition
-    vec3 finalColor = mix(outerHalo, brightPink, pinkZone);
-    finalColor = mix(finalColor, solidYellow, yellowZone);
+    // 3. Crisp yellow mask — tight radius forces yellow before white blowout
+    float yellowMask = smoothstep(0.12, 0.0, dist);
 
-    // Smooth volumetric alpha falloff
-    float alpha = smoothstep(0.45, 0.15, dist + edgeNoise);
+    vec3 finalColor = mix(outerEdge, midPink, smoothstep(0.15, 0.5, finalGlow));
+    finalColor = mix(finalColor, coreYellow, yellowMask);
 
-    gl_FragColor = vec4(finalColor, alpha * 0.95);
+    // Soft organic transparency falloff
+    float alpha = smoothstep(0.02, 0.3, finalGlow * (1.0 - dist * 2.0));
+
+    // Tone down intensity multiplier so colors survive additive blending
+    gl_FragColor = vec4(finalColor * finalGlow * 0.85, alpha);
 
     #include <colorspace_fragment>
   }
@@ -440,6 +458,7 @@ function KiraKiraVortex() {
         transparent: true,
         depthWrite: false,
         depthTest: false,
+        blending: THREE.AdditiveBlending,
       }),
     [],
   )
