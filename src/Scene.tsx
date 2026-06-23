@@ -215,9 +215,11 @@ const flareVertex = /* glsl */ `
   attribute vec3 aRandoms;
   varying vec2 vUv;
   varying float vDepth;
+  varying float vColorMix;
 
   void main() {
     vUv = uv;
+    vColorMix = aRandoms.x;
     vec3 pos = aInitialPos;
 
     pos.z += uTime * uSpeed * (1.0 + aRandoms.x * 0.5);
@@ -246,10 +248,11 @@ const flareFragment = /* glsl */ `
   uniform sampler2D uTexStar;
   varying vec2 vUv;
   varying float vDepth;
+  varying float vColorMix;
 
   void main() {
     vec4 texColor = texture2D(uTexStar, vUv);
-    vec3 glow = mix(vec3(1.0, 0.98, 0.65), vec3(0.95, 0.12, 0.38), vDepth);
+    vec3 glow = mix(vec3(1.0, 0.98, 0.65), vec3(0.95, 0.12, 0.38), vColorMix);
 
     float alphaFade = smoothstep(1.0, 0.80, vDepth);
     gl_FragColor = vec4(glow * 1.3, texColor.a * alphaFade);
