@@ -340,52 +340,38 @@ const glowFragment = /* glsl */ `
     centered.x *= uAspect;
     float dist = length(centered);
 
-    // Realistic volumetric gas noise
-    vec2 noiseUV = centered * 4.0;
-    float gasNoise = fbm(noiseUV - vec2(uTime * 0.2, uTime * 0.1));
+    // Organic noise
+    float angle = atan(centered.y, centered.x);
+    float gasNoise = fbm(centered * 4.0 - vec2(uTime * 0.2, uTime * 0.1));
+    float edgeWobble = fbm(vec2(angle * 3.0, uTime * 0.6)) * 0.02;
 
-    // 1. Light Intensity Curves
-    float coreGlow = exp(-dist * 14.0) * 2.2;
-    float outerHalo = exp(-dist * 5.5) * 1.0;
-    float finalGlow = coreGlow + outerHalo * (0.5 + gasNoise * 0.5);
-
-    // 2. Color Profiles
-    vec3 coreYellow = vec3(1.0, 0.78, 0.0);   // Rich amber gold
-    vec3 midPink    = vec3(1.0, 0.20, 0.60);  // Vibrant neon pink
-    vec3 outerEdge  = vec3(0.60, 0.08, 0.45); // Deep nebular magenta
-
-    // Base gradient transition
-    vec3 finalColor = mix(outerEdge, midPink, smoothstep(0.15, 0.5, finalGlow));
-
-    // 3. Drifting yellow blob — wobble center + irregular edge
-    vec2 wobbleOffset = vec2(
+    // Gentle drift of the whole core
+    vec2 drift = vec2(
       fbm(vec2(uTime * 0.3, 0.0)) - 0.5,
       fbm(vec2(0.0, uTime * 0.35)) - 0.5
-    ) * 0.08;
+    ) * 0.03;
 
-    float angle = atan(centered.y, centered.x);
-    float radialNoise = fbm(vec2(angle * 2.0, uTime * 0.5)) * 0.03;
+    float d = length(centered - drift) + edgeWobble;
 
-    float blobDist = length(centered - wobbleOffset) + radialNoise;
-    float blobMask = smoothstep(0.12, 0.03, blobDist);
+    // ── Color Palette ──
+    vec3 whiteCore = vec3(1.0, 1.0, 1.0);      // Incandescent heart
+    vec3 yellow    = vec3(1.0, 0.80, 0.05);    // Chromatic halo — THE STAR
+    vec3 midPink   = vec3(0.95, 0.18, 0.58);   // Cooling energy
+    vec3 outerEdge = vec3(0.55, 0.08, 0.40);   // Deep magenta fade
 
-    // 4. Pulsing yellow ring — breathes in/out at fixed radius
-    float ringRadius = 0.07 + sin(uTime * 1.5) * 0.015;
-    float ringNoise = fbm(vec2(angle * 3.0, uTime * 0.4)) * 0.015;
-    float ringDist = abs(dist - ringRadius - ringNoise);
-    float ringMask = smoothstep(0.025, 0.0, ringDist);
+    // ── Distance Banding (outside → inside) ──
+    vec3 color = outerEdge;
+    color = mix(color, midPink,  smoothstep(0.22, 0.13, d + gasNoise * 0.015));
+    color = mix(color, yellow,   smoothstep(0.12, 0.045, d));
+    color = mix(color, whiteCore, smoothstep(0.035, 0.0, d));
 
-    // 5. Combine blob + ring → total yellow presence
-    float yellowMask = clamp(blobMask + ringMask, 0.0, 1.0);
-    finalColor = mix(finalColor, coreYellow, yellowMask);
+    // ── Gentle intensity (capped to prevent blowout) ──
+    float glow = min(exp(-d * 8.0) + 0.4, 1.0);
 
-    // 6. Prevent brightness blowout inside yellow zones
-    float intensityModifier = mix(finalGlow, 1.0, yellowMask);
+    // ── Organic alpha falloff ──
+    float alpha = smoothstep(0.42, 0.06, d) * (0.7 + gasNoise * 0.3);
 
-    // Soft organic transparency falloff
-    float alpha = smoothstep(0.02, 0.3, finalGlow * (1.0 - dist * 2.0));
-
-    gl_FragColor = vec4(finalColor * intensityModifier * 0.8, alpha);
+    gl_FragColor = vec4(color * glow, alpha);
 
     #include <colorspace_fragment>
   }
