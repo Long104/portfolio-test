@@ -254,7 +254,7 @@ const flareFragment = /* glsl */ `
     vec4 texColor = texture2D(uTexStar, vUv);
 
     vec3 colors[5] = vec3[5](
-      vec3(1.0, 1.0, 0.0),        // #FFFF00  pure yellow
+      vec3(0.8078, 1.0, 0.6863),  // #CEFFAF  mint yellow
       vec3(1.0, 0.7059, 0.3529),  // #FFB45A  warm amber
       vec3(1.0, 0.3, 0.5),        // #FF4D80  neon coral
       vec3(1.0, 0.4, 0.7),        // #FF66B2  deep pink
@@ -264,7 +264,7 @@ const flareFragment = /* glsl */ `
     vec3 glow = colors[index];
 
     float alphaFade = smoothstep(1.0, 0.80, vDepth);
-    gl_FragColor = vec4(glow * 1.3, texColor.a * alphaFade);
+    gl_FragColor = vec4(glow * 1.0, texColor.a * alphaFade);
 
     #include <colorspace_fragment>
   }
@@ -290,7 +290,7 @@ const glowFragment = /* glsl */ `
     float dist = length(centered);
 
     vec3 coreColor = vec3(1.0, 0.98, 0.65);  // Warm yellow-white
-    vec3 haloColor = vec3(0.95, 0.12, 0.38);  // Crimson pink
+    vec3 haloColor = vec3(0.76, 0.09, 0.36);  // #C2185B  dark pink
 
     // Core blends into pink halo
     vec3 color = mix(coreColor, haloColor, smoothstep(0.02, 0.16, dist));
