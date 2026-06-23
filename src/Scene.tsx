@@ -106,6 +106,7 @@ const backdropVertex = /* glsl */ `
   }
 `
 
+  // see yellow
 // const backdropFragment = /* glsl */ `
 //   varying vec2 vUv;
 //   void main() {
@@ -126,20 +127,17 @@ const backdropVertex = /* glsl */ `
 // `;
 
 const backdropFragment = /* glsl */ `
-  uniform float uAspect;
   varying vec2 vUv;
   void main() {
-    vec2 centered = vUv - vec2(0.5);
-    centered.x *= uAspect;
-    float dist = length(centered);
+    float dist = distance(vUv, vec2(0.5));
 
     // Dark center — the foreground glow mesh paints the core/halo on top
     // vec3 dark   = vec3(0.01, 0.03, 0.05);
     // vec3 mint   = vec3(0.15, 0.85, 0.70);
     // vec3 teal   = vec3(0.02, 0.18, 0.22);
-    vec3 dark   = vec3(0.005, 0.05, 0.06);   // Deep Jade/Vortex Center
-    vec3 mint   = vec3(0.08, 0.75, 0.62);    // Magical Glowing Mint
-    vec3 teal   = vec3(0.01, 0.22, 0.25);    // Outer Deep Teal Tunnel
+    vec3 dark   = vec3(1, 1, 1);
+    vec3 mint   = vec3(1, 1, 1);
+    vec3 teal   = vec3(1, 1, 1);
 
     vec3 color = mix(dark, mint, smoothstep(0.0, 0.40, dist));
     if (dist > 0.40) color = mix(color, teal, smoothstep(0.40, 0.70, dist));
@@ -341,38 +339,25 @@ const glowFragment = /* glsl */ `
   void main() {
     vec2 centered = vUv - vec2(0.5);
     centered.x *= uAspect;
+
+    // ── Center locked at (0,0) — no drift ──
     float dist = length(centered);
-
-    // Organic noise
     float angle = atan(centered.y, centered.x);
+
+    // Gas noise — drifts through color/intensity, NOT position
     float gasNoise = fbm(centered * 4.0 - vec2(uTime * 0.2, uTime * 0.1));
-    float edgeWobble = fbm(vec2(angle * 3.0, uTime * 0.6)) * 0.02;
 
-    // Gentle drift of the whole core
-    // vec2 drift = vec2(
-    //   fbm(vec2(uTime * 0.3, 0.0)) - 0.5,
-    //   fbm(vec2(0.0, uTime * 0.35)) - 0.5
-    // ) * 0.01;
-    //
-    // float d = length(centered - drift) + edgeWobble;
-    // Force the core drift to stay at 0.0 so it locks directly in the center
-    vec2 drift = vec2(0.0, 0.0);
+    // Symmetrical edge ripple — breathes around center without moving it
+    float ripple = fbm(vec2(angle * 3.0, uTime * 0.6)) * 0.02;
+    float d = dist + ripple;
 
-    float d = length(centered - drift) + edgeWobble;
-
-    // ── Color Palette ──
-    // vec3 whiteCore = vec3(1.0, 1.0, 1.0);      // Incandescent heart
-    // vec3 yellow    = vec3(1.0, 0.65, 0.0);    // Amber-yellow — best visibility under additive
-    // vec3 midPink   = vec3(0.95, 0.18, 0.58);   // Cooling energy
-    // vec3 outerEdge = vec3(0.55, 0.08, 0.40);   // Deep magenta fade
     // ── Color Palette ──
     vec3 whiteCore = vec3(1.0, 1.0, 1.0);      // Incandescent heart
-    vec3 yellow    = vec3(1.0, 0.40, 0.00);    // Pushed toward a fiery reddish-orange
-    vec3 midPink   = vec3(1.00, 0.05, 0.00);    // Pure, intense neon red
-    vec3 outerEdge = vec3(0.95, 0.00, 0.15);    // Deep crimson pink-red with minimal blue
+    vec3 yellow    = vec3(1.0, 0.40, 0.00);    // Fiery amber
+    vec3 midPink   = vec3(1.00, 0.05, 0.00);    // Intense neon red
+    vec3 outerEdge = vec3(0.95, 0.00, 0.15);    // Deep crimson
 
-
-    // ── Distance Banding (outside → inside) ──
+    // ── Distance Banding (outside → inside) — centered ──
     vec3 color = outerEdge;
     color = mix(color, midPink,  smoothstep(0.22, 0.15, d + gasNoise * 0.015));
     color = mix(color, yellow,   smoothstep(0.15, 0.025, d));
@@ -424,9 +409,6 @@ function KiraKiraVortex() {
   const backdropMat = useMemo(
     () =>
       new THREE.ShaderMaterial({
-        uniforms: {
-          uAspect: { value: window.innerWidth / window.innerHeight },
-        },
         vertexShader: backdropVertex,
         fragmentShader: backdropFragment,
         depthWrite: false,
@@ -511,9 +493,7 @@ function KiraKiraVortex() {
     paintMat.uniforms.uTime.value = t
     flareMat.uniforms.uTime.value = t
     glowMat.uniforms.uTime.value = t
-    const aspect = state.size.width / state.size.height
-    glowMat.uniforms.uAspect.value = aspect
-    backdropMat.uniforms.uAspect.value = aspect
+    glowMat.uniforms.uAspect.value = state.size.width / state.size.height
   })
 
   return (
