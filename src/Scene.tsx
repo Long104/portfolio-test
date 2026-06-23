@@ -112,9 +112,12 @@ const backdropFragment = /* glsl */ `
     float dist = distance(vUv, vec2(0.5));
 
     // Dark center — the foreground glow mesh paints the core/halo on top
-    vec3 dark   = vec3(0.01, 0.03, 0.05);
-    vec3 mint   = vec3(0.15, 0.85, 0.70);
-    vec3 teal   = vec3(0.02, 0.18, 0.22);
+    // vec3 dark   = vec3(0.01, 0.03, 0.05);
+    // vec3 mint   = vec3(0.15, 0.85, 0.70);
+    // vec3 teal   = vec3(0.02, 0.18, 0.22);
+    vec3 dark   = vec3(1, 1, 1);
+    vec3 mint   = vec3(1, 1, 1);
+    vec3 teal   = vec3(1, 1, 1);
 
     vec3 color = mix(dark, mint, smoothstep(0.0, 0.40, dist));
     if (dist > 0.40) color = mix(color, teal, smoothstep(0.40, 0.70, dist));
@@ -185,7 +188,8 @@ const particleFragment = /* glsl */ `
 
     if (vType < 0.5) {
       // Vibrant peach/pink petals
-      texColor = texture2D(uTexPetal, vUv);
+      // no need for this the pink blur i want it to be the pink explosive instead not as blur and ove slowly
+      // texColor = texture2D(uTexBlob, vUv);
       finalColor = mix(vec3(1.0, 0.3, 0.55), vec3(1.0, 0.6, 0.75), vDepth);
     } else {
       // Dark framing blobs (deep jade/teal)
@@ -376,7 +380,7 @@ function KiraKiraVortex() {
   )
 
   // --- Geometry with instanced attributes ---
-  const backdropGeo = useMemo(() => new THREE.PlaneGeometry(2, 2), [])
+  const backdropGeo = useMemo(() => new THREE.PlaneGeometry(1, 1), [])
 
   const paintGeo = useMemo(() => {
     const { pos, rand } = generateInstanceData(PAINT_COUNT, 14.0)
@@ -405,7 +409,7 @@ function KiraKiraVortex() {
   return (
     <>
       {/* Layer A: Static fullscreen backdrop */}
-      <mesh geometry={backdropGeo} material={backdropMat} renderOrder={-1} />
+      {/* <mesh geometry={backdropGeo} material={backdropMat} renderOrder={-1} /> */}
 
       {/* Layer B: Fluid particles (normal alpha blending) */}
       <instancedMesh
@@ -414,13 +418,13 @@ function KiraKiraVortex() {
       />
 
       {/* Layer C: Star flares (additive blending) */}
-      <instancedMesh
-        args={[flareGeo, flareMat, FLARE_COUNT]}
-        frustumCulled={false}
-      />
+      {/* <instancedMesh */}
+      {/*   args={[flareGeo, flareMat, FLARE_COUNT]} */}
+      {/*   frustumCulled={false} */}
+      {/* /> */}
 
       {/* Layer D: Foreground core glow — always visible on top */}
-      <mesh geometry={backdropGeo} material={glowMat} renderOrder={1} />
+      {/* <mesh geometry={backdropGeo} material={glowMat} renderOrder={1} /> */}
     </>
   )
 }
