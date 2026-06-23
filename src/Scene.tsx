@@ -310,7 +310,6 @@ const glowFragment = /* glsl */ `
   uniform float uTime;
   varying vec2 vUv;
 
-  // Smooth 2D Noise for realistic gas/plasma emulation
   float hash(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
   }
@@ -323,16 +322,14 @@ const glowFragment = /* glsl */ `
                mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
   }
 
-  // Fractional Brownian Motion for layered, realistic cloud depth
   float fbm(vec2 p) {
     float v = 0.0;
     float a = 0.5;
     vec2 shift = vec2(100.0);
-    // Rotate to reduce axial bias
-    mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.50));
-    for (int i = 0; i < 4; ++i) {
+    mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5));
+    for (int i = 0; i < 3; ++i) {
       v += a * noise(p);
-      p = rot * p * 2.0 + shift;
+      p = rot * p * 2.5 + shift;
       a *= 0.5;
     }
     return v;
@@ -343,33 +340,35 @@ const glowFragment = /* glsl */ `
     centered.x *= uAspect;
     float dist = length(centered);
 
-    // 1. Realistic Light Physics Falloff (Inverse-square approximation)
-    float coreGlow = exp(-dist * 18.0) * 2.0;
-    float outerHalo = exp(-dist * 6.5) * 0.8;
+    // 1. Slow down and scale the gas noise swirling near the center
+    vec2 noiseUV = centered * 4.0;
+    float gasNoise = fbm(noiseUV - vec2(uTime * 0.2, uTime * 0.1));
 
-    // 2. Realistic Volumetric Gas Movement
-    vec2 noiseUV = centered * 3.5;
-    float timeScale = uTime * 0.4;
+    // 2. Build explicit structural layers based on radius distances
+    float coreMask  = smoothstep(0.08, 0.0, dist);
+    float innerHalo = smoothstep(0.22, 0.02, dist);
+    float outerHalo = smoothstep(0.45, 0.10, dist);
 
-    float gasNoise = fbm(noiseUV - vec2(timeScale, -timeScale * 0.5)) * 0.5
-                   + fbm(noiseUV * 2.0 + vec2(timeScale * 0.2, timeScale * 0.7)) * 0.25;
+    // Inject our fluid noise directly into the structural masks
+    float coreField   = clamp(coreMask + gasNoise * 0.15, 0.0, 1.0);
+    float middleField = clamp(innerHalo + gasNoise * 0.3, 0.0, 1.0);
+    float outerField  = clamp(outerHalo + gasNoise * 0.4, 0.0, 1.0);
 
-    // Smoothly mix the gas noise into the halo so it looks volumetric
-    float finalGlow = coreGlow + outerHalo * (0.6 + gasNoise * 0.8);
+    // 3. Define the explicit target colors
+    vec3 brightYellow = vec3(1.0, 0.95, 0.2);   // Rich yellow core (lowered blue)
+    vec3 hotPink      = vec3(1.0, 0.15, 0.55);  // Vivid middle pink
+    vec3 deepMagenta  = vec3(0.75, 0.05, 0.45); // Darker saturated edge pink
 
-    // 3. Cinematic Color Grading (Soft gradients)
-    vec3 coreColor  = vec3(1.5, 1.4, 0.9);   // Intense overexposed white-yellow core
-    vec3 midOrange  = vec3(1.0, 0.55, 0.35); // Soft transitional amber plasma
-    vec3 outerPink  = vec3(0.95, 0.18, 0.55); // Cinematic nebular pink/magenta
+    // 4. Composite layers from outside edge to center
+    vec3 finalColor = deepMagenta * outerField;
+    finalColor = mix(finalColor, hotPink, middleField);
+    finalColor = mix(finalColor, brightYellow, coreField);
 
-    // Distribute colors smoothly based on the realistic light intensity
-    vec3 color = mix(outerPink, midOrange, smoothstep(0.15, 0.6, finalGlow));
-    color = mix(color, coreColor, smoothstep(0.8, 1.5, finalGlow));
+    // Gentle global falloff at the furthest boundaries
+    float finalAlpha = outerField * (1.0 - smoothstep(0.35, 0.5, dist));
 
-    // Naturally fade out at the edges using the light intensity profile
-    float alpha = smoothstep(0.02, 0.25, finalGlow * (1.0 - dist * 2.0));
-
-    gl_FragColor = vec4(color * finalGlow, alpha);
+    // Cap output so additive blending retains hues
+    gl_FragColor = vec4(finalColor * 0.9, finalAlpha * 0.85);
 
     #include <colorspace_fragment>
   }
