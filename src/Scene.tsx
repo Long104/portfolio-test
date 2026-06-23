@@ -107,10 +107,10 @@ const backdropFragment = /* glsl */ `
 
     vec3 mintGreen  = vec3(0.20, 0.88, 0.58);
     vec3 brightCyan = vec3(0.00, 0.95, 0.85);
-    vec3 deepTeal   = vec3(0.01, 0.12, 0.18);
+    vec3 deepTeal   = vec3(0.05, 0.25, 0.40);
 
-    vec3 skyColor = mix(mintGreen, brightCyan, smoothstep(0.0, 0.35, dist));
-    vec3 finalColor = mix(skyColor, deepTeal, smoothstep(0.25, 0.70, dist));
+    vec3 skyColor = mix(mintGreen, brightCyan, smoothstep(0.0, 0.6, dist));
+    vec3 finalColor = mix(skyColor, deepTeal, smoothstep(0.5, 1.0, dist));
 
     gl_FragColor = vec4(finalColor, 1.0);
     #include <colorspace_fragment>
