@@ -307,21 +307,38 @@ const glowVertex = /* glsl */ `
 
 const glowFragment = /* glsl */ `
   uniform float uAspect;
+  uniform float uTime;
   varying vec2 vUv;
+
   void main() {
-    // Correct for screen aspect so the glow is circular
+    // Correct for screen aspect ratio so the explosion core remains circular
     vec2 centered = vUv - vec2(0.5);
     centered.x *= uAspect;
     float dist = length(centered);
 
-    vec3 coreColor = vec3(1.0, 0.98, 0.65);  // Warm yellow-white
-    vec3 haloColor = vec3(0.76, 0.09, 0.36);  // #C2185B  dark pink
+    // Calculate angle to inject procedural noise around the perimeter
+    float angle = atan(centered.y, centered.x);
 
-    // Core blends into pink halo
-    vec3 color = mix(coreColor, haloColor, smoothstep(0.02, 0.16, dist));
+    // Anime-style jagged displacement math (overlapping high frequencies)
+    float jaggedNoise = sin(angle * 7.0 + uTime * 12.0) * 0.15 
+                      + cos(angle * 13.0 - uTime * 18.0) * 0.08
+                      + sin(angle * 29.0 + uTime * 30.0) * 0.03;
 
-    // Strong alpha at center, smooth falloff
-    float alpha = 1.0 - smoothstep(0.0, 0.35, dist);
+    // Distort the distance evaluation using our noise calculation
+    float distortedDist = dist + jaggedNoise * (0.25 - clamp(dist, 0.0, 0.25));
+
+    // High intensity color mapping matching your target image
+    vec3 coreColor = vec3(1.2, 1.2, 0.6);   // Over-saturated, blazing yellow-white core
+    vec3 middlePink = vec3(1.0, 0.35, 0.6); // Vivid hand-painted mid-tone pink
+    vec3 haloColor = vec3(0.85, 0.12, 0.42); // Deep outer crimson halo boundary
+
+    // Blend color steps along the distorted distance field
+    vec3 color = mix(coreColor, middlePink, smoothstep(0.04, 0.12, distortedDist));
+    color = mix(color, haloColor, smoothstep(0.12, 0.24, distortedDist));
+
+    // Sharp ink-style falloff profile instead of a linear digital glow blur
+    float alphaField = 1.0 - smoothstep(0.08, 0.32, distortedDist);
+    float alpha = smoothstep(0.0, 0.2, alphaField);
 
     gl_FragColor = vec4(color, alpha);
 
@@ -410,6 +427,7 @@ function KiraKiraVortex() {
       new THREE.ShaderMaterial({
         uniforms: {
           uAspect: { value: window.innerWidth / window.innerHeight },
+          uTime: { value: 0 },
         },
         vertexShader: glowVertex,
         fragmentShader: glowFragment,
@@ -421,7 +439,7 @@ function KiraKiraVortex() {
   )
 
   // --- Geometry with instanced attributes ---
-  const backdropGeo = useMemo(() => new THREE.PlaneGeometry(1.5, 1.5), [])
+  const backdropGeo = useMemo(() => new THREE.PlaneGeometry(1, 1), [])
 
   const paintGeo = useMemo(() => {
     const { pos, rand } = generateInstanceData(PAINT_COUNT, 14.0)
@@ -444,6 +462,7 @@ function KiraKiraVortex() {
     const t = state.clock.getElapsedTime()
     paintMat.uniforms.uTime.value = t
     flareMat.uniforms.uTime.value = t
+    glowMat.uniforms.uTime.value = t
     glowMat.uniforms.uAspect.value = state.size.width / state.size.height
   })
 
