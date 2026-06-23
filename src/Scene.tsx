@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { EffectComposer, Bloom } from '@react-three/postprocessing'
 
 // ==========================================
 // 1. PROCEDURAL TEXTURES (Canvas-based)
@@ -111,13 +112,13 @@ const backdropFragment = /* glsl */ `
   void main() {
     float dist = distance(vUv, vec2(0.5));
 
-    // Dark center — the foreground glow mesh paints the core/halo on top
-    vec3 dark   = vec3(0.01, 0.03, 0.05);
-    vec3 mint   = vec3(0.15, 0.85, 0.70);
-    vec3 teal   = vec3(0.02, 0.18, 0.22);
+    // Tunnel effect — pitch-black void at edges, bright core at center
+    vec3 outerColor = vec3(0.0, 0.01, 0.02);
+    vec3 midColor   = vec3(0.02, 0.12, 0.18);
+    vec3 coreColor  = vec3(0.8, 0.9, 0.85);
 
-    vec3 color = mix(dark, mint, smoothstep(0.0, 0.40, dist));
-    if (dist > 0.40) color = mix(color, teal, smoothstep(0.40, 0.70, dist));
+    vec3 color = mix(coreColor, midColor, smoothstep(0.0, 0.25, dist));
+    color = mix(color, outerColor, smoothstep(0.25, 0.75, dist));
 
     gl_FragColor = vec4(color, 1.0);
 
@@ -244,7 +245,7 @@ const flareFragment = /* glsl */ `
     vec3 glow = mix(vec3(1.0, 0.98, 0.6), vec3(1.0, 1.0, 1.0), vDepth);
 
     float alphaFade = smoothstep(1.0, 0.80, vDepth);
-    gl_FragColor = vec4(glow * 1.3, texColor.a * alphaFade);
+    gl_FragColor = vec4(min(glow, 1.0), texColor.a * alphaFade);
 
     #include <colorspace_fragment>
   }
@@ -269,8 +270,9 @@ const glowFragment = /* glsl */ `
     centered.x *= uAspect;
     float dist = length(centered);
 
-    vec3 coreColor = vec3(1.0, 0.98, 0.65);  // Warm yellow-white
-    vec3 haloColor = vec3(0.95, 0.12, 0.38);  // Crimson pink
+    // HDR colors > 1.0 to trigger Bloom post-processing
+    vec3 coreColor = vec3(1.0, 0.98, 0.65) * 3.0;
+    vec3 haloColor = vec3(0.95, 0.12, 0.38) * 1.5;
 
     // Core blends into pink halo
     vec3 color = mix(coreColor, haloColor, smoothstep(0.02, 0.16, dist));
@@ -441,6 +443,13 @@ export default function Scene() {
     >
       <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>
         <KiraKiraVortex />
+        <EffectComposer enableNormalPass={false}>
+          <Bloom
+            luminanceThreshold={1.0}
+            mipmapBlur
+            intensity={1.5}
+          />
+        </EffectComposer>
       </Canvas>
     </div>
   )
