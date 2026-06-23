@@ -310,37 +310,66 @@ const glowFragment = /* glsl */ `
   uniform float uTime;
   varying vec2 vUv;
 
+  // Smooth 2D Noise for realistic gas/plasma emulation
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+  }
+
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i + vec2(0.0,0.0)), hash(i + vec2(1.0,0.0)), u.x),
+               mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
+  }
+
+  // Fractional Brownian Motion for layered, realistic cloud depth
+  float fbm(vec2 p) {
+    float v = 0.0;
+    float a = 0.5;
+    vec2 shift = vec2(100.0);
+    // Rotate to reduce axial bias
+    mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.50));
+    for (int i = 0; i < 4; ++i) {
+      v += a * noise(p);
+      p = rot * p * 2.0 + shift;
+      a *= 0.5;
+    }
+    return v;
+  }
+
   void main() {
-    // Correct for screen aspect ratio so the explosion core remains circular
     vec2 centered = vUv - vec2(0.5);
     centered.x *= uAspect;
     float dist = length(centered);
 
-    // Calculate angle to inject procedural noise around the perimeter
-    float angle = atan(centered.y, centered.x);
+    // 1. Realistic Light Physics Falloff (Inverse-square approximation)
+    float coreGlow = exp(-dist * 18.0) * 2.0;
+    float outerHalo = exp(-dist * 6.5) * 0.8;
 
-    // Anime-style jagged displacement math (overlapping high frequencies)
-    float jaggedNoise = sin(angle * 7.0 + uTime * 12.0) * 0.15 
-                      + cos(angle * 13.0 - uTime * 18.0) * 0.08
-                      + sin(angle * 29.0 + uTime * 30.0) * 0.03;
+    // 2. Realistic Volumetric Gas Movement
+    vec2 noiseUV = centered * 3.5;
+    float timeScale = uTime * 0.4;
 
-    // Distort the distance evaluation using our noise calculation
-    float distortedDist = dist + jaggedNoise * (0.25 - clamp(dist, 0.0, 0.25));
+    float gasNoise = fbm(noiseUV - vec2(timeScale, -timeScale * 0.5)) * 0.5
+                   + fbm(noiseUV * 2.0 + vec2(timeScale * 0.2, timeScale * 0.7)) * 0.25;
 
-    // High intensity color mapping matching your target image
-    vec3 coreColor = vec3(1.2, 1.2, 0.6);   // Over-saturated, blazing yellow-white core
-    vec3 middlePink = vec3(1.0, 0.35, 0.6); // Vivid hand-painted mid-tone pink
-    vec3 haloColor = vec3(0.85, 0.12, 0.42); // Deep outer crimson halo boundary
+    // Smoothly mix the gas noise into the halo so it looks volumetric
+    float finalGlow = coreGlow + outerHalo * (0.6 + gasNoise * 0.8);
 
-    // Blend color steps along the distorted distance field
-    vec3 color = mix(coreColor, middlePink, smoothstep(0.04, 0.12, distortedDist));
-    color = mix(color, haloColor, smoothstep(0.12, 0.24, distortedDist));
+    // 3. Cinematic Color Grading (Soft gradients)
+    vec3 coreColor  = vec3(1.5, 1.4, 0.9);   // Intense overexposed white-yellow core
+    vec3 midOrange  = vec3(1.0, 0.55, 0.35); // Soft transitional amber plasma
+    vec3 outerPink  = vec3(0.95, 0.18, 0.55); // Cinematic nebular pink/magenta
 
-    // Sharp ink-style falloff profile instead of a linear digital glow blur
-    float alphaField = 1.0 - smoothstep(0.08, 0.32, distortedDist);
-    float alpha = smoothstep(0.0, 0.2, alphaField);
+    // Distribute colors smoothly based on the realistic light intensity
+    vec3 color = mix(outerPink, midOrange, smoothstep(0.15, 0.6, finalGlow));
+    color = mix(color, coreColor, smoothstep(0.8, 1.5, finalGlow));
 
-    gl_FragColor = vec4(color, alpha);
+    // Naturally fade out at the edges using the light intensity profile
+    float alpha = smoothstep(0.02, 0.25, finalGlow * (1.0 - dist * 2.0));
+
+    gl_FragColor = vec4(color * finalGlow, alpha);
 
     #include <colorspace_fragment>
   }
@@ -434,6 +463,7 @@ function KiraKiraVortex() {
         transparent: true,
         depthWrite: false,
         depthTest: false,
+        blending: THREE.AdditiveBlending,
       }),
     [],
   )
