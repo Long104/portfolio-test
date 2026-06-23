@@ -127,14 +127,15 @@ const backdropVertex = /* glsl */ `
 // `;
 
 const backdropFragment = /* glsl */ `
+  uniform float uAspect;
   varying vec2 vUv;
   void main() {
-    float dist = distance(vUv, vec2(0.5));
+    // Center coordinate space + correct for aspect ratio (matches glow shader)
+    vec2 centered = vUv - vec2(0.5);
+    centered.x *= uAspect;
+    float dist = length(centered);
 
     // Dark center — the foreground glow mesh paints the core/halo on top
-    // vec3 dark   = vec3(0.01, 0.03, 0.05);
-    // vec3 mint   = vec3(0.15, 0.85, 0.70);
-    // vec3 teal   = vec3(0.02, 0.18, 0.22);
     vec3 dark   = vec3(1, 1, 1);
     vec3 mint   = vec3(1, 1, 1);
     vec3 teal   = vec3(1, 1, 1);
@@ -345,7 +346,7 @@ const glowFragment = /* glsl */ `
     float angle = atan(centered.y, centered.x);
 
     // Gas noise — drifts through color/intensity, NOT position
-    float gasNoise = fbm(centered * 4.0 - vec2(uTime * 0.2, uTime * 0.1));
+    float gasNoise = fbm(centered * 4.0 - vec2(uTime * 0.3, uTime * 0.3));
 
     // Symmetrical edge ripple — breathes around center without moving it
     float ripple = fbm(vec2(angle * 3.0, uTime * 0.6)) * 0.02;
@@ -409,6 +410,9 @@ function KiraKiraVortex() {
   const backdropMat = useMemo(
     () =>
       new THREE.ShaderMaterial({
+        uniforms: {
+          uAspect: { value: window.innerWidth / window.innerHeight },
+        },
         vertexShader: backdropVertex,
         fragmentShader: backdropFragment,
         depthWrite: false,
@@ -493,7 +497,9 @@ function KiraKiraVortex() {
     paintMat.uniforms.uTime.value = t
     flareMat.uniforms.uTime.value = t
     glowMat.uniforms.uTime.value = t
-    glowMat.uniforms.uAspect.value = state.size.width / state.size.height
+    const aspect = state.size.width / state.size.height
+    glowMat.uniforms.uAspect.value = aspect
+    backdropMat.uniforms.uAspect.value = aspect
   })
 
   return (
