@@ -111,7 +111,7 @@ const backdropFragment = /* glsl */ `
   uniform float uTime;
   varying vec2 vUv;
 
-  // Simple 2D noise for chaotic texture
+  // 2D Noise function
   float random(in vec2 st) { return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123); }
   float noise(in vec2 st) {
     vec2 i = floor(st); vec2 f = fract(st);
@@ -122,19 +122,21 @@ const backdropFragment = /* glsl */ `
   }
 
   void main() {
-    vec2 pos = vUv * 4.0;
-    float n = noise(pos + uTime * 0.5);
+    // Scale and animate the noise
+    vec2 pos = vUv * 3.0;
+    float n = noise(pos - uTime * 0.2);
     float dist = distance(vUv, vec2(0.5));
 
-    // Anime colors: deep teal outer, bright mint/cyan inner
-    vec3 deepTeal   = vec3(0.01, 0.10, 0.15);
-    vec3 brightMint = vec3(0.15, 0.90, 0.75);
+    // Anime Colors
+    vec3 brightCyan = vec3(0.2, 1.0, 0.9);
+    vec3 mintGreen  = vec3(0.4, 0.9, 0.5);
+    vec3 deepTeal   = vec3(0.01, 0.1, 0.15);
 
-    // Mix noise with radial distance for chaotic nebula texture
-    vec3 color = mix(brightMint, deepTeal, dist * 2.0 - n * 0.4);
+    // Create chaotic nebula mix, then fade to dark edges
+    vec3 baseColor = mix(mintGreen, brightCyan, n);
+    vec3 color = mix(baseColor, deepTeal, smoothstep(0.1, 0.6, dist));
 
     gl_FragColor = vec4(color, 1.0);
-
     #include <colorspace_fragment>
   }
 `
@@ -199,15 +201,15 @@ const particleFragment = /* glsl */ `
     float alpha = 1.0;
 
     if (vType < 0.5) {
-      // Sharp pink petals
+      // Small, fast-moving neon pink streaks
       texColor = texture2D(uTexPetal, vUv);
-      finalColor = mix(vec3(1.0, 0.3, 0.55), vec3(1.0, 0.6, 0.75), vDepth);
-      alpha = texColor.a * smoothstep(1.0, 0.85, vDepth);
+      finalColor = vec3(1.0, 0.1, 0.4) * 2.0; // Multiply to glow
+      alpha = texColor.a * smoothstep(1.0, 0.8, vDepth);
     } else {
-      // Dark silhouettes — frame the explosion, do NOT bloom
+      // MASSIVE dark framing blobs (extreme foreground)
       texColor = texture2D(uTexBlob, vUv);
-      finalColor = vec3(0.01, 0.03, 0.05);
-      alpha = texColor.a;
+      finalColor = vec3(0.0, 0.02, 0.05); // Almost pitch black
+      alpha = texColor.a * 0.9; // Keep them highly visible/opaque
     }
 
     gl_FragColor = vec4(finalColor, alpha);
@@ -277,29 +279,37 @@ const glowVertex = /* glsl */ `
 
 const glowFragment = /* glsl */ `
   uniform float uAspect;
+  uniform float uTime;
   varying vec2 vUv;
+
+  float random(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+  float noise(vec2 p) {
+    vec2 i = floor(p); vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(random(i), random(i + vec2(1.0, 0.0)), u.x),
+               mix(random(i + vec2(0.0, 1.0)), random(i + vec2(1.0, 1.0)), u.x), u.y);
+  }
 
   void main() {
     vec2 centered = vUv - vec2(0.5);
     centered.x *= uAspect;
 
-    // Jagged explosion edges
-    float angle = atan(centered.y, centered.x);
-    float jagged = sin(angle * 30.0) * 0.015 + sin(angle * 13.0) * 0.02;
-    float dist = length(centered) + jagged;
+    // Soft, organic distortion so it's not a perfect circle
+    float dist = length(centered);
+    dist += noise(centered * 15.0 - uTime * 2.0) * 0.03;
 
-    // Distinct colors — core yellow, halo magenta, edge to black
-    vec3 coreYellow = vec3(1.0, 0.95, 0.2);
-    vec3 haloPink   = vec3(0.95, 0.12, 0.38);
-    vec3 edgeDark   = vec3(0.0, 0.0, 0.0);
+    // Overlapping additive rings (exponential falloff for realism)
+    float whiteCore  = pow(max(1.0 - dist * 10.0, 0.0), 2.0);
+    float yellowRing = pow(max(1.0 - dist * 5.0, 0.0), 1.5);
+    float pinkHalo   = pow(max(1.0 - dist * 2.5, 0.0), 1.0);
 
-    // Harder mixing to prevent white-out
-    vec3 color = mix(coreYellow, haloPink, smoothstep(0.02, 0.08, dist));
-    color = mix(color, edgeDark, smoothstep(0.08, 0.25, dist));
+    vec3 color = vec3(0.0);
+    color += vec3(2.0, 0.1, 0.5) * pinkHalo;   // Base hot pink
+    color += vec3(1.5, 1.2, 0.0) * yellowRing; // Intense yellow mid
+    color += vec3(3.0, 3.0, 3.0) * whiteCore;  // Blinding white center
 
-    // Keep multiplier at 1.5 so bloom catches it without destroying color
-    float alpha = 1.0 - smoothstep(0.15, 0.35, dist);
-    gl_FragColor = vec4(color * 1.5, alpha);
+    float alpha = smoothstep(0.4, 0.0, dist);
+    gl_FragColor = vec4(color, alpha);
 
     #include <colorspace_fragment>
   }
@@ -389,6 +399,7 @@ function KiraKiraVortex() {
       new THREE.ShaderMaterial({
         uniforms: {
           uAspect: { value: window.innerWidth / window.innerHeight },
+          uTime: { value: 0 },
         },
         vertexShader: glowVertex,
         fragmentShader: glowFragment,
@@ -424,6 +435,7 @@ function KiraKiraVortex() {
     backdropMat.uniforms.uTime.value = t
     paintMat.uniforms.uTime.value = t
     flareMat.uniforms.uTime.value = t
+    glowMat.uniforms.uTime.value = t
     glowMat.uniforms.uAspect.value = state.size.width / state.size.height
   })
 
