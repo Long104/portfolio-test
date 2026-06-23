@@ -322,53 +322,32 @@ const glowFragment = /* glsl */ `
                mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
   }
 
-  float fbm(vec2 p) {
-    float v = 0.0;
-    float a = 0.5;
-    vec2 shift = vec2(100.0);
-    mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5));
-    for (int i = 0; i < 3; ++i) {
-      v += a * noise(p);
-      p = rot * p * 2.5 + shift;
-      a *= 0.5;
-    }
-    return v;
-  }
-
   void main() {
     vec2 centered = vUv - vec2(0.5);
     centered.x *= uAspect;
     float dist = length(centered);
 
-    // 1. Slow down and scale the gas noise swirling near the center
-    vec2 noiseUV = centered * 4.0;
-    float gasNoise = fbm(noiseUV - vec2(uTime * 0.2, uTime * 0.1));
+    // Dynamic, smooth swirling distortion for the core boundaries
+    float coreNoise = noise(centered * 6.0 + vec2(sin(uTime * 0.5), cos(uTime * 0.5))) * 0.04;
+    float edgeNoise = noise(centered * 3.0 - vec2(uTime * 0.2)) * 0.08;
 
-    // 2. Build explicit structural layers based on radius distances
-    float coreMask  = smoothstep(0.08, 0.0, dist);
-    float innerHalo = smoothstep(0.22, 0.02, dist);
-    float outerHalo = smoothstep(0.45, 0.10, dist);
+    // Expand the radius zones so the yellow is highly visible and dominant
+    float yellowZone = smoothstep(0.14 + coreNoise, 0.04, dist);
+    float pinkZone   = smoothstep(0.35 + edgeNoise, 0.08, dist);
 
-    // Inject our fluid noise directly into the structural masks
-    float coreField   = clamp(coreMask + gasNoise * 0.15, 0.0, 1.0);
-    float middleField = clamp(innerHalo + gasNoise * 0.3, 0.0, 1.0);
-    float outerField  = clamp(outerHalo + gasNoise * 0.4, 0.0, 1.0);
+    // Explicit solid colors matching the reference picture
+    vec3 solidYellow = vec3(1.0, 0.92, 0.15);  // Rich, solid golden yellow
+    vec3 brightPink  = vec3(1.0, 0.32, 0.58);  // Vibrant surrounding pink
+    vec3 outerHalo   = vec3(0.92, 0.20, 0.50);  // Deep magenta edge layer
 
-    // 3. Define the explicit target colors
-    vec3 brightYellow = vec3(1.0, 0.95, 0.2);   // Rich yellow core (lowered blue)
-    vec3 hotPink      = vec3(1.0, 0.15, 0.55);  // Vivid middle pink
-    vec3 deepMagenta  = vec3(0.75, 0.05, 0.45); // Darker saturated edge pink
+    // Mix the layers cleanly
+    vec3 finalColor = mix(outerHalo, brightPink, pinkZone);
+    finalColor = mix(finalColor, solidYellow, yellowZone);
 
-    // 4. Composite layers from outside edge to center
-    vec3 finalColor = deepMagenta * outerField;
-    finalColor = mix(finalColor, hotPink, middleField);
-    finalColor = mix(finalColor, brightYellow, coreField);
+    // Smooth but structured alpha falloff at the very edge of the pink
+    float alpha = smoothstep(0.40, 0.12, dist + edgeNoise * 0.5);
 
-    // Gentle global falloff at the furthest boundaries
-    float finalAlpha = outerField * (1.0 - smoothstep(0.35, 0.5, dist));
-
-    // Cap output so additive blending retains hues
-    gl_FragColor = vec4(finalColor * 0.9, finalAlpha * 0.85);
+    gl_FragColor = vec4(finalColor, alpha * 0.95);
 
     #include <colorspace_fragment>
   }
@@ -462,7 +441,6 @@ function KiraKiraVortex() {
         transparent: true,
         depthWrite: false,
         depthTest: false,
-        blending: THREE.AdditiveBlending,
       }),
     [],
   )
