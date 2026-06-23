@@ -344,30 +344,30 @@ const glowFragment = /* glsl */ `
     vec2 noiseUV = centered * 4.0;
     float gasNoise = fbm(noiseUV - vec2(uTime * 0.2, uTime * 0.1));
 
-    // 1. Light Intensity Curves
-    float coreGlow = exp(-dist * 14.0) * 2.2;
+    // 1. Light Intensity Curves (dialed down core to prevent white blowout)
+    float coreGlow = exp(-dist * 12.0) * 1.5;
     float outerHalo = exp(-dist * 5.5) * 1.0;
     float finalGlow = coreGlow + outerHalo * (0.5 + gasNoise * 0.5);
 
-    // 2. Color Profiles
-    vec3 coreYellow = vec3(1.0, 0.78, 0.0);   // Rich amber gold
-    vec3 midPink    = vec3(1.0, 0.20, 0.60);  // Vibrant neon pink
-    vec3 outerEdge  = vec3(0.60, 0.08, 0.45); // Deep nebular magenta
+    // 2. Base Color Swatches
+    vec3 coreYellow = vec3(1.0, 0.82, 0.05);  // Vibrant rich yellow/gold
+    vec3 midPink    = vec3(1.0, 0.20, 0.60);  // Dynamic electric pink
+    vec3 outerEdge  = vec3(0.55, 0.05, 0.40); // Dark nebular border
 
-    // Base gradient transition
-    vec3 finalColor = mix(outerEdge, midPink, smoothstep(0.15, 0.5, finalGlow));
+    // 3. Blend pink to dark edge base gradient
+    vec3 finalColor = mix(outerEdge, midPink, smoothstep(0.12, 0.45, finalGlow));
 
-    // 3. Core Compression Mask — force yellow into center
-    float coreMask = smoothstep(0.15, 0.0, dist);
-    finalColor = mix(finalColor, coreYellow, coreMask);
+    // 4. Inner correction mask — noise-linked yellow injection
+    float innerCoreMask = smoothstep(0.16 + gasNoise * 0.05, 0.02, dist);
+    finalColor = mix(finalColor, coreYellow, innerCoreMask);
 
-    // 4. Prevent brightness blowout — suppress multiplier inside core
-    float intensityModifier = mix(finalGlow, 1.1, coreMask);
+    // 5. Cap brightness in center to prevent additive blowout
+    float intensityModifier = mix(finalGlow, min(finalGlow, 1.25), innerCoreMask);
 
     // Soft organic transparency falloff
     float alpha = smoothstep(0.02, 0.3, finalGlow * (1.0 - dist * 2.0));
 
-    gl_FragColor = vec4(finalColor * intensityModifier * 0.8, alpha);
+    gl_FragColor = vec4(finalColor * intensityModifier * 0.9, alpha);
 
     #include <colorspace_fragment>
   }
