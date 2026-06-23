@@ -355,9 +355,10 @@ const glowFragment = /* glsl */ `
 
     // ── Color Palette ──
     vec3 whiteCore = vec3(1.0, 1.0, 1.0);      // Incandescent heart
-    vec3 yellow    = vec3(1.0, 0.50, 0.0);    // Deep amber — survives additive blending
+    vec3 yellow    = vec3(1.0, 0.65, 0.0);    // Amber-yellow — best visibility under additive
     vec3 midPink   = vec3(0.95, 0.18, 0.58);   // Cooling energy
     vec3 outerEdge = vec3(0.55, 0.08, 0.40);   // Deep magenta fade
+
 
     // ── Distance Banding (outside → inside) ──
     vec3 color = outerEdge;
@@ -366,7 +367,7 @@ const glowFragment = /* glsl */ `
     color = mix(color, whiteCore, smoothstep(0.02, 0.0, d));
 
     // ── Gentle intensity (capped to prevent blowout) ──
-    float glow = min(exp(-d * 8.0) + 0.4, 1.0);
+    float glow = min(exp(-d * 8.0) + 0.4, 0.85);
 
     // ── Organic alpha falloff ──
     float alpha = smoothstep(0.42, 0.06, d) * (0.7 + gasNoise * 0.3);
