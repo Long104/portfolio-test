@@ -361,9 +361,9 @@ const glowFragment = /* glsl */ `
 
     // ── Distance Banding (outside → inside) ──
     vec3 color = outerEdge;
-    color = mix(color, midPink,  smoothstep(0.22, 0.13, d + gasNoise * 0.015));
-    color = mix(color, yellow,   smoothstep(0.12, 0.045, d));
-    color = mix(color, whiteCore, smoothstep(0.035, 0.0, d));
+    color = mix(color, midPink,  smoothstep(0.22, 0.15, d + gasNoise * 0.015));
+    color = mix(color, yellow,   smoothstep(0.15, 0.025, d));
+    color = mix(color, whiteCore, smoothstep(0.02, 0.0, d));
 
     // ── Gentle intensity (capped to prevent blowout) ──
     float glow = min(exp(-d * 8.0) + 0.4, 1.0);
