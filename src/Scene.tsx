@@ -344,27 +344,30 @@ const glowFragment = /* glsl */ `
     vec2 noiseUV = centered * 4.0;
     float gasNoise = fbm(noiseUV - vec2(uTime * 0.2, uTime * 0.1));
 
-    // 1. Light Intensity Curves for Additive Stacking
-    float coreGlow = exp(-dist * 16.0) * 2.5;
-    float outerHalo = exp(-dist * 6.0) * 1.0;
-    float finalGlow = coreGlow + outerHalo * (0.5 + gasNoise * 0.6);
+    // 1. Light Intensity Curves
+    float coreGlow = exp(-dist * 14.0) * 2.2;
+    float outerHalo = exp(-dist * 5.5) * 1.0;
+    float finalGlow = coreGlow + outerHalo * (0.5 + gasNoise * 0.5);
 
-    // 2. Base Colors — blue channel dropped to force yellow hue in core
-    vec3 coreYellow = vec3(1.0, 0.85, 0.0);   // Dominant gold/yellow center
-    vec3 midPink    = vec3(1.0, 0.25, 0.65);  // Vibrant neon pink
-    vec3 outerEdge  = vec3(0.65, 0.10, 0.50); // Deep nebular magenta
+    // 2. Color Profiles
+    vec3 coreYellow = vec3(1.0, 0.78, 0.0);   // Rich amber gold
+    vec3 midPink    = vec3(1.0, 0.20, 0.60);  // Vibrant neon pink
+    vec3 outerEdge  = vec3(0.60, 0.08, 0.45); // Deep nebular magenta
 
-    // 3. Crisp yellow mask — tight radius forces yellow before white blowout
-    float yellowMask = smoothstep(0.12, 0.0, dist);
-
+    // Base gradient transition
     vec3 finalColor = mix(outerEdge, midPink, smoothstep(0.15, 0.5, finalGlow));
-    finalColor = mix(finalColor, coreYellow, yellowMask);
+
+    // 3. Core Compression Mask — force yellow into center
+    float coreMask = smoothstep(0.15, 0.0, dist);
+    finalColor = mix(finalColor, coreYellow, coreMask);
+
+    // 4. Prevent brightness blowout — suppress multiplier inside core
+    float intensityModifier = mix(finalGlow, 1.1, coreMask);
 
     // Soft organic transparency falloff
     float alpha = smoothstep(0.02, 0.3, finalGlow * (1.0 - dist * 2.0));
 
-    // Tone down intensity multiplier so colors survive additive blending
-    gl_FragColor = vec4(finalColor * finalGlow * 0.85, alpha);
+    gl_FragColor = vec4(finalColor * intensityModifier * 0.8, alpha);
 
     #include <colorspace_fragment>
   }
