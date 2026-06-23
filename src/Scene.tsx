@@ -4,7 +4,7 @@ import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import * as THREE from 'three'
 
 // ============================================================================
-// 1. TEXTURE CREATORS (Procedural Canvas Maps with Sharp/Soft Profiles)
+// 1. TEXTURE CREATORS
 // ============================================================================
 
 function createCoreSpurtTexture(): THREE.Texture {
@@ -14,7 +14,6 @@ function createCoreSpurtTexture(): THREE.Texture {
   canvas.height = size
   const ctx = canvas.getContext('2d')!
   
-  // Creates irregular sharp organic debris shapes instead of perfect circles
   ctx.fillStyle = '#ffffff'
   ctx.beginPath()
   ctx.arc(size / 2, size / 2, size * 0.4, 0, Math.PI * 2)
@@ -33,7 +32,6 @@ function createStreakTexture(): THREE.Texture {
   const ctx = canvas.getContext('2d')!
   const c = size / 2
 
-  // An oval capsule shape for sharp velocity streaks
   ctx.fillStyle = '#ffffff'
   ctx.beginPath()
   ctx.ellipse(c, c, size * 0.15, size * 0.45, 0, 0, Math.PI * 2)
@@ -52,7 +50,6 @@ function createBlobTexture(): THREE.Texture {
   const ctx = canvas.getContext('2d')!
   const c = size / 2
 
-  // Large, opaque foreground silhouette particle with a very tight edge fade
   const grad = ctx.createRadialGradient(c, c, 0, c, c, c * 0.9)
   grad.addColorStop(0, 'rgba(255,255,255,1)')
   grad.addColorStop(0.8, 'rgba(255,255,255,0.95)')
@@ -73,7 +70,6 @@ function createStarFlareTexture(): THREE.Texture {
   const ctx = canvas.getContext('2d')!
   const c = size / 2
 
-  // 4-pointed sharp twinkling diamond flares
   ctx.save()
   ctx.translate(c, c)
   for (let i = 0; i < 2; i++) {
@@ -93,7 +89,7 @@ function createStarFlareTexture(): THREE.Texture {
 }
 
 // ============================================================================
-// 2. SHADER CODES (Optimized for WebGL Performance and Colorspace Integrity)
+// 2. SHADER CODES
 // ============================================================================
 
 const backdropVertex = /* glsl */ `
@@ -109,7 +105,6 @@ const backdropFragment = /* glsl */ `
   void main() {
     float dist = distance(vUv, vec2(0.5));
 
-    // True Anime Palette: Solid, luminous mint-cyan gradient core
     vec3 mintGreen  = vec3(0.20, 0.88, 0.58);
     vec3 brightCyan = vec3(0.00, 0.95, 0.85);
     vec3 deepTeal   = vec3(0.01, 0.12, 0.18);
@@ -125,6 +120,7 @@ const backdropFragment = /* glsl */ `
 const elementVertex = /* glsl */ `
   uniform float uTime;
   uniform float uSpeed;
+  uniform float uMode;
   attribute vec3 aInitialPos;
   attribute vec3 aRandoms;
 
@@ -138,24 +134,36 @@ const elementVertex = /* glsl */ `
 
     vec3 pos = aInitialPos;
 
-    // Fast linear timeline projection traveling directly towards the camera lens
-    pos.z += uTime * uSpeed * (1.0 + aRandoms.x * 0.6);
-    pos.z = mod(pos.z + 65.0, 70.0) - 65.0;
+    if (uMode > 0.5) {
+      pos.z += uTime * uSpeed * (1.0 + aRandoms.x * 0.6);
+      pos.z = mod(pos.z + 65.0, 70.0) - 65.0;
+    } else {
+      // Core particles just wiggle slightly in Z
+      pos.z += sin(uTime * 3.0 + aRandoms.x * 6.28) * 1.5;
+    }
 
     vDepth = clamp((pos.z + 65.0) / 65.0, 0.0, 1.0);
 
-    // Exponential velocity scale curve mimicking optical motion blur zoom
-    float scale = 0.4 * (0.15 + pow(vDepth, 3.5) * 12.0);
+    float scale = 0.4;
+    if (uMode > 0.5) {
+      scale *= (0.15 + pow(vDepth, 3.5) * 12.0);
+    } else {
+      scale *= (2.0 + aRandoms.y * 5.0) + sin(uTime * 2.0 + aRandoms.y * 6.28) * 0.5;
+    }
 
-    // Orient and align vectors pointing radially outwards away from screen core
     vec3 transformed = position;
-    if (pos.x != 0.0 || pos.y != 0.0) {
+    if ((pos.x != 0.0 || pos.y != 0.0) && uMode > 0.5) {
       vec2 dir = normalize(pos.xy);
       float stretch = 1.0 + (vDepth * 4.0);
-      
-      // Multiplies longitudinal translation mapping along flight trajectory lines
       float dotProd = dot(transformed.xy, dir);
       transformed.xy += dir * dotProd * (stretch - 1.0);
+    }
+    
+    if (uMode < 0.5) {
+      float angle = (uTime * 0.2 + aRandoms.z * 6.28);
+      float s = sin(angle);
+      float c = cos(angle);
+      transformed.xy = mat2(c, -s, s, c) * transformed.xy;
     }
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos + transformed * scale, 1.0);
@@ -164,6 +172,7 @@ const elementVertex = /* glsl */ `
 
 const elementFragment = /* glsl */ `
   uniform sampler2D uTexture;
+  uniform float uMode;
   varying vec2 vUv;
   varying float vColorIndex;
   varying float vDepth;
@@ -172,20 +181,28 @@ const elementFragment = /* glsl */ `
     vec4 tex = texture2D(uTexture, vUv);
     if (tex.a < 0.05) discard;
 
-    // Strict multi-hue vector distribution splitting yellow, pink, and bright mint paths
     vec3 color;
-    if (vColorIndex < 0.33) {
-      color = vec3(1.0, 0.92, 0.15); // Pure Anime Chrome Yellow
-    } else if (vColorIndex < 0.66) {
-      color = vec3(1.0, 0.15, 0.55); // Intense Shock Pink
+    if (uMode < 1.5) {
+      if (vColorIndex < 0.33) {
+        color = vec3(1.0, 0.85, 0.1); 
+      } else if (vColorIndex < 0.66) {
+        color = vec3(1.0, 0.1, 0.5); 
+      } else {
+        color = vec3(0.1, 0.9, 0.6); 
+      }
     } else {
-      color = vec3(0.12, 0.98, 0.70); // Vibrant Electric Mint
+      color = mix(vec3(1.0, 1.0, 1.0), vec3(0.2, 1.0, 0.4), step(0.5, vColorIndex));
     }
 
-    // Proximity visibility curve avoiding close viewport frame flashing
-    float alphaFade = smoothstep(1.0, 0.82, vDepth) * smoothstep(0.0, 0.15, vDepth);
+    float alpha = tex.a;
+    if (uMode > 0.5) { 
+      alpha *= smoothstep(1.0, 0.82, vDepth) * smoothstep(0.0, 0.15, vDepth);
+    } else {
+      float distFromCenter = distance(vUv, vec2(0.5));
+      alpha *= smoothstep(0.5, 0.2, distFromCenter);
+    }
 
-    gl_FragColor = vec4(color * 1.4, tex.a * alphaFade);
+    gl_FragColor = vec4(color * (uMode == 0.0 ? 1.0 : 1.5), alpha);
     #include <colorspace_fragment>
   }
 `
@@ -194,9 +211,9 @@ const elementFragment = /* glsl */ `
 // 3. MAIN COMPONENT SCENE ARCHITECTURE
 // ============================================================================
 
-const CORE_PARTICLE_COUNT = 1800 // High-density explosion cluster
-const VELOCITY_STREAK_COUNT = 2500 // Speed lines
-const FOREGROUND_SILHOUETTE_COUNT = 45 // Big framing blobs
+const CORE_PARTICLE_COUNT = 400 
+const VELOCITY_STREAK_COUNT = 300 
+const FOREGROUND_SILHOUETTE_COUNT = 30 
 
 function generateVFXInstanceData(count: number, minRadius: number, maxRadius: number, depthRange: number) {
   const pos = new Float32Array(count * 3)
@@ -219,13 +236,8 @@ function generateVFXInstanceData(count: number, minRadius: number, maxRadius: nu
 }
 
 function KiraKiraVortex() {
-  const backdropMatRef = useRef<THREE.ShaderMaterial>(null)
-  const coreMatRef = useRef<THREE.ShaderMaterial>(null)
-  const streakMatRef = useRef<THREE.ShaderMaterial>(null)
-  const flareMatRef = useRef<THREE.ShaderMaterial>(null)
   const silhouetteMeshRef = useRef<THREE.InstancedMesh>(null)
 
-  // Memoize stable engine assets
   const textures = useMemo(() => ({
     core: createCoreSpurtTexture(),
     streak: createStreakTexture(),
@@ -238,7 +250,6 @@ function KiraKiraVortex() {
     screen: new THREE.PlaneGeometry(160, 160)
   }), [])
 
-  // 1. Dynamic Background Materials
   const backdropMat = useMemo(() => new THREE.ShaderMaterial({
     vertexShader: backdropVertex,
     fragmentShader: backdropFragment,
@@ -246,9 +257,8 @@ function KiraKiraVortex() {
     depthTest: false
   }), [])
 
-  // 2. High-Density Inner Core Explosion Layer
   const coreMat = useMemo(() => new THREE.ShaderMaterial({
-    uniforms: { uTime: { value: 0 }, uSpeed: { value: 12.0 }, uTexture: { value: textures.core } },
+    uniforms: { uTime: { value: 0 }, uSpeed: { value: 0.0 }, uMode: { value: 0.0 }, uTexture: { value: textures.core } },
     vertexShader: elementVertex,
     fragmentShader: elementFragment,
     transparent: true,
@@ -256,9 +266,8 @@ function KiraKiraVortex() {
     blending: THREE.NormalBlending
   }), [textures.core])
 
-  // 3. Fast Kinetic Speed Line Streaks
   const streakMat = useMemo(() => new THREE.ShaderMaterial({
-    uniforms: { uTime: { value: 0 }, uSpeed: { value: 32.0 }, uTexture: { value: textures.streak } },
+    uniforms: { uTime: { value: 0 }, uSpeed: { value: 32.0 }, uMode: { value: 1.0 }, uTexture: { value: textures.streak } },
     vertexShader: elementVertex,
     fragmentShader: elementFragment,
     transparent: true,
@@ -266,9 +275,8 @@ function KiraKiraVortex() {
     blending: THREE.NormalBlending
   }), [textures.streak])
 
-  // 4. White/Green Luminescent Twinkle Star Flares
   const flareMat = useMemo(() => new THREE.ShaderMaterial({
-    uniforms: { uTime: { value: 0 }, uSpeed: { value: 20.0 }, uTexture: { value: textures.flare } },
+    uniforms: { uTime: { value: 0 }, uSpeed: { value: 20.0 }, uMode: { value: 2.0 }, uTexture: { value: textures.flare } },
     vertexShader: elementVertex,
     fragmentShader: elementFragment,
     transparent: true,
@@ -276,9 +284,20 @@ function KiraKiraVortex() {
     blending: THREE.AdditiveBlending
   }), [textures.flare])
 
-  // Data Generation Buffers
+  const silhouetteMat = useMemo(() => new THREE.MeshBasicMaterial({
+    map: textures.blob, 
+    color: "#000000", 
+    transparent: true,
+    opacity: 0.95,
+    depthWrite: false,
+    depthTest: false
+  }), [textures.blob])
+
   const coreGeo = useMemo(() => {
-    const { pos, rand } = generateVFXInstanceData(CORE_PARTICLE_COUNT, 0.0, 4.5, 60)
+    // Keep core tightly grouped in the distance
+    const { pos, rand } = generateVFXInstanceData(CORE_PARTICLE_COUNT, 0.0, 8.0, 15)
+    // Shift them all to -60 Z
+    for(let i=0; i<CORE_PARTICLE_COUNT; i++) pos[i*3+2] -= 45.0
     const geo = geometry.quad.clone()
     geo.setAttribute('aInitialPos', new THREE.InstancedBufferAttribute(pos, 3))
     geo.setAttribute('aRandoms', new THREE.InstancedBufferAttribute(rand, 3))
@@ -293,21 +312,18 @@ function KiraKiraVortex() {
     return geo
   }, [geometry.quad])
 
-  // 5. Light-Absorbing Foreground Shadow Layer Data
   const silhouetteData = useMemo(() => {
     const { pos, rand } = generateVFXInstanceData(FOREGROUND_SILHOUETTE_COUNT, 1.5, 9.0, 12)
     return { pos, rand }
   }, [])
 
-  // Animation Frame Render Runtime
   useFrame((state) => {
     const t = state.clock.getElapsedTime()
 
-    if (coreMatRef.current) coreMatRef.current.uniforms.uTime.value = t
-    if (streakMatRef.current) streakMatRef.current.uniforms.uTime.value = t
-    if (flareMatRef.current) flareMatRef.current.uniforms.uTime.value = t
+    coreMat.uniforms.uTime.value = t
+    streakMat.uniforms.uTime.value = t
+    flareMat.uniforms.uTime.value = t
 
-    // Animate the light-blocking silhouette positions via Matrix translations
     if (silhouetteMeshRef.current) {
       const dummy = new THREE.Object3D()
       const speed = 4.5
@@ -318,14 +334,12 @@ function KiraKiraVortex() {
         const initZ = silhouetteData.pos[i * 3 + 2]
         const rFactor = silhouetteData.rand[i * 3]
 
-        // Loop items smoothly along Z towards camera screen plane
         let curZ = initZ + t * speed * (0.8 + rFactor * 0.4)
-        curZ = (curZ % 12.0) - 2.0 // Keeps them clamped directly in front of the lens view
+        curZ = (curZ % 12.0) - 2.0 
 
         dummy.position.set(initX * (1.0 + (curZ + 2.0) * 0.15), initY * (1.0 + (curZ + 2.0) * 0.15), curZ)
         
-        // Scale them up massively as they brush directly against camera glass boundary
-        const s = (2.2 + rFactor * 2.5) * (0.4 + pow((curZ + 2.0) / 14.0, 2.0) * 4.0)
+        const s = (2.2 + rFactor * 2.5) * (0.4 + Math.pow((curZ + 2.0) / 14.0, 2.0) * 4.0)
         dummy.scale.set(s, s, 1)
         dummy.updateMatrix()
         silhouetteMeshRef.current.setMatrixAt(i, dummy.matrix)
@@ -336,50 +350,31 @@ function KiraKiraVortex() {
 
   return (
     <>
-      {/* BACKGROUND SKY CANVAS */}
       <mesh geometry={geometry.screen} material={backdropMat} position={[0, 0, -66]} />
 
-      {/* CORE BLAST DENSE SPATTER CLUSTER */}
-      <instancedMesh ref={coreMatRef} args={[coreGeo, coreMat, CORE_PARTICLE_COUNT]} frustumCulled={false} />
+      <instancedMesh args={[coreGeo, coreMat, CORE_PARTICLE_COUNT]} frustumCulled={false} />
 
-      {/* COMPRESSED RADIAL SPEED STREAKS */}
-      <instancedMesh ref={streakMatRef} args={[streakGeo, streakMat, VELOCITY_STREAK_COUNT]} frustumCulled={false} />
+      <instancedMesh args={[streakGeo, streakMat, VELOCITY_STREAK_COUNT]} frustumCulled={false} />
 
-      {/* ADDITIVE SPARKLING TWINKLE FLARES */}
-      <instancedMesh ref={flareMatRef} args={[streakGeo, flareMat, VELOCITY_STREAK_COUNT]} frustumCulled={false} />
+      <instancedMesh args={[streakGeo, flareMat, VELOCITY_STREAK_COUNT]} frustumCulled={false} />
 
-      {/* LIGHT-ABSORBING FOREGROUND SHADOW SILHOUETTES */}
       <instancedMesh 
         ref={silhouetteMeshRef} 
-        args={[geometry.quad, null as any, FOREGROUND_SILHOUETTE_COUNT]} 
+        args={[geometry.quad, silhouetteMat, FOREGROUND_SILHOUETTE_COUNT]} 
         frustumCulled={false}
-      >
-        <meshBasicMaterial 
-          map={textures.blob} 
-          color="#000000" // Pure pitch black matte paint style matching flat animation art cells
-          transparent 
-          opacity={0.98}
-          depthWrite={false}
-          depthTest={false}
-        />
-      </instancedMesh>
+        renderOrder={10}
+      />
 
-      {/* OPTICAL LENS SCATTER BLOOM EFFECT */}
       <EffectComposer disableNormalPass>
         <Bloom 
           luminanceThreshold={0.9} 
           luminanceSmoothing={0.2} 
-          intensity={0.6} // Delicate brightness boundary safeguarding high color definition
+          intensity={0.6} 
           mipmapBlur 
         />
       </EffectComposer>
     </>
   )
-}
-
-// Inline helper for cleanly computing exponential scaling exponents
-function pow(base: number, exp: number): number {
-  return Math.pow(base, exp)
 }
 
 export default function Scene() {
