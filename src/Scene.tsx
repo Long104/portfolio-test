@@ -327,25 +327,24 @@ const glowFragment = /* glsl */ `
     centered.x *= uAspect;
     float dist = length(centered);
 
-    // Dynamic, smooth swirling distortion for the core boundaries
-    float coreNoise = noise(centered * 6.0 + vec2(sin(uTime * 0.5), cos(uTime * 0.5))) * 0.04;
-    float edgeNoise = noise(centered * 3.0 - vec2(uTime * 0.2)) * 0.08;
+    // Subtle realistic volumetric noise
+    float edgeNoise = noise(centered * 4.0 - vec2(uTime * 0.15)) * 0.05;
 
-    // Expand the radius zones so the yellow is highly visible and dominant
-    float yellowZone = smoothstep(0.14 + coreNoise, 0.04, dist);
-    float pinkZone   = smoothstep(0.35 + edgeNoise, 0.08, dist);
+    // --- EXPANDED YELLOW CORE ---
+    float yellowZone = smoothstep(0.22 + edgeNoise, 0.10, dist);
+    float pinkZone   = smoothstep(0.42 + edgeNoise, 0.15, dist);
 
-    // Explicit solid colors matching the reference picture
-    vec3 solidYellow = vec3(1.0, 0.92, 0.15);  // Rich, solid golden yellow
-    vec3 brightPink  = vec3(1.0, 0.32, 0.58);  // Vibrant surrounding pink
-    vec3 outerHalo   = vec3(0.92, 0.20, 0.50);  // Deep magenta edge layer
+    // Highly saturated solid color profiles
+    vec3 solidYellow = vec3(1.0, 0.95, 0.1);   // Blazing golden yellow
+    vec3 brightPink  = vec3(1.0, 0.28, 0.60);  // Fluid middle pink
+    vec3 outerHalo   = vec3(0.85, 0.15, 0.48);  // Soft outer magenta
 
-    // Mix the layers cleanly
+    // Clean layer composition
     vec3 finalColor = mix(outerHalo, brightPink, pinkZone);
     finalColor = mix(finalColor, solidYellow, yellowZone);
 
-    // Smooth but structured alpha falloff at the very edge of the pink
-    float alpha = smoothstep(0.40, 0.12, dist + edgeNoise * 0.5);
+    // Smooth volumetric alpha falloff
+    float alpha = smoothstep(0.45, 0.15, dist + edgeNoise);
 
     gl_FragColor = vec4(finalColor, alpha * 0.95);
 
