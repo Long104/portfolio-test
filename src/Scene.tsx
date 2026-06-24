@@ -106,26 +106,6 @@ const backdropVertex = /* glsl */ `
   }
 `;
 
-// see yellow
-// const backdropFragment = /* glsl */ `
-//   varying vec2 vUv;
-//   void main() {
-//     float dist = distance(vUv, vec2(0.5));
-//
-//     // Re-introducing the beautiful teal/cyan backdrop from the image
-//     vec3 dark   = vec3(0.005, 0.05, 0.06);   // Deep Jade/Vortex Center
-//     vec3 mint   = vec3(0.08, 0.75, 0.62);    // Magical Glowing Mint
-//     vec3 teal   = vec3(0.01, 0.22, 0.25);    // Outer Deep Teal Tunnel
-//
-//     vec3 color = mix(dark, mint, smoothstep(0.0, 0.40, dist));
-//     if (dist > 0.40) color = mix(color, teal, smoothstep(0.40, 0.70, dist));
-//
-//     gl_FragColor = vec4(color, 1.0);
-//
-//     #include <colorspace_fragment>
-//   }
-// `;
-
 const backdropFragment = /* glsl */ `
   uniform float uAspect;
   varying vec2 vUv;
@@ -159,7 +139,6 @@ const particleVertex = /* glsl */ `
   varying vec2 vUv;
   varying float vType;
   varying float vDepth;
-  varying vec2 vScreenPos;
 
   void main() {
     vUv = uv;
@@ -181,11 +160,14 @@ const particleVertex = /* glsl */ `
     pos.x += cos(wave) * 0.5;
     pos.y += sin(wave) * 0.5;
 
-    vDepth = clamp((pos.z + 60.0) / 65.0, 0.0, 1.0);
+    // vDepth = clamp((pos.z + 60.0) / 65.0, 0.0, 1.0);
+    // REPLACE IT WITH THIS:
+    vDepth = pow(clamp((pos.z + 60.0) / 65.0, 0.0, 1.0), 1.5);
 
     // Scale: microscopic far away, massive near camera
     float baseScale = (vType < 0.5) ? 1.0 : 2.5;
     float scale = baseScale * (0.2 + pow(vDepth, 3.0) * 15.0);
+
 
     // Spin particles along the current
     float angle = pos.z * 0.05 + aRandoms.y * 6.28;
@@ -196,7 +178,6 @@ const particleVertex = /* glsl */ `
 
     vec4 mvPos = modelViewMatrix * vec4(pos + transformed * scale, 1.0);
     gl_Position = projectionMatrix * mvPos;
-    vScreenPos = gl_Position.xy / gl_Position.w;
   }
 `;
 
@@ -206,7 +187,6 @@ const particleFragment = /* glsl */ `
   varying vec2 vUv;
   varying float vType;
   varying float vDepth;
-  varying vec2 vScreenPos;
 
   void main() {
     vec4 texColor;
@@ -214,19 +194,54 @@ const particleFragment = /* glsl */ `
 
     if (vType < 0.5) {
       // Vibrant peach/pink petals
+      // no need for this the pink blur i want it to be the pink explosive instead not as blur and ove slowly
+      // texColor = texture2D(uTexBlob, vUv);
       finalColor = mix(vec3(1.0, 0.3, 0.55), vec3(1.0, 0.6, 0.75), vDepth);
     } else {
-      // Dark framing blobs — bright center → dark green edges
+      // Dark framing blobs (deep jade/teal)
       texColor = texture2D(uTexBlob, vUv);
+      
+      // 7-LAYER COLOR SYSTEM FOR GRAPHICS REALISM
+      vec3 coreFar = vec3(1.000, 0.957, 0.161)
+      vec3 pinkCorona = vec3(0.991, 0.410, 0.510)
+      vec3 mintGlow  = vec3(0.047, 0.890, 0.714);  // #0ce3b6 Bright magical mint mid-ground
+      // vec3 mintGlow      = vec3(0.040, 0.350, 0.320);  // 3. MUCH DARKER Ghibli mint
+      vec3 seafoam = vec3(0.005, 0.318, 0.383);
+      // vec3 seafoam = vec3(0.000, 0.083, 0.139);
+      vec3 deepTeal = vec3(0.000, 0.083, 0.139);
+      vec3 darkForest = vec3(0.002, 0.025, 0.054);
+      vec3 darkJade = vec3(0.001, 0.014, 0.032);
 
-      vec3 bright = vec3(0.047, 0.890, 0.714);  // #0ce3b6 — bright mint (core)
-      vec3 dark   = vec3(0.004, 0.165, 0.180);  // #012a2e — dark teal (edges)
+      // LAYER 1: Core Center to Pink Corona (0.0 to 0.15) -> Tightened light center
+      if (vDepth < 0.15) {
+           finalColor = mix(coreFar, pinkCorona, smoothstep(0.0, 0.15, vDepth));
 
-      // Depth: 0 (far) → 1 (near)
-      // Radial: 0 (screen edge) → 1 (screen center)
-      float radialT = 1.0 - clamp(length(vScreenPos) / 1.2, 0.0, 1.0);
-      float t = mix(vDepth, radialT, 0.5);  // 50/50 blend
-      finalColor = mix(dark, bright, t);    // dark → bright
+      // LAYER 2: Pink Corona to Muted Mint (0.15 to 0.45) -> Restricted light spread
+      } else if (vDepth < 0.45) {
+           finalColor = mix(pinkCorona, mintGlow, smoothstep(0.15, 0.45, vDepth));
+
+      // LAYER 3: Muted Mint to Dark Seafoam (0.45 to 0.65) -> Early transition to darks
+      } else if (vDepth < 0.70) {
+           finalColor = mix(mintGlow, seafoam, smoothstep(0.45, 0.65, vDepth));
+
+      // LAYER 4: Dark Seafoam to Deep Teal (0.65 to 0.80)
+      } else if (vDepth < 0.80) {
+           finalColor = mix(seafoam, deepTeal, smoothstep(0.65, 0.80, vDepth));
+
+      // LAYER 5: Deep Teal to Dark Forest Green (0.80 to 0.92)
+      } else if (vDepth < 0.83) {
+          finalColor = mix(deepTeal, darkForest, smoothstep(0.80, 0.92, vDepth));
+
+      // LAYER 6: Dark Forest Green to Near-Black Vignette (0.92 to 0.97)
+      } else if (vDepth < 0.86) {
+            finalColor = mix(darkForest, darkJade, smoothstep(0.92, 0.97, vDepth));
+
+      // LAYER 7: Heavy Framing Void (0.97 to 1.0) -> Pushes corners completely dark
+      } else {
+           finalColor = darkJade;
+      }
+    
+
     }
 
     // Proximity fade — disappear at camera lens to prevent screen blocking
@@ -236,6 +251,7 @@ const particleFragment = /* glsl */ `
     #include <colorspace_fragment>
   }
 `;
+
 
 // Layer C: Radiant star flares (additive blending)
 const flareVertex = /* glsl */ `
@@ -586,11 +602,10 @@ export default function Scene() {
         width: "100vw",
         height: "100vh",
         overflow: "hidden",
-        // background: "#020d12",
+        // background: "#000406",
+        // background: "#032034",
+        background: "#01314A",
 
-        // background: "teal",
-        background: "#044454",
-        // background: "radial-gradient(#00C6C9 0%, #FF69B4 50%, #8A2BE2 100%)"
       }}
     >
       <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>
