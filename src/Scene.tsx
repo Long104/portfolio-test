@@ -136,9 +136,9 @@ const backdropFragment = /* glsl */ `
     float dist = length(centered);
 
     // Dark center — the foreground glow mesh paints the core/halo on top
-    vec3 dark   = vec3(1, 1, 1);
-    vec3 mint   = vec3(1, 1, 1);
-    vec3 teal   = vec3(1, 1, 1);
+    vec3 dark   = vec3(0.0, 0.063, 0.078);
+    vec3 mint   = vec3(0.047, 0.89, 0.714);
+    vec3 teal   = vec3(0.004, 0.165, 0.18);
 
     vec3 color = mix(dark, mint, smoothstep(0.0, 0.40, dist));
     if (dist > 0.40) color = mix(color, teal, smoothstep(0.40, 0.70, dist));
@@ -578,7 +578,7 @@ export default function Scene() {
         width: "100vw",
         height: "100vh",
         overflow: "hidden",
-        background: "#020d12",
+        background: "#001014",
       }}
     >
       <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>
