@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
-import * as THREE from 'three'
+import { useMemo } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import * as THREE from "three";
 
 // ==========================================
 // 1. PROCEDURAL TEXTURES (Canvas-based)
@@ -9,88 +9,88 @@ import * as THREE from 'three'
 // ==========================================
 
 function createStarTexture(): THREE.Texture {
-  const size = 128
-  const canvas = document.createElement('canvas')
-  canvas.width = size
-  canvas.height = size
-  const ctx = canvas.getContext('2d')!
-  const c = size / 2
+  const size = 128;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  const c = size / 2;
 
   // Radial glow core
-  const grad = ctx.createRadialGradient(c, c, 0, c, c, c * 0.5)
-  grad.addColorStop(0, 'rgba(255,255,255,1)')
-  grad.addColorStop(0.2, 'rgba(255,255,220,0.9)')
-  grad.addColorStop(0.5, 'rgba(255,230,150,0.3)')
-  grad.addColorStop(1, 'rgba(255,230,150,0)')
-  ctx.fillStyle = grad
-  ctx.fillRect(0, 0, size, size)
+  const grad = ctx.createRadialGradient(c, c, 0, c, c, c * 0.5);
+  grad.addColorStop(0, "rgba(255,255,255,1)");
+  grad.addColorStop(0.2, "rgba(255,255,220,0.9)");
+  grad.addColorStop(0.5, "rgba(255,230,150,0.3)");
+  grad.addColorStop(1, "rgba(255,230,150,0)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
 
   // Cross-shaped star spikes
-  ctx.save()
-  ctx.translate(c, c)
-  ctx.globalCompositeOperation = 'lighter'
+  ctx.save();
+  ctx.translate(c, c);
+  ctx.globalCompositeOperation = "lighter";
   for (let i = 0; i < 2; i++) {
-    const spike = ctx.createLinearGradient(-c, 0, c, 0)
-    spike.addColorStop(0, 'rgba(255,255,255,0)')
-    spike.addColorStop(0.45, 'rgba(255,255,255,0)')
-    spike.addColorStop(0.5, 'rgba(255,255,240,0.7)')
-    spike.addColorStop(0.55, 'rgba(255,255,255,0)')
-    spike.addColorStop(1, 'rgba(255,255,255,0)')
-    ctx.fillStyle = spike
-    ctx.fillRect(-c, -1, size, 2)
-    ctx.rotate(Math.PI / 2)
+    const spike = ctx.createLinearGradient(-c, 0, c, 0);
+    spike.addColorStop(0, "rgba(255,255,255,0)");
+    spike.addColorStop(0.45, "rgba(255,255,255,0)");
+    spike.addColorStop(0.5, "rgba(255,255,240,0.7)");
+    spike.addColorStop(0.55, "rgba(255,255,255,0)");
+    spike.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = spike;
+    ctx.fillRect(-c, -1, size, 2);
+    ctx.rotate(Math.PI / 2);
   }
-  ctx.restore()
+  ctx.restore();
 
-  const tex = new THREE.CanvasTexture(canvas)
-  tex.needsUpdate = true
-  return tex
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  return tex;
 }
 
 function createPetalTexture(): THREE.Texture {
-  const size = 128
-  const canvas = document.createElement('canvas')
-  canvas.width = size
-  canvas.height = size
-  const ctx = canvas.getContext('2d')!
-  const c = size / 2
+  const size = 128;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  const c = size / 2;
 
   // Soft radial alpha mask
-  const grad = ctx.createRadialGradient(c, c, 0, c, c, c * 0.65)
-  grad.addColorStop(0, 'rgba(255,255,255,1)')
-  grad.addColorStop(0.4, 'rgba(255,255,255,0.8)')
-  grad.addColorStop(0.7, 'rgba(255,255,255,0.3)')
-  grad.addColorStop(1, 'rgba(255,255,255,0)')
-  ctx.fillStyle = grad
-  ctx.fillRect(0, 0, size, size)
+  const grad = ctx.createRadialGradient(c, c, 0, c, c, c * 0.65);
+  grad.addColorStop(0, "rgba(255,255,255,1)");
+  grad.addColorStop(0.4, "rgba(255,255,255,0.8)");
+  grad.addColorStop(0.7, "rgba(255,255,255,0.3)");
+  grad.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
 
-  const tex = new THREE.CanvasTexture(canvas)
-  tex.needsUpdate = true
-  return tex
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  return tex;
 }
 
 function createBlobTexture(): THREE.Texture {
-  const size = 128
-  const canvas = document.createElement('canvas')
-  canvas.width = size
-  canvas.height = size
-  const ctx = canvas.getContext('2d')!
-  const c = size / 2
+  const size = 128;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  const c = size / 2;
 
   // Larger, softer blob
-  const grad = ctx.createRadialGradient(c, c, 0, c, c, c * 0.85)
-  grad.addColorStop(0, 'rgba(255,255,255,0.9)')
-  grad.addColorStop(0.3, 'rgba(255,255,255,0.6)')
-  grad.addColorStop(0.6, 'rgba(255,255,255,0.25)')
-  grad.addColorStop(1, 'rgba(255,255,255,0)')
-  ctx.fillStyle = grad
-  ctx.beginPath()
-  ctx.arc(c, c, c * 0.85, 0, Math.PI * 2)
-  ctx.fill()
+  const grad = ctx.createRadialGradient(c, c, 0, c, c, c * 0.85);
+  grad.addColorStop(0, "rgba(255,255,255,0.9)");
+  grad.addColorStop(0.3, "rgba(255,255,255,0.6)");
+  grad.addColorStop(0.6, "rgba(255,255,255,0.25)");
+  grad.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(c, c, c * 0.85, 0, Math.PI * 2);
+  ctx.fill();
 
-  const tex = new THREE.CanvasTexture(canvas)
-  tex.needsUpdate = true
-  return tex
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  return tex;
 }
 
 // ==========================================
@@ -104,9 +104,9 @@ const backdropVertex = /* glsl */ `
     vUv = uv;
     gl_Position = vec4(position, 1.0);
   }
-`
+`;
 
-  // see yellow
+// see yellow
 // const backdropFragment = /* glsl */ `
 //   varying vec2 vUv;
 //   void main() {
@@ -126,28 +126,53 @@ const backdropVertex = /* glsl */ `
 //   }
 // `;
 
+// const backdropFragment = /* glsl */ `
+//   uniform float uAspect;
+//   varying vec2 vUv;
+//   void main() {
+//     // Center coordinate space + correct for aspect ratio (matches glow shader)
+//     vec2 centered = vUv - vec2(0.5);
+//     centered.x *= uAspect;
+//     float dist = length(centered);
+//
+//     // Dark center — the foreground glow mesh paints the core/halo on top
+//     vec3 dark   = vec3(1, 1, 1);
+//     vec3 mint   = vec3(1, 1, 1);
+//     vec3 teal   = vec3(1, 1, 1);
+//
+//     vec3 color = mix(dark, mint, smoothstep(0.0, 0.40, dist));
+//     if (dist > 0.40) color = mix(color, teal, smoothstep(0.40, 0.70, dist));
+//
+//     gl_FragColor = vec4(color, 1.0);
+//
+//     #include <colorspace_fragment>
+//   }
+// `;
+
 const backdropFragment = /* glsl */ `
   uniform float uAspect;
   varying vec2 vUv;
   void main() {
-    // Center coordinate space + correct for aspect ratio (matches glow shader)
     vec2 centered = vUv - vec2(0.5);
     centered.x *= uAspect;
     float dist = length(centered);
 
-    // Dark center — the foreground glow mesh paints the core/halo on top
-    vec3 dark   = vec3(1, 1, 1);
-    vec3 mint   = vec3(1, 1, 1);
-    vec3 teal   = vec3(1, 1, 1);
+    // ── Exact Color Match from the Right Image ──
+    vec3 darkCenter = vec3(0.000, 0.063, 0.078); // #001014 Deep center void
+    vec3 glowingMint = vec3(0.047, 0.890, 0.714); // #0CE3B6 Vibrant magical mint
+    vec3 deepTeal    = vec3(0.004, 0.165, 0.180); // #012A2E Rich outer tunnel
 
-    vec3 color = mix(dark, mint, smoothstep(0.0, 0.40, dist));
-    if (dist > 0.40) color = mix(color, teal, smoothstep(0.40, 0.70, dist));
+    // Smoothly blend them in a circle outward
+    vec3 color = mix(darkCenter, glowingMint, smoothstep(0.0, 0.28, dist));
+    if (dist > 0.28) {
+      color = mix(color, deepTeal, smoothstep(0.28, 0.65, dist));
+    }
 
     gl_FragColor = vec4(color, 1.0);
 
     #include <colorspace_fragment>
   }
-`
+`;
 
 // Layer B: Fluid particles (petals + blobs, normal alpha blending)
 const particleVertex = /* glsl */ `
@@ -196,7 +221,7 @@ const particleVertex = /* glsl */ `
     vec4 mvPos = modelViewMatrix * vec4(pos + transformed * scale, 1.0);
     gl_Position = projectionMatrix * mvPos;
   }
-`
+`;
 
 const particleFragment = /* glsl */ `
   uniform sampler2D uTexPetal;
@@ -226,7 +251,7 @@ const particleFragment = /* glsl */ `
 
     #include <colorspace_fragment>
   }
-`
+`;
 
 // Layer C: Radiant star flares (additive blending)
 const flareVertex = /* glsl */ `
@@ -263,7 +288,7 @@ const flareVertex = /* glsl */ `
     vec4 mvPos = modelViewMatrix * vec4(pos + transformed * scale, 1.0);
     gl_Position = projectionMatrix * mvPos;
   }
-`
+`;
 
 const flareFragment = /* glsl */ `
   uniform sampler2D uTexStar;
@@ -336,7 +361,7 @@ const flareFragment = /* glsl */ `
 
     #include <colorspace_fragment>
   }
-`
+`;
 
 // Layer D: Foreground core glow (renders ON TOP of particles)
 // Guarantees the yellow core + pink halo are always visible.
@@ -346,7 +371,7 @@ const glowVertex = /* glsl */ `
     vUv = uv;
     gl_Position = vec4(position, 1.0);
   }
-`
+`;
 
 const glowFragment = /* glsl */ `
   uniform float uAspect;
@@ -415,37 +440,37 @@ const glowFragment = /* glsl */ `
 
     #include <colorspace_fragment>
   }
-`
+`;
 
 // ==========================================
 // 3. SCENE COMPONENT
 // ==========================================
 
-const PAINT_COUNT = 5500 // Petals + Blobs
-const FLARE_COUNT = 3000 // Star flares
+const PAINT_COUNT = 5500; // Petals + Blobs
+const FLARE_COUNT = 3000; // Star flares
 
 function generateInstanceData(count: number, maxRadius: number) {
-  const pos = new Float32Array(count * 3)
-  const rand = new Float32Array(count * 3)
+  const pos = new Float32Array(count * 3);
+  const rand = new Float32Array(count * 3);
   for (let i = 0; i < count; i++) {
-    const angle = Math.random() * Math.PI * 2
-    const radius = Math.random() * maxRadius
-    pos[i * 3] = Math.cos(angle) * radius
-    pos[i * 3 + 1] = Math.sin(angle) * radius
-    pos[i * 3 + 2] = Math.random() * -60
+    const angle = Math.random() * Math.PI * 2;
+    const radius = Math.random() * maxRadius;
+    pos[i * 3] = Math.cos(angle) * radius;
+    pos[i * 3 + 1] = Math.sin(angle) * radius;
+    pos[i * 3 + 2] = Math.random() * -60;
 
-    rand[i * 3] = Math.random()
-    rand[i * 3 + 1] = Math.random()
-    rand[i * 3 + 2] = Math.random()
+    rand[i * 3] = Math.random();
+    rand[i * 3 + 1] = Math.random();
+    rand[i * 3 + 2] = Math.random();
   }
-  return { pos, rand }
+  return { pos, rand };
 }
 
 function KiraKiraVortex() {
   // --- Procedural textures ---
-  const starTex = useMemo(() => createStarTexture(), [])
-  const petalTex = useMemo(() => createPetalTexture(), [])
-  const blobTex = useMemo(() => createBlobTexture(), [])
+  const starTex = useMemo(() => createStarTexture(), []);
+  const petalTex = useMemo(() => createPetalTexture(), []);
+  const blobTex = useMemo(() => createBlobTexture(), []);
 
   // --- Materials (raw ShaderMaterial — no extend/TS hacks) ---
   const backdropMat = useMemo(
@@ -460,7 +485,7 @@ function KiraKiraVortex() {
         depthTest: false,
       }),
     [],
-  )
+  );
 
   const paintMat = useMemo(
     () =>
@@ -477,7 +502,7 @@ function KiraKiraVortex() {
         depthWrite: false,
       }),
     [petalTex, blobTex],
-  )
+  );
 
   const flareMat = useMemo(
     () =>
@@ -494,7 +519,7 @@ function KiraKiraVortex() {
         blending: THREE.AdditiveBlending,
       }),
     [starTex],
-  )
+  );
 
   const glowMat = useMemo(
     () =>
@@ -511,37 +536,39 @@ function KiraKiraVortex() {
         blending: THREE.AdditiveBlending,
       }),
     [],
-  )
+  );
 
   // --- Geometry with instanced attributes ---
-  const backdropGeo = useMemo(() => new THREE.PlaneGeometry(1, 1), [])
+  // 2×2 so clip-space vertex shader (gl_Position = vec4(position, 1.0))
+  // fills the full NDC (-1..1). 1×1 only covers the center quarter.
+  const backdropGeo = useMemo(() => new THREE.PlaneGeometry(2, 2), []);
 
   const paintGeo = useMemo(() => {
-    const { pos, rand } = generateInstanceData(PAINT_COUNT, 14.0)
-    const geo = new THREE.PlaneGeometry(0.4, 0.4)
-    geo.setAttribute('aInitialPos', new THREE.InstancedBufferAttribute(pos, 3))
-    geo.setAttribute('aRandoms', new THREE.InstancedBufferAttribute(rand, 3))
-    return geo
-  }, [])
+    const { pos, rand } = generateInstanceData(PAINT_COUNT, 14.0);
+    const geo = new THREE.PlaneGeometry(0.4, 0.4);
+    geo.setAttribute("aInitialPos", new THREE.InstancedBufferAttribute(pos, 3));
+    geo.setAttribute("aRandoms", new THREE.InstancedBufferAttribute(rand, 3));
+    return geo;
+  }, []);
 
   const flareGeo = useMemo(() => {
-    const { pos, rand } = generateInstanceData(FLARE_COUNT, 10.0)
-    const geo = new THREE.PlaneGeometry(0.3, 0.3)
-    geo.setAttribute('aInitialPos', new THREE.InstancedBufferAttribute(pos, 3))
-    geo.setAttribute('aRandoms', new THREE.InstancedBufferAttribute(rand, 3))
-    return geo
-  }, [])
+    const { pos, rand } = generateInstanceData(FLARE_COUNT, 10.0);
+    const geo = new THREE.PlaneGeometry(0.3, 0.3);
+    geo.setAttribute("aInitialPos", new THREE.InstancedBufferAttribute(pos, 3));
+    geo.setAttribute("aRandoms", new THREE.InstancedBufferAttribute(rand, 3));
+    return geo;
+  }, []);
 
   // --- Animation loop ---
   useFrame((state) => {
-    const t = state.clock.getElapsedTime()
-    paintMat.uniforms.uTime.value = t
-    flareMat.uniforms.uTime.value = t
-    glowMat.uniforms.uTime.value = t
-    const aspect = state.size.width / state.size.height
-    glowMat.uniforms.uAspect.value = aspect
-    backdropMat.uniforms.uAspect.value = aspect
-  })
+    const t = state.clock.getElapsedTime();
+    paintMat.uniforms.uTime.value = t;
+    flareMat.uniforms.uTime.value = t;
+    glowMat.uniforms.uTime.value = t;
+    const aspect = state.size.width / state.size.height;
+    glowMat.uniforms.uAspect.value = aspect;
+    backdropMat.uniforms.uAspect.value = aspect;
+  });
 
   return (
     <>
@@ -563,7 +590,7 @@ function KiraKiraVortex() {
       {/* Layer D: Foreground core glow — always visible on top */}
       <mesh geometry={backdropGeo} material={glowMat} renderOrder={1} />
     </>
-  )
+  );
 }
 
 // ==========================================
@@ -574,15 +601,15 @@ export default function Scene() {
   return (
     <div
       style={{
-        width: '100vw',
-        height: '100vh',
-        overflow: 'hidden',
-        background: '#020d12',
+        width: "100vw",
+        height: "100vh",
+        overflow: "hidden",
+        background: "#020d12",
       }}
     >
       <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>
         <KiraKiraVortex />
       </Canvas>
     </div>
-  )
+  );
 }
