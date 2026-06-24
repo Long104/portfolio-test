@@ -217,19 +217,14 @@ const particleFragment = /* glsl */ `
     } else {
       // Dark framing blobs (deep jade/teal)
       texColor = texture2D(uTexBlob, vUv);
-      finalColor = mix(vec3(0.01, 0.12, 0.15), vec3(0.0, 0.05, 0.08), vDepth);
+      // finalColor = mix(vec3(0.01, 0.12, 0.15), vec3(0.0, 0.05, 0.08), vDepth);
 
-// // Current: dark jade/teal
-// finalColor = mix(vec3(0.01, 0.12, 0.15), vec3(0.0, 0.05, 0.08), vDepth);
-//
-// // Example: warm amber
-// finalColor = mix(vec3(0.8, 0.4, 0.1), vec3(0.6, 0.2, 0.0), vDepth);
-//
-// // Example: bright cyan
-// finalColor = mix(vec3(0.0, 0.8, 0.9), vec3(0.0, 0.4, 0.5), vDepth);
-//
-// // Example: hot pink
-// finalColor = mix(vec3(1.0, 0.1, 0.5), vec3(0.6, 0.0, 0.3), vDepth);
+      vec3 outer  = vec3(0.004, 0.165, 0.180);  // #012a2e — dark teal tunnel
+      vec3 middle = vec3(0.047, 0.890, 0.714);  // #0ce3b6 — bright mint glow
+      vec3 center = vec3(0.000, 0.063, 0.078);  // #001014 — dark ocean void
+      finalColor = mix(mix(outer, middle, smoothstep(0.0, 0.5, vDepth)),
+                       center,
+                       smoothstep(0.5, 1.0, vDepth));
     }
 
     // Proximity fade — disappear at camera lens to prevent screen blocking
@@ -567,13 +562,13 @@ function KiraKiraVortex() {
       />
 
       {/* Layer C: Star flares (additive blending) */}
-      {/* <instancedMesh */}
-      {/*   args={[flareGeo, flareMat, FLARE_COUNT]} */}
-      {/*   frustumCulled={false} */}
-      {/* /> */}
+      <instancedMesh
+        args={[flareGeo, flareMat, FLARE_COUNT]}
+        frustumCulled={false}
+      />
 
       {/* Layer D: Foreground core glow — always visible on top */}
-      {/* <mesh geometry={backdropGeo} material={glowMat} renderOrder={1} /> */}
+      <mesh geometry={backdropGeo} material={glowMat} renderOrder={1} />
     </>
   );
 }
