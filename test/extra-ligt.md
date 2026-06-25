@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -110,15 +110,14 @@ const backdropFragment = /* glsl */ `
   uniform float uAspect;
   varying vec2 vUv;
   void main() {
-    // Center coordinate space + correct for aspect ratio (matches glow shader)
     vec2 centered = vUv - vec2(0.5);
     centered.x *= uAspect;
     float dist = length(centered);
 
-    // Dark center — the foreground glow mesh paints the core/halo on top
-    vec3 dark   = vec3(0.0, 0.063, 0.078);  // #001014  — center void
-    vec3 mint   = vec3(0.047, 0.89, 0.714); // #0ce3b6  — middle glow
-    vec3 teal   = vec3(0.004, 0.165, 0.18); // #012a2e  — outer tunnel
+    // Uplifted, vibrant magical tunnel colors (no deep black holes)
+    vec3 dark   = vec3(0.01, 0.27, 0.28);  // Rich Deep Jade
+    vec3 mint   = vec3(0.05, 0.85, 0.68);  // Highly saturated glowing mint/teal
+    vec3 teal   = vec3(0.02, 0.38, 0.38);  // Mid-to-outer magical teal tone
 
     vec3 color = mix(dark, mint, smoothstep(0.0, 0.40, dist));
     if (dist > 0.40) color = mix(color, teal, smoothstep(0.40, 0.70, dist));
@@ -151,23 +150,18 @@ const particleVertex = /* glsl */ `
 
     // Center clearance — keep the glowing core visible
     float r = length(pos.xy);
-    //fix
     if (r < 5.0) pos.xy = normalize(pos.xy + 0.001) * (5.0 + aRandoms.x * 3.0);
-    // if (r < 4.0) pos.xy = normalize(pos.xy + 0.001) * (5.0 + aRandoms.x * 3.0);
 
     // Liquid water-flow math (sine/cosine offset X/Y paths)
     float wave = sin(pos.z * 0.1 + uTime + aRandoms.y * 6.28) * 0.5;
     pos.x += cos(wave) * 0.5;
     pos.y += sin(wave) * 0.5;
 
-    // vDepth = clamp((pos.z + 60.0) / 65.0, 0.0, 1.0);
-    // REPLACE IT WITH THIS:
-    vDepth = pow(clamp((pos.z + 60.0) / 65.0, 0.0, 1.0), 1.5);
+    vDepth = clamp((pos.z + 60.0) / 65.0, 0.0, 1.0);
 
     // Scale: microscopic far away, massive near camera
     float baseScale = (vType < 0.5) ? 1.0 : 2.5;
     float scale = baseScale * (0.2 + pow(vDepth, 3.0) * 15.0);
-
 
     // Spin particles along the current
     float angle = pos.z * 0.05 + aRandoms.y * 6.28;
@@ -193,71 +187,28 @@ const particleFragment = /* glsl */ `
     vec3 finalColor;
 
     if (vType < 0.5) {
-      // Vibrant peach/pink petals — solid alpha (no texture lookup needed)
-      // texColor = vec4(1.0);
-      finalColor = mix(vec3(1.0, 0.3, 0.55), vec3(1.0, 0.6, 0.75), vDepth);
+      // Vibrant pink explosive elements (not blurry, crisp texture)
+      texColor = texture2D(uTexPetal, vUv);
+      finalColor = mix(vec3(1.0, 0.35, 0.6), vec3(1.0, 0.65, 0.8), vDepth);
     } else {
-      // Dark framing blobs (deep jade/teal)
+      // Dark framing fluid blobs matching our new rich jade depth
       texColor = texture2D(uTexBlob, vUv);
+      vec3 outer  = vec3(0.02, 0.38, 0.38);  
+      vec3 middle = vec3(0.05, 0.85, 0.68);  
+      vec3 center = vec3(0.01, 0.27, 0.28);  
       
- // 15-LAYER COLOR SYSTEM
-      vec3 whiteCore   = vec3(1.000, 0.996, 0.941);
-      vec3 coreYellow  = vec3(1.000, 0.960, 0.161);
-      vec3 amber       = vec3(1.000, 0.706, 0.353);
-      vec3 coral       = vec3(1.000, 0.541, 0.431);
-      vec3 hotPink     = vec3(0.991, 0.410, 0.510);
-      vec3 magenta     = vec3(0.920, 0.290, 0.580);
-      vec3 orchid      = vec3(0.620, 0.380, 0.720);
-      vec3 spring      = vec3(0.302, 0.702, 0.620);
-      vec3 mintGlow    = vec3(0.047, 0.890, 0.714);
-      vec3 aqua        = vec3(0.020, 0.580, 0.620);
-      vec3 seafoam     = vec3(0.005, 0.318, 0.383);
-      vec3 deepTeal    = vec3(0.004, 0.180, 0.259);
-      vec3 deepBlue    = vec3(0.000, 0.083, 0.137);
-      vec3 darkForest  = vec3(0.002, 0.025, 0.054);
-      vec3 darkJade    = vec3(0.001, 0.014, 0.032);
-
-      if (vDepth < 0.071) {
-        finalColor = mix(whiteCore, coreYellow, smoothstep(0.000, 0.071, vDepth));
-      } else if (vDepth < 0.143) {
-        finalColor = mix(coreYellow, amber, smoothstep(0.071, 0.143, vDepth));
-      } else if (vDepth < 0.214) {
-        finalColor = mix(amber, coral, smoothstep(0.143, 0.214, vDepth));
-      } else if (vDepth < 0.286) {
-        finalColor = mix(coral, hotPink, smoothstep(0.214, 0.286, vDepth));
-      } else if (vDepth < 0.357) {
-        finalColor = mix(hotPink, magenta, smoothstep(0.286, 0.357, vDepth));
-      } else if (vDepth < 0.429) {
-        finalColor = mix(magenta, orchid, smoothstep(0.357, 0.429, vDepth));
-      } else if (vDepth < 0.500) {
-        finalColor = mix(orchid, spring, smoothstep(0.429, 0.500, vDepth));
-      } else if (vDepth < 0.571) {
-        finalColor = mix(spring, mintGlow, smoothstep(0.500, 0.571, vDepth));
-      } else if (vDepth < 0.643) {
-        finalColor = mix(mintGlow, aqua, smoothstep(0.571, 0.643, vDepth));
-      } else if (vDepth < 0.714) {
-        finalColor = mix(aqua, seafoam, smoothstep(0.643, 0.714, vDepth));
-      } else if (vDepth < 0.786) {
-        finalColor = mix(seafoam, deepTeal, smoothstep(0.714, 0.786, vDepth));
-      } else if (vDepth < 0.857) {
-        finalColor = mix(deepTeal, deepBlue, smoothstep(0.786, 0.857, vDepth));
-      } else if (vDepth < 0.929) {
-        finalColor = mix(deepBlue, darkForest, smoothstep(0.857, 0.929, vDepth));
-      } else {
-        finalColor = mix(darkForest, darkJade, smoothstep(0.929, 1.000, vDepth));
-      }
-    
-
+      finalColor = mix(mix(outer, middle, smoothstep(0.0, 0.5, vDepth)),
+                       center,
+                       smoothstep(0.5, 1.0, vDepth));
     }
 
-    // Proximity fade — disappear at camera lens to prevent screen blocking
+    // Proximity fade — disappear right at the lens
     float alphaFade = smoothstep(1.0, 0.85, vDepth);
     gl_FragColor = vec4(finalColor, texColor.a * alphaFade);
 
     #include <colorspace_fragment>
   }
 `;
-
 
 // Layer C: Radiant star flares (additive blending)
 const flareVertex = /* glsl */ `
@@ -278,9 +229,7 @@ const flareVertex = /* glsl */ `
     pos.z = mod(pos.z + 60.0, 70.0) - 60.0;
 
     float r = length(pos.xy);
-    // fix
     if (r < 4.0) pos.xy = normalize(pos.xy + 0.001) * (4.0 + aRandoms.x * 2.0);
-    // if (r < 2.0) pos.xy = normalize(pos.xy + 0.001) * (2.0 + aRandoms.x * 1.5);
 
     vDepth = clamp((pos.z + 60.0) / 65.0, 0.0, 1.0);
     float scale = 0.5 * (0.2 + pow(vDepth, 2.5) * 6.0);
@@ -305,72 +254,25 @@ const flareFragment = /* glsl */ `
   void main() {
     vec4 texColor = texture2D(uTexStar, vUv);
 
-
-    // vec3 colors[11] = vec3[11](
-    //   vec3(1.0, 1.0, 0.4),        // Saturated Core Yellow
-    //   vec3(1.0, 0.9, 0.2),        // Bright Yellow-Gold
-    //   vec3(1.0, 0.6, 0.3),        // Warm Amber transition
-    //   vec3(1.0, 0.2, 0.6),        // Vivid Hot Pink/VFX Magenta
-    //   vec3(0.95, 0.25, 0.75),      // Outer Edge Pink
-    //   vec3(0.8078, 1.0, 0.6863),  // #CEFFAF  mint yellow
-    //   vec3(1.0, 0.7059, 0.3529),  // #FFB45A  warm amber
-    //   vec3(0.9843, 0.8039, 0.8471), // #FBCDD8  soft pink
-    //   vec3(1.0, 0.3, 0.5),        // #FF4D80  neon coral
-    //   vec3(1.0, 0.4, 0.7),        // #FF66B2  deep pink
-    //   // vec3(1.00, 0.05, 0.00),
-    //   vec3(1.0, 0.4118, 0.7059)   // #FF69B4  hot pink
-    // );
-    // int index = int(floor(vColorMix * 11.0));
-   // vec3 colors[11] = vec3[11](
-   //    vec3(0.965, 0.000, 0.200),   // #F6C9D6 (Pushed to strong pink-red)
-   //    vec3(0.973, 0.050, 0.250),   // #F88FA7 (Pushed to strong pink-red)
-   //    vec3(1.000, 0.100, 0.150),   // #FF9294 (Pushed to strong pink-red)
-   //    vec3(0.976, 0.020, 0.220),   // #F9C5D4 (Pushed to strong pink-red)
-   //    vec3(0.965, 0.000, 0.200),   // #F6C9D6
-   //    vec3(0.973, 0.050, 0.250),   // #F88FA7
-   //    vec3(1.000, 0.100, 0.150),   // #FF9294
-   //    vec3(0.976, 0.020, 0.220),   // #F9C5D4
-   //    vec3(0.965, 0.000, 0.200),   // #F6C9D6
-   //    vec3(0.973, 0.050, 0.250),   // #F88FA7
-   //    vec3(1.000, 0.100, 0.150)    // #FF9294
-   //  );
-   //  int index = int(floor(vColorMix * 11.0));
-
-
     vec3 colors[6] = vec3[6](
-      vec3(1.0, 1.0, 0.4),        // Saturated Core Yellow
-      vec3(1.0, 0.9, 0.2),        // Bright Yellow-Gold
-      // vec3(1.0, 0.6, 0.3),        // Warm Amber transition
-      // vec3(1.0, 0.2, 0.6),        // Vivid Hot Pink/VFX Magenta
-      // vec3(0.95, 0.25, 0.75),      // Outer Edge Pink
-      vec3(0.8078, 1.0, 0.6863),  // #CEFFAF  mint yellow
-      // vec3(1.0, 0.7059, 0.3529),  // #FFB45A  warm amber
-      // vec3(0.9843, 0.8039, 0.8471), // #FBCDD8  soft pink
-      // vec3(1.0, 0.4, 0.7),        // #FF66B2  deep pink
-      // vec3(1.0, 0.4118, 0.7059),   // #FF69B4  hot pink
-
-
-      // test
-      vec3(1.0, 0.3, 0.5),        // #FF4D80  neon coral // want
-      vec3(1.000, 0.100, 0.150),   // #FF9294 (Pushed to strong pink-red) // want
-       vec3(0.973, 0.050, 0.250)   // #F88FA7 (Pushed to strong pink-red) // let see
-       // vec3(0.976, 0.020, 0.220)   // #F9C5D4 (Pushed to strong pink-red) // too red
-       // vec3(0.965, 0.000, 0.200)   // #F6C9D6 (Pushed to strong pink-red) // don't want too red
+      vec3(1.0, 1.0, 0.5),         // Saturated Core Yellow
+      vec3(1.0, 0.92, 0.3),        // Bright Yellow-Gold
+      vec3(0.8078, 1.0, 0.6863),   // #CEFFAF mint yellow
+      vec3(1.0, 0.3, 0.5),         // #FF4D80 neon coral
+      vec3(1.000, 0.100, 0.150),   // #FF9294 Pink-Red spark
+      vec3(0.973, 0.050, 0.250)    // #F88FA7 Soft magical pink
     );
     int index = int(floor(vColorMix * 6.0));
-
-
     vec3 glow = colors[index];
 
     float alphaFade = smoothstep(1.0, 0.80, vDepth);
-    gl_FragColor = vec4(glow * 1.0, texColor.a * alphaFade);
+    gl_FragColor = vec4(glow * 1.2, texColor.a * alphaFade);
 
     #include <colorspace_fragment>
   }
 `;
 
 // Layer D: Foreground core glow (renders ON TOP of particles)
-// Guarantees the yellow core + pink halo are always visible.
 const glowVertex = /* glsl */ `
   varying vec2 vUv;
   void main() {
@@ -401,9 +303,7 @@ const glowFragment = /* glsl */ `
     float a = 0.5;
     vec2 shift = vec2(100.0);
     mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5));
-    // 2 octaves (was 3) — halves fragment cost on this fullscreen pass;
-    // glow is soft so the lost high-frequency detail is imperceptible.
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < 3; ++i) {
       v += a * noise(p);
       p = rot * p * 2.5 + shift;
       a *= 0.5;
@@ -415,33 +315,32 @@ const glowFragment = /* glsl */ `
     vec2 centered = vUv - vec2(0.5);
     centered.x *= uAspect;
 
-    // ── Center locked at (0,0) — no drift ──
     float dist = length(centered);
     float angle = atan(centered.y, centered.x);
 
-    // Gas noise — drifts through color/intensity, NOT position
+    // Fluid gas noise updates
     float gasNoise = fbm(centered * 4.0 - vec2(uTime * 0.3, uTime * 0.3));
 
-    // Symmetrical edge ripple — breathes around center without moving it
+    // Breathing effect around center
     float ripple = fbm(vec2(angle * 3.0, uTime * 0.6)) * 0.02;
     float d = dist + ripple;
 
-    // ── Color Palette ──
-    vec3 whiteCore = vec3(1.0, 1.0, 1.0);      // Incandescent heart
-    vec3 yellow    = vec3(1.0, 0.40, 0.00);    // Fiery amber
-    vec3 midPink   = vec3(1.00, 0.05, 0.00);    // Intense neon red
-    vec3 outerEdge = vec3(0.95, 0.00, 0.15);    // Deep crimson
+    // ── Magical Pastel Color Palette (Swapped out the harsh reds/oranges) ──
+    vec3 whiteCore = vec3(1.0, 1.0, 0.9);      // Creamy incandescent heart
+    vec3 yellow    = vec3(1.0, 0.88, 0.2);     // True Anime Yellow
+    vec3 midPink   = vec3(1.0, 0.45, 0.7);     // Magical bubblegum pink aura
+    vec3 outerEdge = vec3(0.95, 0.2, 0.6);     // Intense cosmic magenta edge
 
-    // ── Distance Banding (outside → inside) — centered ──
+    // ── Distance Banding Mix ──
     vec3 color = outerEdge;
-    color = mix(color, midPink,  smoothstep(0.22, 0.15, d + gasNoise * 0.015));
+    color = mix(color, midPink,   smoothstep(0.22, 0.15, d + gasNoise * 0.015));
     color = mix(color, yellow,   smoothstep(0.15, 0.025, d + gasNoise * 0.015));
     color = mix(color, whiteCore, smoothstep(0.02, 0.0, d + gasNoise * 0.015));
 
-    // ── Gentle intensity (capped to prevent blowout) ──
+    // Capped intensity to remain pastel and ethereal
     float glow = min(exp(-d * 8.0) + 0.4, 0.85);
 
-    // ── Organic alpha falloff ──
+    // Smooth edge falloff
     float alpha = smoothstep(0.42, 0.06, d) * (0.9 + gasNoise * 0.9);
 
     gl_FragColor = vec4(color * glow, alpha);
@@ -454,27 +353,8 @@ const glowFragment = /* glsl */ `
 // 3. SCENE COMPONENT
 // ==========================================
 
-// --- Adaptive perf tier (replaces hardcoded counts) ---
-// Cheap heuristic: UA + cores + RAM. Good enough before first frame;
-// R3F `performance` prop then drops DPR further if FPS dips at runtime.
-type PerfTier = "mobile" | "low" | "high";
-
-function detectPerfTier(): PerfTier {
-  if (typeof navigator === "undefined") return "high";
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent,
-  );
-  if (isMobile) return "mobile";
-  const cores = navigator.hardwareConcurrency ?? 4;
-  const memory = (navigator as { deviceMemory?: number }).deviceMemory ?? 4;
-  if (cores <= 4 || memory <= 4) return "low";
-  return "high";
-}
-
-const PERF_TIER = detectPerfTier();
-const PAINT_COUNT = PERF_TIER === "mobile" ? 2000 : PERF_TIER === "low" ? 3500 : 5500;
-const FLARE_COUNT = PERF_TIER === "mobile" ? 1000 : PERF_TIER === "low" ? 1500 : 3000;
-const MAX_DPR = PERF_TIER === "mobile" ? 1 : PERF_TIER === "low" ? 1.25 : 1.5;
+const PAINT_COUNT = 5500; 
+const FLARE_COUNT = 3000; 
 
 function generateInstanceData(count: number, maxRadius: number) {
   const pos = new Float32Array(count * 3);
@@ -494,12 +374,10 @@ function generateInstanceData(count: number, maxRadius: number) {
 }
 
 function KiraKiraVortex() {
-  // --- Procedural textures ---
   const starTex = useMemo(() => createStarTexture(), []);
   const petalTex = useMemo(() => createPetalTexture(), []);
   const blobTex = useMemo(() => createBlobTexture(), []);
 
-  // --- Materials (raw ShaderMaterial — no extend/TS hacks) ---
   const backdropMat = useMemo(
     () =>
       new THREE.ShaderMaterial({
@@ -565,7 +443,6 @@ function KiraKiraVortex() {
     [],
   );
 
-  // --- Geometry with instanced attributes ---
   const backdropGeo = useMemo(() => new THREE.PlaneGeometry(1, 1), []);
 
   const paintGeo = useMemo(() => {
@@ -584,20 +461,6 @@ function KiraKiraVortex() {
     return geo;
   }, []);
 
-  // --- Dispose all GPU resources on unmount (prevents leaks on HMR/route change) ---
-  useEffect(() => {
-    return () => {
-      [starTex, petalTex, blobTex].forEach((t) => t.dispose());
-      [backdropGeo, paintGeo, flareGeo].forEach((g) => g.dispose());
-      [backdropMat, paintMat, flareMat, glowMat].forEach((m) => m.dispose());
-    };
-  }, [
-    starTex, petalTex, blobTex,
-    backdropGeo, paintGeo, flareGeo,
-    backdropMat, paintMat, flareMat, glowMat,
-  ]);
-
-  // --- Animation loop ---
   useFrame((state) => {
     const t = state.clock.getElapsedTime();
     paintMat.uniforms.uTime.value = t;
@@ -610,22 +473,22 @@ function KiraKiraVortex() {
 
   return (
     <>
-      {/* Layer A: Static fullscreen backdrop */}
+      {/* Layer A: Static rich jade backdrop */}
       <mesh geometry={backdropGeo} material={backdropMat} renderOrder={-1} />
 
-      {/* Layer B: Fluid particles (normal alpha blending) */}
+      {/* Layer B: Fluid particles & pink bursts */}
       <instancedMesh
         args={[paintGeo, paintMat, PAINT_COUNT]}
         frustumCulled={false}
       />
 
-      {/* Layer C: Star flares (additive blending) */}
+      {/* Layer C: Star flares */}
       <instancedMesh
         args={[flareGeo, flareMat, FLARE_COUNT]}
         frustumCulled={false}
       />
 
-      {/* Layer D: Foreground core glow — always visible on top */}
+      {/* Layer D: Foreground pastel anime core glow */}
       <mesh geometry={backdropGeo} material={glowMat} renderOrder={1} />
     </>
   );
@@ -642,22 +505,10 @@ export default function Scene() {
         width: "100vw",
         height: "100vh",
         overflow: "hidden",
-        // background: "#000406",
-        // background: "#032034",
-        background: "#01314A",
-
+        background: "#023b47", 
       }}
     >
-      <Canvas
-        camera={{ position: [0, 0, 5], fov: 75 }}
-        dpr={PERF_TIER === "mobile" ? 1 : [1, MAX_DPR]}
-        gl={{
-          antialias: false, // additive particles + glow — MSAA is wasted cost
-          powerPreference: "high-performance",
-          alpha: false,
-        }}
-        performance={{ min: 0.5 }} // R3F adaptive: drops DPR if FPS dips
-      >
+      <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>
         <KiraKiraVortex />
       </Canvas>
     </div>
