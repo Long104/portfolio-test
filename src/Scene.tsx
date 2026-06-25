@@ -102,22 +102,82 @@ function createGradientLUT(): THREE.Texture {
   canvas.height = 1;
   const ctx = canvas.getContext("2d")!;
 
+  // vec3(0.002, 0.025, 0.054) // #072D42
+  // vec3(0.0003, 0.046, 0.081) // #013D50
+  // vec3(0.0003, 0.083, 0.139) // #015168
+  // vec3(0.003, 0.155, 0.208) // #086E7E
+  // vec3(0.002, 0.191, 0.239) //  #077986
+  // vec3(0.004, 0.308, 0.357) // #0D96A1
+  // vec3(0.029, 0.497, 0.503) // #30BBBC
+  // vec3(0.164, 0.644, 0.672) // #71D2D6
+  // vec3(0.318, 0.657, 0.637) // #98D4D1
+  // vec3(0.479, 0.644, 0.665) // #B8D2D5
+  // vec3(0.686, 0.630, 0.694) // #D8D0D9
+  // vec3(0.930, 0.474, 0.672) // #F7B7D6
+  // vec3(0.991, 0.418, 0.497) // #FEADBB
+  // vec3(0.991, 0.982, 0.247) // #FEFD88
+  // vec3(0.991, 1.000, 0.455) // #FEFFB4
+  // vec3(0.991, 0.982, 0.930) // #FEFDF7
+  // vec3 mintGlow    = vec3(0.047, 0.890, 0.714); // #0CE3B6
   const stops: [number, string][] = [
-    [0.0, "#FFFEF0"], // whiteCore
-    [0.071, "#FFF529"], // coreYellow
-    [0.143, "#FFB45A"], // amber
-    [0.214, "#FF8A6E"], // coral
-    [0.286, "#FD6982"], // hotPink
-    [0.357, "#EB4A94"], // magenta
-    [0.429, "#9E61B8"], // orchid
-    [0.5, "#4DB39E"], // spring
-    [0.571, "#0CE3B6"], // mintGlow
-    [0.643, "#05949E"], // aqua
-    [0.714, "#015161"], // seafoam
-    [0.786, "#012E42"], // deepTeal
-    [0.857, "#001523"], // deepBlue
-    [0.929, "#00060E"], // darkForest
-    [1.0, "#000208"], // darkJade
+  // recommend
+    // [0.0,   "#FFFEF0"], // whiteCore
+    // [0.030, "#FFF78A"], // warmYellow
+    // [0.071, "#FFE040"], // vividYellow
+    // [0.143, "#FFB06A"], // peach
+    // [0.214, "#FF7F9C"], // vividPink
+    // [0.286, "#D65A8A"], // deepRose
+    // [0.357, "#40C4C6"], // brightTeal (skip the gray zone)
+    // [0.429, "#1AACB2"], // saturatedTeal
+    // [0.5,   "#0C8E98"], // teal
+    // [0.571, "#07717C"], // deepTeal
+    // [0.643, "#045560"], // darkerTeal
+    // [0.714, "#023A46"], // darkBlue
+    // [0.786, "#01242E"], // veryDark
+    // [0.857, "#01141C"], // nearBlack
+    // [0.929, "#000A10"], // almostBlack
+    // [1.0,   "#000508"], // deepBlack
+
+    // too real
+
+    [0.0, "#FEFDF7"], // whiteCore
+    [0.03, "#FEFFB4"], // whiteCore
+    [0.071, "#FEFD88"], // coreYellow
+    [0.143, "#FEADBB"], // amber
+    [0.214, "#F7B7D6"], // coral
+    [0.286, "#D8D0D9"], // hotPink
+    [0.357, "#B8D2D5"], // magenta
+    [0.429, "#98D4D1"], // orchid
+    // [0.473, "#0CE3B6"], // mintGlow
+    // [0.5, "#71D2D6"], // spring
+    // [0.571, "#30BBBC"], // mintGlow
+    [0.643, "#0D96A1"], // aqua
+    // [0.714, "#077986"], // seafoam
+    // [0.786, "#086E7E"], // deepTeal
+    // [0.857, "#015168"], // deepBlue
+    // [0.929, "#013D50"], // darkForest
+    // [0.945, "#072D42"], // darkJade
+    [0.857, "#01141C"], // nearBlack
+    [0.929, "#000A10"], // almostBlack
+    [1.0,   "#000508"], // deepBlack
+
+
+    // test
+    // [0.0, "#FFFEF0"], // whiteCore
+    // [0.071, "#FFF529"], // coreYellow
+    // [0.143, "#FFB45A"], // amber
+    // [0.214, "#FF8A6E"], // coral
+    // [0.286, "#FD6982"], // hotPink
+    // [0.357, "#EB4A94"], // magenta
+    // [0.429, "#9E61B8"], // orchid
+    // [0.5, "#4DB39E"], // spring
+    // [0.571, "#0CE3B6"], // mintGlow
+    // [0.643, "#05949E"], // aqua
+    // [0.714, "#015161"], // seafoam
+    // [0.786, "#012E42"], // deepTeal
+    // [0.857, "#001523"], // deepBlue
+    // [0.929, "#00060E"], // darkForest
+    // [1.0, "#000208"], // darkJade
   ];
 
   const grad = ctx.createLinearGradient(0, 0, w, 0);
@@ -128,7 +188,11 @@ function createGradientLUT(): THREE.Texture {
   const tex = new THREE.CanvasTexture(canvas);
   tex.minFilter = THREE.LinearFilter; // GPU interpolates between stops for free
   tex.magFilter = THREE.LinearFilter;
-  tex.colorSpace = THREE.LinearSRGBColorSpace; // raw values — no sRGB linearization
+
+  // old
+  // tex.colorSpace = THREE.LinearSRGBColorSpace; // raw values — no sRGB linearization
+  // To this:
+  tex.colorSpace = THREE.SRGBColorSpace;
   tex.needsUpdate = true;
   return tex;
 }
@@ -251,7 +315,6 @@ const particleFragment = /* glsl */ `
     #include <colorspace_fragment>
   }
 `;
-
 
 // Layer C: Radiant star flares (additive blending)
 const flareVertex = /* glsl */ `
@@ -455,9 +518,10 @@ type PerfTier = "mobile" | "low" | "high";
 
 function detectPerfTier(): PerfTier {
   if (typeof navigator === "undefined") return "high";
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent,
-  );
+  const isMobile =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent,
+    );
   if (isMobile) return "mobile";
   const cores = navigator.hardwareConcurrency ?? 4;
   const memory = (navigator as { deviceMemory?: number }).deviceMemory ?? 4;
@@ -466,8 +530,10 @@ function detectPerfTier(): PerfTier {
 }
 
 const PERF_TIER = detectPerfTier();
-const PAINT_COUNT = PERF_TIER === "mobile" ? 2000 : PERF_TIER === "low" ? 3500 : 5500;
-const FLARE_COUNT = PERF_TIER === "mobile" ? 1000 : PERF_TIER === "low" ? 1500 : 3000;
+const PAINT_COUNT =
+  PERF_TIER === "mobile" ? 2000 : PERF_TIER === "low" ? 3500 : 5500;
+const FLARE_COUNT =
+  PERF_TIER === "mobile" ? 1000 : PERF_TIER === "low" ? 1500 : 3000;
 const MAX_DPR = PERF_TIER === "mobile" ? 1 : PERF_TIER === "low" ? 1.25 : 1.5;
 
 function generateInstanceData(count: number, maxRadius: number) {
@@ -588,9 +654,17 @@ function KiraKiraVortex() {
       [backdropMat, paintMat, flareMat, glowMat].forEach((m) => m.dispose());
     };
   }, [
-    starTex, petalTex, blobTex, gradLUT,
-    backdropGeo, paintGeo, flareGeo,
-    backdropMat, paintMat, flareMat, glowMat,
+    starTex,
+    petalTex,
+    blobTex,
+    gradLUT,
+    backdropGeo,
+    paintGeo,
+    flareGeo,
+    backdropMat,
+    paintMat,
+    flareMat,
+    glowMat,
   ]);
 
   // --- Animation loop ---
@@ -641,7 +715,6 @@ export default function Scene() {
         // background: "#000406",
         // background: "#032034",
         background: "#01314A",
-
       }}
     >
       <Canvas
