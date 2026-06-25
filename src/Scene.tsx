@@ -593,8 +593,8 @@ function KiraKiraVortex() {
   );
 
   // --- Geometry ---
-  // PlaneGeometry(2, 2) fills clip space [-1, 1] — proper fullscreen pass
-  const fullscreenGeo = useMemo(() => new THREE.PlaneGeometry(2, 2), []);
+  // PlaneGeometry(1, 1) — center 50% shader + CSS background fills the rest
+  const fullscreenGeo = useMemo(() => new THREE.PlaneGeometry(1, 1), []);
 
   const paintGeo = useMemo(() => {
     const { pos, rand } = generateInstanceData(PAINT_COUNT, 15.0);
@@ -729,7 +729,7 @@ export default function Scene() {
         width: "100vw",
         height: "100vh",
         overflow: "hidden",
-        background: "#000508",
+        background: "#01314A",
       }}
     >
       <Canvas
