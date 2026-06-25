@@ -1,5 +1,5 @@
-import { useEffect, useMemo } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 // ==========================================
@@ -120,7 +120,31 @@ function createGradientLUT(): THREE.Texture {
   // vec3(0.991, 0.982, 0.930) // #FEFDF7
   // vec3 mintGlow    = vec3(0.047, 0.890, 0.714); // #0CE3B6
   const stops: [number, string][] = [
-  // recommend
+    // freah
+    // [0.0, "#FEFDF7"], // whiteCore
+    // [0.03, "#FEFFB4"], // whiteCore
+    // [0.071, "#FEFD88"], // coreYellow
+    // [0.132, "#FF3366"], // freshHotPink - Ultra-vivid, neon-leaning hot pink
+    // [0.260, "#FFB347"], // freshAmber - Bright, juicy, saturated neon amber
+    // [0.420, "#F7B7D6"], // coral   
+    // [0.386, "#D8D0D9"], // hotPink
+    // [0.757, "#B8D2D5"], // magenta
+    // [0.729, "#98D4D1"], // orchid
+    // [0.480, "#0CE3B6"], // mintGlow - Kept original (already fresh)
+    // [0.5, "#71D2D6"], // spring
+    // [0.571, "#30BBBC"], // mintGlow
+    // [0.643, "#0D96A1"], // aqua
+    // [0.714, "#077986"], // seafoam
+    // [0.786, "#086E7E"], // deepTeal
+    // [0.857, "#015168"], // deepBlue
+    // [0.929, "#013D50"], // darkForest
+    // [0.945, "#005F73"], // freshDarkJade - Cleaner, deep teal-cyan without the muddy gray tones
+    // [0.857, "#0A2533"], // freshNearBlack - Deep midnight blue-green base
+    // [0.929, "#05131C"], // freshAlmostBlack - Extremely dark, rich cyber-tinted shadow
+    // [1.0, "#01080C"], // freshDeepBlack - Crisp, high-contrast final stop
+
+
+    // recommend
     // [0.0,   "#FFFEF0"], // whiteCore
     // [0.030, "#FFF78A"], // warmYellow
     // [0.071, "#FFE040"], // vividYellow
@@ -143,24 +167,24 @@ function createGradientLUT(): THREE.Texture {
     [0.0, "#FEFDF7"], // whiteCore
     [0.03, "#FEFFB4"], // whiteCore
     [0.071, "#FEFD88"], // coreYellow
-    [0.143, "#FEADBB"], // amber
-    [0.214, "#F7B7D6"], // coral
-    [0.286, "#D8D0D9"], // hotPink
-    [0.357, "#B8D2D5"], // magenta
-    [0.429, "#98D4D1"], // orchid
-    // [0.473, "#0CE3B6"], // mintGlow
+    [0.132, "#FF9093"], // hotPink
+    [0.360, "#FEADBB"], // amber
+    // [0.420, "#F7B7D6"], // coral   
+    // [0.386, "#D8D0D9"], // hotPink
+    // [0.757, "#B8D2D5"], // magenta
+    // [0.729, "#98D4D1"], // orchid
+    [0.480, "#0CE3B6"], // mintGlow
     // [0.5, "#71D2D6"], // spring
-    // [0.571, "#30BBBC"], // mintGlow
-    [0.643, "#0D96A1"], // aqua
+    [0.571, "#30BBBC"], // mintGlow
+    // [0.643, "#0D96A1"], // aqua
     // [0.714, "#077986"], // seafoam
     // [0.786, "#086E7E"], // deepTeal
     // [0.857, "#015168"], // deepBlue
     // [0.929, "#013D50"], // darkForest
-    // [0.945, "#072D42"], // darkJade
+    [0.945, "#072D42"], // darkJade
     [0.857, "#01141C"], // nearBlack
     [0.929, "#000A10"], // almostBlack
-    [1.0,   "#000508"], // deepBlack
-
+    [1.0, "#000508"], // deepBlack
 
     // test
     // [0.0, "#FFFEF0"], // whiteCore
@@ -195,6 +219,74 @@ function createGradientLUT(): THREE.Texture {
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.needsUpdate = true;
   return tex;
+}
+
+// Precomputed FBM noise — replaces 16 sin() calls per fragment
+// in the glow shader with a single texture2D lookup.
+function createNoiseTexture(size = 256): THREE.Texture {
+  const data = new Uint8Array(size * size * 4);
+
+  // Match the GLSL hash function exactly
+  function hash(x: number, y: number): number {
+    const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453123;
+    return n - Math.floor(n);
+  }
+
+  function noise(x: number, y: number): number {
+    const ix = Math.floor(x);
+    const iy = Math.floor(y);
+    const fx = x - ix;
+    const fy = y - iy;
+    const ux = fx * fx * (3 - 2 * fx);
+    const uy = fy * fy * (3 - 2 * fy);
+    return (
+      hash(ix, iy) * (1 - ux) * (1 - uy) +
+      hash(ix + 1, iy) * ux * (1 - uy) +
+      hash(ix, iy + 1) * (1 - ux) * uy +
+      hash(ix + 1, iy + 1) * ux * uy
+    );
+  }
+
+  // Match the GLSL fbm rotation: mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5))
+  const cosR = Math.cos(0.5);
+  const sinR = Math.sin(0.5);
+
+  function fbm(x: number, y: number): number {
+    let v = 0;
+    let a = 0.5;
+    for (let i = 0; i < 3; i++) {
+      v += a * noise(x, y);
+      const nx = cosR * x - sinR * y;
+      const ny = sinR * x + cosR * y;
+      x = nx * 2.5 + 100;
+      y = ny * 2.5 + 100;
+      a *= 0.5;
+    }
+    return v;
+  }
+
+  for (let py = 0; py < size; py++) {
+    for (let px = 0; px < size; px++) {
+      const tiles = 4;
+      const nx = (px / size) * tiles;
+      const ny = (py / size) * tiles;
+      const n = Math.min(1, Math.max(0, fbm(nx, ny)));
+      const val = Math.floor(n * 255);
+      const idx = (py * size + px) * 4;
+      data[idx] = val;
+      data[idx + 1] = val;
+      data[idx + 2] = val;
+      data[idx + 3] = 255;
+    }
+  }
+
+  const texture = new THREE.DataTexture(data, size, size);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.needsUpdate = true;
+  return texture;
 }
 
 // ==========================================
@@ -302,57 +394,10 @@ const particleFragment = /* glsl */ `
       // texColor = vec4(1.0);
       finalColor = mix(vec3(1.0, 0.3, 0.55), vec3(1.0, 0.6, 0.75), vDepth);
     } else {
-      // Dark framing blobs — 16-layer smoothstep color system
+      // Dark framing blobs — color from baked 15-stop depth gradient LUT.
+      // Edit palette in createGradientLUT(), never touch this shader.
       texColor = texture2D(uTexBlob, vUv);
-
-      vec3 c00 = vec3(1.000, 0.996, 0.941); // #FFFEF0 whiteCore
-      vec3 c01 = vec3(1.000, 0.969, 0.541); // #FFF78A warmYellow
-      vec3 c02 = vec3(1.000, 0.878, 0.251); // #FFE040 vividYellow
-      vec3 c03 = vec3(1.000, 0.690, 0.416); // #FFB06A peach
-      vec3 c04 = vec3(1.000, 0.498, 0.612); // #FF7F9C vividPink
-      vec3 c05 = vec3(0.839, 0.353, 0.541); // #D65A8A deepRose
-      vec3 c06 = vec3(0.251, 0.769, 0.776); // #40C4C6 brightTeal
-      vec3 c07 = vec3(0.102, 0.675, 0.698); // #1AACB2 saturatedTeal
-      vec3 c08 = vec3(0.047, 0.557, 0.596); // #0C8E98 teal
-      vec3 c09 = vec3(0.027, 0.443, 0.486); // #07717C deepTeal
-      vec3 c10 = vec3(0.016, 0.333, 0.376); // #045560 darkerTeal
-      vec3 c11 = vec3(0.008, 0.227, 0.275); // #023A46 darkBlue
-      vec3 c12 = vec3(0.004, 0.141, 0.180); // #01242E veryDark
-      vec3 c13 = vec3(0.004, 0.078, 0.110); // #01141C nearBlack
-      vec3 c14 = vec3(0.000, 0.039, 0.063); // #000A10 almostBlack
-      vec3 c15 = vec3(0.000, 0.020, 0.031); // #000508 deepBlack
-
-      if (vDepth < 0.030) {
-        finalColor = mix(c00, c01, smoothstep(0.000, 0.030, vDepth));
-      } else if (vDepth < 0.071) {
-        finalColor = mix(c01, c02, smoothstep(0.030, 0.071, vDepth));
-      } else if (vDepth < 0.143) {
-        finalColor = mix(c02, c03, smoothstep(0.071, 0.143, vDepth));
-      } else if (vDepth < 0.214) {
-        finalColor = mix(c03, c04, smoothstep(0.143, 0.214, vDepth));
-      } else if (vDepth < 0.286) {
-        finalColor = mix(c04, c05, smoothstep(0.214, 0.286, vDepth));
-      } else if (vDepth < 0.357) {
-        finalColor = mix(c05, c06, smoothstep(0.286, 0.357, vDepth));
-      } else if (vDepth < 0.429) {
-        finalColor = mix(c06, c07, smoothstep(0.357, 0.429, vDepth));
-      } else if (vDepth < 0.500) {
-        finalColor = mix(c07, c08, smoothstep(0.429, 0.500, vDepth));
-      } else if (vDepth < 0.571) {
-        finalColor = mix(c08, c09, smoothstep(0.500, 0.571, vDepth));
-      } else if (vDepth < 0.643) {
-        finalColor = mix(c09, c10, smoothstep(0.571, 0.643, vDepth));
-      } else if (vDepth < 0.714) {
-        finalColor = mix(c10, c11, smoothstep(0.643, 0.714, vDepth));
-      } else if (vDepth < 0.786) {
-        finalColor = mix(c11, c12, smoothstep(0.714, 0.786, vDepth));
-      } else if (vDepth < 0.857) {
-        finalColor = mix(c12, c13, smoothstep(0.786, 0.857, vDepth));
-      } else if (vDepth < 0.929) {
-        finalColor = mix(c13, c14, smoothstep(0.857, 0.929, vDepth));
-      } else {
-        finalColor = mix(c14, c15, smoothstep(0.929, 1.000, vDepth));
-      }
+      finalColor = texture2D(uGradLUT, vec2(vDepth, 0.5)).rgb;
     }
 
     // Proximity fade — disappear at camera lens to prevent screen blocking
@@ -486,34 +531,8 @@ const glowVertex = /* glsl */ `
 const glowFragment = /* glsl */ `
   uniform float uAspect;
   uniform float uTime;
+  uniform sampler2D uNoiseTex;
   varying vec2 vUv;
-
-  float hash(vec2 p) {
-    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
-  }
-
-  float noise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(mix(hash(i + vec2(0.0,0.0)), hash(i + vec2(1.0,0.0)), u.x),
-               mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
-  }
-
-  float fbm(vec2 p) {
-    float v = 0.0;
-    float a = 0.5;
-    vec2 shift = vec2(100.0);
-    mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5));
-    // 2 octaves (was 3) — halves fragment cost on this fullscreen pass;
-    // glow is soft so the lost high-frequency detail is imperceptible.
-    for (int i = 0; i < 2; ++i) {
-      v += a * noise(p);
-      p = rot * p * 2.5 + shift;
-      a *= 0.5;
-    }
-    return v;
-  }
 
   void main() {
     vec2 centered = vUv - vec2(0.5);
@@ -523,11 +542,11 @@ const glowFragment = /* glsl */ `
     float dist = length(centered);
     float angle = atan(centered.y, centered.x);
 
-    // Gas noise — drifts through color/intensity, NOT position
-    float gasNoise = fbm(centered * 4.0 - vec2(uTime * 0.3, uTime * 0.3));
+    // Gas noise — precomputed texture (was 16 sin() per fragment, now 1 texture lookup)
+    float gasNoise = texture2D(uNoiseTex, centered * 4.0 - vec2(uTime * 0.15, uTime * 0.15)).r;
 
     // Symmetrical edge ripple — breathes around center without moving it
-    float ripple = fbm(vec2(angle * 3.0, uTime * 0.6)) * 0.02;
+    float ripple = texture2D(uNoiseTex, vec2(angle * 1.5, uTime * 0.1)).r * 0.02;
     float d = dist + ripple;
 
     // ── Color Palette ──
@@ -606,6 +625,7 @@ function KiraKiraVortex() {
   const petalTex = useMemo(() => createPetalTexture(), []);
   const blobTex = useMemo(() => createBlobTexture(), []);
   const gradLUT = useMemo(() => createGradientLUT(), []);
+  const noiseTex = useMemo(() => createNoiseTexture(), []);
 
   // --- Materials (raw ShaderMaterial — no extend/TS hacks) ---
   const backdropMat = useMemo(
@@ -663,6 +683,7 @@ function KiraKiraVortex() {
         uniforms: {
           uAspect: { value: window.innerWidth / window.innerHeight },
           uTime: { value: 0 },
+          uNoiseTex: { value: noiseTex },
         },
         vertexShader: glowVertex,
         fragmentShader: glowFragment,
@@ -671,7 +692,7 @@ function KiraKiraVortex() {
         depthTest: false,
         blending: THREE.AdditiveBlending,
       }),
-    [],
+    [noiseTex],
   );
 
   // --- Geometry with instanced attributes ---
@@ -696,7 +717,7 @@ function KiraKiraVortex() {
   // --- Dispose all GPU resources on unmount (prevents leaks on HMR/route change) ---
   useEffect(() => {
     return () => {
-      [starTex, petalTex, blobTex, gradLUT].forEach((t) => t.dispose());
+      [starTex, petalTex, blobTex, gradLUT, noiseTex].forEach((t) => t.dispose());
       [backdropGeo, paintGeo, flareGeo].forEach((g) => g.dispose());
       [backdropMat, paintMat, flareMat, glowMat].forEach((m) => m.dispose());
     };
@@ -705,6 +726,7 @@ function KiraKiraVortex() {
     petalTex,
     blobTex,
     gradLUT,
+    noiseTex,
     backdropGeo,
     paintGeo,
     flareGeo,
@@ -749,8 +771,44 @@ function KiraKiraVortex() {
 }
 
 // ==========================================
-// 4. EXPORT
+// 4. FRAME LIMITER + EXPORT
 // ==========================================
+
+// Caps render rate to 30fps and pauses entirely when the tab is hidden.
+// In frameloop="demand" mode, R3F only renders when invalidate() is called,
+// so the GPU genuinely idles between frames instead of spinning at 60-120fps.
+function FrameLimiter({ fps = 30 }: { fps?: number }) {
+  const invalidate = useThree((state) => state.invalidate);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    function start() {
+      if (intervalRef.current) return;
+      intervalRef.current = setInterval(() => invalidate(), 1000 / fps);
+    }
+    function stop() {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+
+    function onVisibilityChange() {
+      if (document.hidden) stop();
+      else start();
+    }
+
+    start();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [fps, invalidate]);
+
+  return null;
+}
 
 export default function Scene() {
   return (
@@ -765,6 +823,7 @@ export default function Scene() {
       }}
     >
       <Canvas
+        frameloop="demand"
         camera={{ position: [0, 0, 5], fov: 75 }}
         dpr={PERF_TIER === "mobile" ? 1 : [1, MAX_DPR]}
         gl={{
@@ -774,6 +833,7 @@ export default function Scene() {
         }}
         performance={{ min: 0.5 }} // R3F adaptive: drops DPR if FPS dips
       >
+        <FrameLimiter fps={30} />
         <KiraKiraVortex />
       </Canvas>
     </div>
