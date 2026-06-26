@@ -93,32 +93,7 @@ function createBlobTexture(): THREE.Texture {
   return tex;
 }
 
-// Soft bokeh circle — out-of-focus lens circle with bright rim
-function createBokehTexture(): THREE.Texture {
-  const size = 128;
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext("2d")!;
-  const c = size / 2;
-
-  // Dark center (out of focus — light doesn't converge at center)
-  const grad = ctx.createRadialGradient(c, c, 0, c, c, c * 0.75);
-  grad.addColorStop(0, "rgba(255,255,255,0.0)");
-  grad.addColorStop(0.3, "rgba(255,255,255,0.0)");
-  grad.addColorStop(0.6, "rgba(255,255,255,0.15)");
-  grad.addColorStop(0.78, "rgba(255,255,255,0.5)");
-  grad.addColorStop(0.88, "rgba(255,255,255,0.35)");
-  grad.addColorStop(1.0, "rgba(255,255,255,0.0)");
-  ctx.fillStyle = grad;
-  ctx.beginPath();
-  ctx.arc(c, c, c * 0.75, 0, Math.PI * 2);
-  ctx.fill();
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.needsUpdate = true;
-  return tex;
-}
+// 15-stop depth gradient baked into a 256×1 LUT.
 // Edit colors here — no shader changes ever needed.
 function createGradientLUT(): THREE.Texture {
   const w = 256;
@@ -245,74 +220,6 @@ function createGradientLUT(): THREE.Texture {
   return tex;
 }
 
-// Precomputed FBM noise — replaces 16 sin() calls per fragment
-// in the glow shader with a single texture2D lookup.
-function createNoiseTexture(size = 256): THREE.Texture {
-  const data = new Uint8Array(size * size * 4);
-
-  // Match the GLSL hash function exactly
-  function hash(x: number, y: number): number {
-    const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453123;
-    return n - Math.floor(n);
-  }
-
-  function noise(x: number, y: number): number {
-    const ix = Math.floor(x);
-    const iy = Math.floor(y);
-    const fx = x - ix;
-    const fy = y - iy;
-    const ux = fx * fx * (3 - 2 * fx);
-    const uy = fy * fy * (3 - 2 * fy);
-    return (
-      hash(ix, iy) * (1 - ux) * (1 - uy) +
-      hash(ix + 1, iy) * ux * (1 - uy) +
-      hash(ix, iy + 1) * (1 - ux) * uy +
-      hash(ix + 1, iy + 1) * ux * uy
-    );
-  }
-
-  // Match the GLSL fbm rotation: mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5))
-  const cosR = Math.cos(0.5);
-  const sinR = Math.sin(0.5);
-
-  function fbm(x: number, y: number): number {
-    let v = 0;
-    let a = 0.5;
-    for (let i = 0; i < 3; i++) {
-      v += a * noise(x, y);
-      const nx = cosR * x - sinR * y;
-      const ny = sinR * x + cosR * y;
-      x = nx * 2.5 + 100;
-      y = ny * 2.5 + 100;
-      a *= 0.5;
-    }
-    return v;
-  }
-
-  for (let py = 0; py < size; py++) {
-    for (let px = 0; px < size; px++) {
-      const tiles = 4;
-      const nx = (px / size) * tiles;
-      const ny = (py / size) * tiles;
-      const n = Math.min(1, Math.max(0, fbm(nx, ny)));
-      const val = Math.floor(n * 255);
-      const idx = (py * size + px) * 4;
-      data[idx] = val;
-      data[idx + 1] = val;
-      data[idx + 2] = val;
-      data[idx + 3] = 255;
-    }
-  }
-
-  const texture = new THREE.DataTexture(data, size, size);
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.minFilter = THREE.LinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.needsUpdate = true;
-  return texture;
-}
-
 // ==========================================
 // 2. SHADERS
 // ==========================================
@@ -373,17 +280,13 @@ const particleVertex = /* glsl */ `
 
     // Center clearance — keep the glowing core visible
     float r = length(pos.xy);
-    //fix
     if (r < 5.0) pos.xy = normalize(pos.xy + 0.001) * (5.0 + aRandoms.x * 3.0);
-    // if (r < 4.0) pos.xy = normalize(pos.xy + 0.001) * (5.0 + aRandoms.x * 3.0);
 
     // Liquid water-flow math (sine/cosine offset X/Y paths)
     float wave = sin(pos.z * 0.1 + uTime + aRandoms.y * 6.28) * 0.5;
     pos.x += cos(wave) * 0.5;
     pos.y += sin(wave) * 0.5;
 
-    // vDepth = clamp((pos.z + 60.0) / 65.0, 0.0, 1.0);
-    // REPLACE IT WITH THIS:
     vDepth = pow(clamp((pos.z + 60.0) / 65.0, 0.0, 1.0), 1.5);
 
     // Scale: microscopic far away, massive near camera
@@ -453,9 +356,7 @@ const flareVertex = /* glsl */ `
     pos.z = mod(pos.z + 60.0, 70.0) - 60.0;
 
     float r = length(pos.xy);
-    // fix
     if (r < 4.0) pos.xy = normalize(pos.xy + 0.001) * (4.0 + aRandoms.x * 2.0);
-    // if (r < 2.0) pos.xy = normalize(pos.xy + 0.001) * (2.0 + aRandoms.x * 1.5);
 
     vDepth = clamp((pos.z + 60.0) / 65.0, 0.0, 1.0);
     float scale = 0.5 * (0.2 + pow(vDepth, 2.5) * 6.0);
@@ -478,85 +379,28 @@ const flareFragment = /* glsl */ `
   varying float vColorMix;
 
   void main() {
-    vec4 texColor = texture2D(uTexStar, vUv);
+     vec4 texColor = texture2D(uTexStar, vUv);
 
+    vec3 colors[10] = vec3[10](
+      vec3(0.938, 0.278, 0.386),    // #F890A8 Vibrant Soft Pink
+      vec3(0.947, 0.481, 0.584),    // #F9B9CA Pastel Rose
+      vec3(0.262, 1.000, 0.320),    // #8CFF96 Bright Mint Green
+      vec3(0.850, 1.000, 0.448),    // #EDFFB6 Soft Lime Yellow
+      vec3(0.612, 1.000, 0.402),    // #D0FFAF Mint Yellow
+      vec3(0.984, 0.694, 0.761),    // #FEDBE4 Blush Pink
+      vec3(1.000, 1.000, 0.448),    // #FFFFB6 Pastel Yellow
+      vec3(0.973, 0.612, 0.694),    // #FDD0DA Light Sakura
+      vec3(0.947, 0.247, 0.347),    // #FB889E Neon Deep Pink
+      vec3(1.000, 0.973, 0.612)     // #FFFDDA Warm Cream
+    );
 
-    // vec3 colors[11] = vec3[11](
-    //   vec3(1.0, 1.0, 0.4),        // Saturated Core Yellow
-    //   vec3(1.0, 0.9, 0.2),        // Bright Yellow-Gold
-    //   vec3(1.0, 0.6, 0.3),        // Warm Amber transition
-    //   vec3(1.0, 0.2, 0.6),        // Vivid Hot Pink/VFX Magenta
-    //   vec3(0.95, 0.25, 0.75),      // Outer Edge Pink
-    //   vec3(0.8078, 1.0, 0.6863),  // #CEFFAF  mint yellow
-    //   vec3(1.0, 0.7059, 0.3529),  // #FFB45A  warm amber
-    //   vec3(0.9843, 0.8039, 0.8471), // #FBCDD8  soft pink
-    //   vec3(1.0, 0.3, 0.5),        // #FF4D80  neon coral
-    //   vec3(1.0, 0.4, 0.7),        // #FF66B2  deep pink
-    //   // vec3(1.00, 0.05, 0.00),
-    //   vec3(1.0, 0.4118, 0.7059)   // #FF69B4  hot pink
-    // );
-    // int index = int(floor(vColorMix * 11.0));
-   // vec3 colors[11] = vec3[11](
-   //    vec3(0.965, 0.000, 0.200),   // #F6C9D6 (Pushed to strong pink-red)
-   //    vec3(0.973, 0.050, 0.250),   // #F88FA7 (Pushed to strong pink-red)
-   //    vec3(1.000, 0.100, 0.150),   // #FF9294 (Pushed to strong pink-red)
-   //    vec3(0.976, 0.020, 0.220),   // #F9C5D4 (Pushed to strong pink-red)
-   //    vec3(0.965, 0.000, 0.200),   // #F6C9D6
-   //    vec3(0.973, 0.050, 0.250),   // #F88FA7
-   //    vec3(1.000, 0.100, 0.150),   // #FF9294
-   //    vec3(0.976, 0.020, 0.220),   // #F9C5D4
-   //    vec3(0.965, 0.000, 0.200),   // #F6C9D6
-   //    vec3(0.973, 0.050, 0.250),   // #F88FA7
-   //    vec3(1.000, 0.100, 0.150)    // #FF9294
-   //  );
-   //  int index = int(floor(vColorMix * 11.0));
-
-
-    // vec3 colors[6] = vec3[6](
-    //   vec3(1.0, 1.0, 0.4),        // Saturated Core Yellow
-    //   vec3(1.0, 0.9, 0.2),        // Bright Yellow-Gold
-    //   // vec3(1.0, 0.6, 0.3),        // Warm Amber transition
-    //   // vec3(1.0, 0.2, 0.6),        // Vivid Hot Pink/VFX Magenta
-    //   // vec3(0.95, 0.25, 0.75),      // Outer Edge Pink
-    //   vec3(0.8078, 1.0, 0.6863),  // #CEFFAF  mint yellow
-    //   // vec3(1.0, 0.7059, 0.3529),  // #FFB45A  warm amber
-    //   // vec3(0.9843, 0.8039, 0.8471), // #FBCDD8  soft pink
-    //   // vec3(1.0, 0.4, 0.7),        // #FF66B2  deep pink
-    //   // vec3(1.0, 0.4118, 0.7059),   // #FF69B4  hot pink
-    //
-    //
-    //   // test
-    //   // vec3(1.0, 0.3, 0.5),        // #FF4D80  neon coral // want
-    //   vec3(1.0, 0.3, 0.5),        // #FF4D80  neon coral // want
-    //   vec3(1.000, 0.100, 0.150),   // #FF9294 (Pushed to strong pink-red) // want
-    //    vec3(0.973, 0.050, 0.250)   // #F88FA7 (Pushed to strong pink-red) // let see
-    //    // vec3(0.976, 0.020, 0.220)   // #F9C5D4 (Pushed to strong pink-red) // too red
-    //    // vec3(0.965, 0.000, 0.200)   // #F6C9D6 (Pushed to strong pink-red) // don't want too red
-    // );
-    // int index = int(floor(vColorMix * 6.0));
-
-vec3 colors[10] = vec3[10](
-    vec3(0.938, 0.278, 0.386),    // #F890A8 (Vibrant Soft Pink)
-    vec3(0.947, 0.481, 0.584),    // #F9B9CA (Pastel Rose)
-    vec3(0.262, 1.000, 0.320),    // #8CFF96 (Bright Mint Green)
-    vec3(0.850, 1.000, 0.448),    // #EDFFB6 (Soft Lime Yellow)
-    vec3(0.612, 1.000, 0.402),    // #D0FFAF (Mint Yellow / Zen Green)
-    vec3(0.984, 0.694, 0.761),    // #FEDBE4 (Blush Pink)
-    vec3(1.000, 1.000, 0.448),    // #FFFFB6 (Pastel Yellow)
-    vec3(0.973, 0.612, 0.694),    // #FDD0DA (Light Sakura)
-    vec3(0.947, 0.247, 0.347),    // #FB889E (Neon Deep Pink)
-    vec3(1.000, 0.973, 0.612)     // #FFFDDA (Warm Cream / Soft Light)
-);
-
-// Safe indexing from 0.0 to 1.0 map
-int index = int(floor(vColorMix * 10.0));
-index = clamp(index, 0, 9);
-
+    int index = int(floor(vColorMix * 10.0));
+    index = clamp(index, 0, 9);
 
     vec3 glow = colors[index];
 
     float alphaFade = smoothstep(1.0, 0.80, vDepth);
-    gl_FragColor = vec4(glow * 1.0, texColor.a * alphaFade);
+    gl_FragColor = vec4(glow, texColor.a * alphaFade);
 
     #include <colorspace_fragment>
   }
@@ -619,9 +463,9 @@ const sunFragment = /* glsl */ `
     float d = dist + ripple;
 
     // Sun palette (outside → inside) — pink outside, yellow center
-vec3 whiteCore = vec3(1.0, 0.95, 0.0);      // Pure blazing yellow core (was 1.0, 0.95, 0.6)
-    vec3 yellow    = vec3(1.0, 0.85, 0.0);      // Golden anime yellow (was 1.0, 0.88, 0.2)
-    vec3 midPink   = vec3(1.0, 0.08, 0.58);     
+    vec3 whiteCore = vec3(1.0, 0.95, 0.0);
+    vec3 yellow    = vec3(1.0, 0.85, 0.0);
+    vec3 midPink   = vec3(1.0, 0.08, 0.58);
     vec3 outerEdge = vec3(1.0, 0.0, 0.2);
 
     vec3 color = outerEdge;
@@ -632,14 +476,7 @@ vec3 whiteCore = vec3(1.0, 0.95, 0.0);      // Pure blazing yellow core (was 1.0
     float glow = min(exp(-d * 8.0) + 0.4, 0.85);
     float alpha = smoothstep(0.42, 0.06, d) * (0.1 + gasNoise * 0.1);
 
-    //change
-    // Capped intensity — stays pastel, never blows out
-    // float glow = min(exp(-d * 8.0) + 0.4, 0.85);
-    // float alpha = smoothstep(0.42, 0.06, d) * (0.9 + gasNoise * 0.9);
-    // to
-    // Dimmed intensity — whispers under the core so core colors survive
-    // float glow = min(exp(-d * 8.0) + 0.15, 0.25);
-    // float alpha = smoothstep(0.42, 0.06, d) * (0.25 + gasNoise * 0.25);
+    if (alpha < 0.001) discard;
 
     gl_FragColor = vec4(color * glow, alpha);
 
@@ -689,10 +526,9 @@ const raysFragment = /* glsl */ `
       smoothstep(0.05, 0.3, dist)
     );
 
-    // change
-    // float alpha = rays * distFade * 0.35;
-    // to
     float alpha = rays * distFade * 0.2;
+
+    if (alpha < 0.001) discard;
 
     gl_FragColor = vec4(rayColor * alpha, alpha);
 
@@ -725,8 +561,8 @@ const bridgeFragment = /* glsl */ `
     float d = dist + gasNoise * 0.012;
 
     // Bridge palette — #FDAEC2 aura connects core to sun
-vec3 whiteCore = vec3(1.0, 0.90, 0.0);     // Strong gold-yellow core (was 1.0, 0.95, 0.8)
-    vec3 gold      = vec3(1.0, 0.70, 0.0);     // Deep orange-gold (was 1.0, 0.75, 0.2)
+    vec3 whiteCore = vec3(1.0, 0.90, 0.0);
+    vec3 gold      = vec3(1.0, 0.70, 0.0);
     vec3 softPink  = vec3(0.992, 0.682, 0.761);
 
     vec3 color = softPink;
@@ -736,10 +572,8 @@ vec3 whiteCore = vec3(1.0, 0.90, 0.0);     // Strong gold-yellow core (was 1.0, 
     float glow = exp(-d * 6.0);
     float alpha = smoothstep(0.25, 0.05, d);
 
+    if (alpha < 0.001) discard;
 
-    //change
-    // gl_FragColor = vec4(color * glow * 0.8, alpha * 0.6);
-    // to
     gl_FragColor = vec4(color * glow * 0.8, alpha * 0.5);
 
     #include <colorspace_fragment>
@@ -769,37 +603,18 @@ const coreFragment = /* glsl */ `
     float gasNoise = noise(centered * 6.0 - vec2(uTime * 0.5, uTime * 0.5));
     float d = dist + gasNoise * 0.01;
 
-    //good
-    vec3 softPink = vec3(1.0, 0.92, 0.0);
-    // not bad
-    // vec3 softPink = vec3(0.95, 1.0, 0.0);
-    // not sure
-    // vec3 softPink = vec3(1.0, 0.75, 0.0);
-    // Hot core palette (outside → inside) — yellow dominant, white pinpoint center
-    // vec3 softPink  = vec3(1.0, 0.08, 0.58);   // #FDAEC2 — pastel pink aura
-    // vec3 softPink  = vec3(0.992, 0.682, 0.761);   // #FDAEC2 — pastel pink aura
-
+    // Core palette (outside → inside) — yellow dominant, white pinpoint center
+    vec3 softPink  = vec3(1.0, 0.92, 0.0);
     vec3 whiteCore = vec3(1.0, 1.0, 0.9);
     vec3 sunYellow = vec3(1.0, 0.80, 0.1);
-// vec3 softPink  = vec3(1.0, 0.92, 0.0);   // Vibrant electric yellow aura
-// vec3 whiteCore = vec3(1.0, 0.98, 0.4);   // Ultra-bright highlight yellow center
-// vec3 sunYellow = vec3(1.0, 0.85, 0.0);   // Solid primary anime yellow
-
-// vec3 softPink  = vec3(1.0, 0.75, 0.0);   // Deep gold / amber-yellow aura
-// vec3 whiteCore = vec3(1.0, 0.95, 0.2);   // Brilliant primary yellow center
-// vec3 sunYellow = vec3(1.0, 0.85, 0.0);   // Mid-tone anime yellow
-
-// vec3 softPink  = vec3(0.95, 1.0, 0.0);   // Neon lime-yellow aura
-// vec3 whiteCore = vec3(0.98, 1.0, 0.5);   // Crisp pastel-neon yellow center
-// vec3 sunYellow = vec3(1.0, 0.90, 0.0);   // Intense bright yellow
 
     vec3 color = softPink;
     color = mix(color, sunYellow, smoothstep(0.10, 0.03, d));
     color = mix(color, whiteCore, smoothstep(0.01, 0.00, d));
 
-    // change size — extended to 0.15 so pink aura (d=0.06 to 0.15) is visible
     float alpha = smoothstep(0.15, 0.01, d);
-    // float alpha = smoothstep(0.12, 0.01, d);
+
+    if (alpha < 0.001) discard;
 
     gl_FragColor = vec4(color * 1.3, alpha);
 
@@ -808,143 +623,7 @@ const coreFragment = /* glsl */ `
 `;
 
 // ==========================================
-// 3. BOKEH + SPEED LINE SHADERS
-// ==========================================
-
-// Layer E: Bokeh — slow-drifting soft circles (normal alpha, behind particles)
-const bokehVertex = /* glsl */ `
-  uniform float uTime;
-  uniform float uSpeed;
-  attribute vec3 aInitialPos;
-  attribute vec3 aRandoms;
-
-  varying vec2 vUv;
-  varying float vDepth;
-
-  void main() {
-    vUv = uv;
-    vec3 pos = aInitialPos;
-
-    // Very slow drift — NOT the fast Z-suction of particles
-    // Gentle random walk using sin/cos with individual phase offsets
-    float phase = aRandoms.y * 6.28;
-    pos.x += sin(uTime * 0.08 + phase) * 2.0;
-    pos.y += cos(uTime * 0.06 + phase * 1.3) * 2.0;
-    pos.z += uTime * uSpeed * (0.3 + aRandoms.x * 0.2);
-    pos.z = mod(pos.z + 20.0, 30.0) - 20.0;
-
-    vDepth = clamp((pos.z + 20.0) / 25.0, 0.0, 1.0);
-
-    // Large, soft sizing — bokeh circles are big
-    float scale = (0.8 + aRandoms.x * 2.0) * (0.3 + pow(vDepth, 2.0) * 4.0);
-
-    vec4 mvPos = modelViewMatrix * vec4(pos + position * scale, 1.0);
-    gl_Position = projectionMatrix * mvPos;
-  }
-`;
-
-const bokehFragment = /* glsl */ `
-  uniform sampler2D uTexBokeh;
-  varying vec2 vUv;
-  varying float vDepth;
-
-  void main() {
-    vec4 texColor = texture2D(uTexBokeh, vUv);
-
-    // Teal/cyan tint — matches background, subtle and dreamy
-    vec3 color = mix(
-      vec3(0.04, 0.55, 0.50),   // teal (far away)
-      vec3(0.05, 0.85, 0.68),   // mint glow (close)
-      vDepth
-    );
-
-    // Very low opacity — bokeh should whisper, not shout
-    float alpha = texColor.a * 0.18;
-
-    // Fade at camera lens
-    float alphaFade = smoothstep(1.0, 0.85, vDepth);
-    gl_FragColor = vec4(color, alpha * alphaFade);
-
-    #include <colorspace_fragment>
-  }
-`;
-
-// Layer F: Speed Lines — radial burst streaks shooting outward from center (additive)
-const speedLineVertex = /* glsl */ `
-  uniform float uTime;
-  uniform float uSpeed;
-  attribute vec3 aInitialPos;
-  attribute vec3 aRandoms;
-
-  varying vec2 vUv;
-  varying float vDepth;
-  varying float vColorMix;
-
-  void main() {
-    vUv = uv;
-    vColorMix = aRandoms.x;
-    vec3 pos = aInitialPos;
-
-    // Each line has a fixed angle but its radius grows outward over time
-    float angle = aRandoms.y * 6.2832;  // fixed angle per instance
-    float speed = uSpeed * (0.8 + aRandoms.x * 0.6);
-
-    // Radius expands outward, wraps around when it goes too far
-    float radius = aRandoms.z * 12.0;   // initial radius (spread out)
-    radius += uTime * speed * 2.0;       // grow outward
-    radius = mod(radius, 14.0);          // wrap — reappears at center when far
-
-    // Convert polar to cartesian
-    pos.x = cos(angle) * radius;
-    pos.y = sin(angle) * radius;
-
-    // Z for depth scaling (closer to camera = bigger and faster)
-    pos.z = mod(uTime * speed * 3.0 + aRandoms.z * 30.0, 30.0) - 30.0;
-    vDepth = clamp((pos.z + 30.0) / 30.0, 0.0, 1.0);
-
-    // Elongated along radial direction — thin width, long length
-    float scale = 0.1 + pow(vDepth, 2.0) * 1.5;
-    vec3 transformed = position;
-
-    // Stretch along the radial direction (direction from center to this point)
-    vec2 dir = normalize(pos.xy + vec2(0.001));
-    float stretch = 1.0 + vDepth * 6.0;  // longer when closer to camera
-    transformed.xy += dir * dot(transformed.xy, dir) * (stretch - 1.0);
-
-    vec4 mvPos = modelViewMatrix * vec4(pos + transformed * scale, 1.0);
-    gl_Position = projectionMatrix * mvPos;
-  }
-`;
-
-const speedLineFragment = /* glsl */ `
-  varying vec2 vUv;
-  varying float vDepth;
-  varying float vColorMix;
-
-  void main() {
-    // Soft streak alpha — brightest at center of line, fades at edges
-    float alpha = smoothstep(0.5, 0.1, abs(vUv.y - 0.5));
-
-    // Fade at far distance and camera lens
-    float depthFade = smoothstep(0.0, 0.3, vDepth) * smoothstep(1.0, 0.85, vDepth);
-
-    // Warm color mix — yellow to pink, matching core palette
-    vec3 color = mix(
-      vec3(1.0, 0.88, 0.3),    // warm yellow
-      vec3(1.0, 0.45, 0.6),    // soft pink
-      vColorMix
-    );
-
-    alpha *= depthFade * 0.4;  // subtle — streaks whisper, not scream
-
-    gl_FragColor = vec4(color * alpha, alpha);
-
-    #include <colorspace_fragment>
-  }
-`;
-
-// ==========================================
-// 4. SCENE COMPONENT
+// 3. SCENE COMPONENT
 // ==========================================
 
 // --- Adaptive perf tier (replaces hardcoded counts) ---
@@ -970,10 +649,6 @@ const PAINT_COUNT =
   PERF_TIER === "mobile" ? 2000 : PERF_TIER === "low" ? 3500 : 5500;
 const FLARE_COUNT =
   PERF_TIER === "mobile" ? 1000 : PERF_TIER === "low" ? 1500 : 3000;
-const BOKEH_COUNT =
-  PERF_TIER === "mobile" ? 30 : PERF_TIER === "low" ? 50 : 80;
-const SPEEDLINE_COUNT =
-  PERF_TIER === "mobile" ? 80 : PERF_TIER === "low" ? 150 : 250;
 const MAX_DPR = PERF_TIER === "mobile" ? 1 : PERF_TIER === "low" ? 1.25 : 1.5;
 
 function generateInstanceData(count: number, maxRadius: number) {
@@ -999,8 +674,6 @@ function KiraKiraVortex() {
   const petalTex = useMemo(() => createPetalTexture(), []);
   const blobTex = useMemo(() => createBlobTexture(), []);
   const gradLUT = useMemo(() => createGradientLUT(), []);
-  const bokehTex = useMemo(() => createBokehTexture(), []);
-  const noiseTex = useMemo(() => createNoiseTexture(), []); // unused by glow shaders (inline noise) — kept for potential future use
 
   // --- Materials (raw ShaderMaterial — no extend/TS hacks) ---
   const backdropMat = useMemo(
@@ -1124,40 +797,6 @@ function KiraKiraVortex() {
     [],
   );
 
-  // E: Bokeh — slow-drifting soft circles
-  const bokehMat = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        uniforms: {
-          uTime: { value: 0 },
-          uSpeed: { value: 0.05 },
-          uTexBokeh: { value: bokehTex },
-        },
-        vertexShader: bokehVertex,
-        fragmentShader: bokehFragment,
-        transparent: true,
-        depthWrite: false,
-      }),
-    [bokehTex],
-  );
-
-  // F: Speed Lines — radial burst streaks
-  const speedLineMat = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        uniforms: {
-          uTime: { value: 0 },
-          uSpeed: { value: 0.8 },
-        },
-        vertexShader: speedLineVertex,
-        fragmentShader: speedLineFragment,
-        transparent: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-      }),
-    [],
-  );
-
   // --- Geometry with instanced attributes ---
   const backdropGeo = useMemo(() => new THREE.PlaneGeometry(2, 2), []);
 
@@ -1177,29 +816,13 @@ function KiraKiraVortex() {
     return geo;
   }, []);
 
-  const bokehGeo = useMemo(() => {
-    const { pos, rand } = generateInstanceData(BOKEH_COUNT, 10.0);
-    const geo = new THREE.PlaneGeometry(1.0, 1.0);
-    geo.setAttribute("aInitialPos", new THREE.InstancedBufferAttribute(pos, 3));
-    geo.setAttribute("aRandoms", new THREE.InstancedBufferAttribute(rand, 3));
-    return geo;
-  }, []);
-
-  const speedLineGeo = useMemo(() => {
-    const { pos, rand } = generateInstanceData(SPEEDLINE_COUNT, 1.0);
-    const geo = new THREE.PlaneGeometry(0.08, 0.8);
-    geo.setAttribute("aInitialPos", new THREE.InstancedBufferAttribute(pos, 3));
-    geo.setAttribute("aRandoms", new THREE.InstancedBufferAttribute(rand, 3));
-    return geo;
-  }, []);
-
   // --- Dispose all GPU resources on unmount (prevents leaks on HMR/route change) ---
   useEffect(() => {
     return () => {
-      [starTex, petalTex, blobTex, gradLUT, bokehTex, noiseTex].forEach((t) =>
+      [starTex, petalTex, blobTex, gradLUT].forEach((t) =>
         t.dispose(),
       );
-      [backdropGeo, paintGeo, flareGeo, bokehGeo, speedLineGeo].forEach((g) => g.dispose());
+      [backdropGeo, paintGeo, flareGeo].forEach((g) => g.dispose());
       [
         backdropMat,
         paintMat,
@@ -1208,8 +831,6 @@ function KiraKiraVortex() {
         raysMat,
         bridgeMat,
         coreMat,
-        bokehMat,
-        speedLineMat,
       ].forEach((m) => m.dispose());
     };
   }, [
@@ -1217,13 +838,9 @@ function KiraKiraVortex() {
     petalTex,
     blobTex,
     gradLUT,
-    bokehTex,
-    noiseTex,
     backdropGeo,
     paintGeo,
     flareGeo,
-    bokehGeo,
-    speedLineGeo,
     backdropMat,
     paintMat,
     flareMat,
@@ -1231,8 +848,6 @@ function KiraKiraVortex() {
     raysMat,
     bridgeMat,
     coreMat,
-    bokehMat,
-    speedLineMat,
   ]);
 
   // --- Animation loop ---
@@ -1240,8 +855,6 @@ function KiraKiraVortex() {
     const t = state.clock.getElapsedTime();
     paintMat.uniforms.uTime.value = t;
     flareMat.uniforms.uTime.value = t;
-    bokehMat.uniforms.uTime.value = t;
-    speedLineMat.uniforms.uTime.value = t;
     sunMat.uniforms.uTime.value = t;
     raysMat.uniforms.uTime.value = t;
     bridgeMat.uniforms.uTime.value = t;
@@ -1265,13 +878,6 @@ return (
       <mesh geometry={backdropGeo} material={bridgeMat} renderOrder={-2} />
       <mesh geometry={backdropGeo} material={coreMat} renderOrder={-1} />
 
-      {/* E: Bokeh — soft drifting circles (behind particles) */}
-      <instancedMesh
-        args={[bokehGeo, bokehMat, BOKEH_COUNT]}
-        frustumCulled={false}
-        renderOrder={0}
-      />
-
       {/* 3. Fluid Particles & Water Bubbles (Now clipping on top of the clouds seamlessly) */}
       <instancedMesh 
         args={[paintGeo, paintMat, PAINT_COUNT]} 
@@ -1284,13 +890,6 @@ return (
         args={[flareGeo, flareMat, FLARE_COUNT]} 
         frustumCulled={false} 
         renderOrder={2}
-      />
-
-      {/* F: Speed Lines — radial burst streaks (in front of everything) */}
-      <instancedMesh
-        args={[speedLineGeo, speedLineMat, SPEEDLINE_COUNT]}
-        frustumCulled={false}
-        renderOrder={3}
       />
     </>
   );
