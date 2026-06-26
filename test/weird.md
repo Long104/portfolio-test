@@ -47,28 +47,6 @@ function createStarTexture(): THREE.Texture {
   return tex;
 }
 
-function createPetalTexture(): THREE.Texture {
-  const size = 128;
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext("2d")!;
-  const c = size / 2;
-
-  // Soft radial alpha mask
-  const grad = ctx.createRadialGradient(c, c, 0, c, c, c * 0.65);
-  grad.addColorStop(0, "rgba(255,255,255,1)");
-  grad.addColorStop(0.4, "rgba(255,255,255,0.8)");
-  grad.addColorStop(0.7, "rgba(255,255,255,0.3)");
-  grad.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, size, size);
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.needsUpdate = true;
-  return tex;
-}
-
 function createBlobTexture(): THREE.Texture {
   const size = 128;
   const canvas = document.createElement("canvas");
@@ -302,7 +280,7 @@ const particleVertex = /* glsl */ `
     pos.x += cos(wave) * 0.5;
     pos.y += sin(wave) * 0.5;
 
-    vDepth = pow(clamp((pos.z + 60.0) / 65.0, 0.0, 1.0), 1.5);
+    vDepth = clamp((pos.z + 60.0) / 65.0, 0.0, 1.0);
 
     // Scale: microscopic far away, massive near camera
     float baseScale = (vType < 0.5) ? 1.0 : 2.5;
@@ -322,21 +300,23 @@ const particleVertex = /* glsl */ `
 `;
 
 const particleFragment = /* glsl */ `
-  uniform sampler2D uTexPetal;
   uniform sampler2D uTexBlob;
   uniform sampler2D uGradLUT;
   varying vec2 vUv;
   varying float vType;
   varying float vDepth;
 
+
   void main() {
-    vec4 texColor;
+    vec4 texColor = vec4(1.0);
     vec3 finalColor;
 
     if (vType < 0.5) {
-      // Vibrant peach/pink petals — soft radial alpha from petal texture
-      texColor = texture2D(uTexPetal, vUv);
-      finalColor = mix(vec3(1.0, 0.3, 0.55), vec3(1.0, 0.6, 0.75), vDepth);
+      // Semi-transparent glass/smoke wisps — light tint, soft circular blob shape
+      texColor = texture2D(uTexBlob, vUv);
+      finalColor = vec3(1.0, 0.92, 0.96); // very light warm white tint
+      // Extra fade — wisps disappear as they approach camera
+      alphaFade *= 0.12 + 0.15 * vDepth;
     } else {
       // Dark framing blobs — color from baked 15-stop depth gradient LUT.
       // Edit palette in createGradientLUT(), never touch this shader.
@@ -700,7 +680,6 @@ function generateInstanceData(count: number, maxRadius: number) {
 function KiraKiraVortex() {
   // --- Procedural textures ---
   const starTex = useMemo(() => createStarTexture(), []);
-  const petalTex = useMemo(() => createPetalTexture(), []);
   const blobTex = useMemo(() => createBlobTexture(), []);
   const gradLUT = useMemo(() => createGradientLUT(), []);
 
@@ -725,7 +704,6 @@ function KiraKiraVortex() {
         uniforms: {
           uTime: { value: 0 },
           uSpeed: { value: 0.15 },
-          uTexPetal: { value: petalTex },
           uTexBlob: { value: blobTex },
           uGradLUT: { value: gradLUT },
         },
@@ -734,7 +712,7 @@ function KiraKiraVortex() {
         transparent: true,
         depthWrite: false,
       }),
-    [petalTex, blobTex, gradLUT],
+    [blobTex, gradLUT],
   );
 
   const flareMat = useMemo(
@@ -848,7 +826,7 @@ function KiraKiraVortex() {
   // --- Dispose all GPU resources on unmount (prevents leaks on HMR/route change) ---
   useEffect(() => {
     return () => {
-      [starTex, petalTex, blobTex, gradLUT].forEach((t) =>
+      [starTex, blobTex, gradLUT].forEach((t) =>
         t.dispose(),
       );
       [backdropGeo, paintGeo, flareGeo].forEach((g) => g.dispose());
@@ -864,7 +842,6 @@ function KiraKiraVortex() {
     };
   }, [
     starTex,
-    petalTex,
     blobTex,
     gradLUT,
     backdropGeo,
