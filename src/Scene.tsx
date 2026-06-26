@@ -575,17 +575,15 @@ const sunFragment = /* glsl */ `
     float ripple = fbm(vec2(angle * 3.0, uTime * 0.6)) * 0.02;
     float d = dist + ripple;
 
-    // Pastel sun palette (outside → inside)
-    vec3 whiteCore =  vec3(1.0, 0.08, 0.58);      // creamy incandescent heart
-    vec3 yellow    = vec3(1.0, 0.88, 0.2);     // anime yellow
-    // vec3 midPink   = vec3(1.0, 0.45, 0.7);     // bubblegum pink aura
-    // vec3 outerEdge = vec3(0.95, 0.2, 0.6);     // cosmic magenta edge
-    vec3 midPink   = vec3(1.0, 0.08, 0.58);    // Maximized deep hot pink
-    vec3 outerEdge = vec3(1.0, 0.0, 0.2);     // Intense pink-red / raspberry
+    // Sun palette (outside → inside) — pink outside, yellow center
+    vec3 whiteCore = vec3(1.0, 0.95, 0.6);      // warm yellow-white pinpoint
+    vec3 yellow    = vec3(1.0, 0.88, 0.2);      // anime yellow
+    vec3 midPink   = vec3(1.0, 0.08, 0.58);     // deep hot pink
+    vec3 outerEdge = vec3(1.0, 0.0, 0.2);       // intense pink-red / raspberry
 
     vec3 color = outerEdge;
     color = mix(color, midPink,   smoothstep(0.15, 0.025, d + gasNoise * 0.015));
-    // color = mix(color, yellow,    smoothstep(0.15, 0.025, d + gasNoise * 0.015));
+    color = mix(color, yellow,    smoothstep(0.09, 0.03, d + gasNoise * 0.015));
     color = mix(color, whiteCore, smoothstep(0.02, 0.0, d + gasNoise * 0.015));
 
     float glow = min(exp(-d * 8.0) + 0.4, 0.85);
