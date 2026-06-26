@@ -728,15 +728,14 @@ const coreFragment = /* glsl */ `
     float gasNoise = noise(centered * 6.0 - vec2(uTime * 0.5, uTime * 0.5));
     float d = dist + gasNoise * 0.01;
 
-    // Hot core palette (outside → inside) — with soft pink aura
+    // Hot core palette (outside → inside) — yellow dominant, white pinpoint center
     vec3 softPink  = vec3(0.992, 0.682, 0.761);   // #FDAEC2 — pastel pink aura
     vec3 whiteCore = vec3(1.0, 1.0, 0.9);
     vec3 sunYellow = vec3(1.0, 0.80, 0.1);
 
-    // Wide pink aura (d=0.15 → 0.06) before it transitions to yellow
     vec3 color = softPink;
-    color = mix(color, sunYellow, smoothstep(0.08, 0.04, d));
-    color = mix(color, whiteCore, smoothstep(0.03, 0.00, d));
+    color = mix(color, sunYellow, smoothstep(0.10, 0.03, d));
+    color = mix(color, whiteCore, smoothstep(0.01, 0.00, d));
 
     // change size — extended to 0.15 so pink aura (d=0.06 to 0.15) is visible
     float alpha = smoothstep(0.15, 0.01, d);
