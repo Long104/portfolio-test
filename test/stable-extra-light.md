@@ -585,13 +585,11 @@ const sunFragment = /* glsl */ `
     color = mix(color, yellow,    smoothstep(0.15, 0.025, d + gasNoise * 0.015));
     color = mix(color, whiteCore, smoothstep(0.02, 0.0, d + gasNoise * 0.015));
 
-    float glow = min(exp(-d * 8.0) + 0.4, 0.85);
-    float alpha = smoothstep(0.42, 0.06, d) * (0.4 + gasNoise * 0.4);
 
     //change
     // Capped intensity — stays pastel, never blows out
-    // float glow = min(exp(-d * 8.0) + 0.4, 0.85);
-    // float alpha = smoothstep(0.42, 0.06, d) * (0.9 + gasNoise * 0.9);
+    float glow = min(exp(-d * 8.0) + 0.4, 0.85);
+    float alpha = smoothstep(0.42, 0.06, d) * (0.9 + gasNoise * 0.9);
     // to
     // Dimmed intensity — whispers under the core so core colors survive
     // float glow = min(exp(-d * 8.0) + 0.15, 0.25);
@@ -646,9 +644,9 @@ const raysFragment = /* glsl */ `
     );
 
     // change
-    // float alpha = rays * distFade * 0.35;
+    float alpha = rays * distFade * 0.35;
     // to
-    float alpha = rays * distFade * 0.15;
+    // float alpha = rays * distFade * 0.15;
 
     gl_FragColor = vec4(rayColor * alpha, alpha);
 
@@ -680,12 +678,12 @@ const bridgeFragment = /* glsl */ `
     float gasNoise = noise(centered * 4.0 - vec2(uTime * 0.2));
     float d = dist + gasNoise * 0.012;
 
-    // Bridge palette — #FDAEC2 aura connects core to sun
+    // Bridge palette — connects hot core to pastel sun
     vec3 whiteCore = vec3(1.0, 0.95, 0.8);    // warm white
     vec3 gold      = vec3(1.0, 0.75, 0.2);     // gold
-    vec3 softPink  = vec3(0.992, 0.682, 0.761); // #FDAEC2 — pastel pink aura
+    vec3 warmPink  = vec3(1.0, 0.35, 0.5);     // warm pink
 
-    vec3 color = softPink;
+    vec3 color = warmPink;
     color = mix(color, gold,      smoothstep(0.15, 0.06, d));
     color = mix(color, whiteCore, smoothstep(0.04, 0.0, d));
 
@@ -694,9 +692,9 @@ const bridgeFragment = /* glsl */ `
 
 
     //change
-    // gl_FragColor = vec4(color * glow * 0.8, alpha * 0.6);
+    gl_FragColor = vec4(color * glow * 0.8, alpha * 0.6);
     // to
-    gl_FragColor = vec4(color * glow * 0.8, alpha * 0.5);
+    // gl_FragColor = vec4(color * glow * 0.25, alpha * 0.2);
 
     #include <colorspace_fragment>
   }
@@ -725,19 +723,17 @@ const coreFragment = /* glsl */ `
     float gasNoise = noise(centered * 6.0 - vec2(uTime * 0.5, uTime * 0.5));
     float d = dist + gasNoise * 0.01;
 
-    // Hot core palette (outside → inside) — with soft pink aura
-    vec3 softPink  = vec3(0.992, 0.682, 0.761);   // #FDAEC2 — pastel pink aura
+    // Hot core palette (outside → inside)
     vec3 whiteCore = vec3(1.0, 1.0, 0.9);
     vec3 sunYellow = vec3(1.0, 0.80, 0.1);
+    vec3 neonPink  = vec3(0.95, 0.15, 0.45);
 
-    // Wide pink aura (d=0.15 → 0.06) before it transitions to yellow
-    vec3 color = softPink;
+    vec3 color = neonPink;
     color = mix(color, sunYellow, smoothstep(0.08, 0.04, d));
     color = mix(color, whiteCore, smoothstep(0.03, 0.00, d));
 
-    // change size — extended to 0.15 so pink aura (d=0.06 to 0.15) is visible
-    float alpha = smoothstep(0.15, 0.01, d);
-    // float alpha = smoothstep(0.12, 0.01, d);
+    // Tight falloff — kills everything past radius 0.12
+    float alpha = smoothstep(0.12, 0.01, d);
 
     gl_FragColor = vec4(color * 1.3, alpha);
 
