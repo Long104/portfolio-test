@@ -93,32 +93,7 @@ function createBlobTexture(): THREE.Texture {
   return tex;
 }
 
-// Soft bokeh circle — out-of-focus lens circle with bright rim
-function createBokehTexture(): THREE.Texture {
-  const size = 128;
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext("2d")!;
-  const c = size / 2;
-
-  // Dark center (out of focus — light doesn't converge at center)
-  const grad = ctx.createRadialGradient(c, c, 0, c, c, c * 0.75);
-  grad.addColorStop(0, "rgba(255,255,255,0.0)");
-  grad.addColorStop(0.3, "rgba(255,255,255,0.0)");
-  grad.addColorStop(0.6, "rgba(255,255,255,0.15)");
-  grad.addColorStop(0.78, "rgba(255,255,255,0.5)");
-  grad.addColorStop(0.88, "rgba(255,255,255,0.35)");
-  grad.addColorStop(1.0, "rgba(255,255,255,0.0)");
-  ctx.fillStyle = grad;
-  ctx.beginPath();
-  ctx.arc(c, c, c * 0.75, 0, Math.PI * 2);
-  ctx.fill();
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.needsUpdate = true;
-  return tex;
-}
+// 15-stop depth gradient baked into a 256×1 LUT.
 // Edit colors here — no shader changes ever needed.
 function createGradientLUT(): THREE.Texture {
   const w = 256;
@@ -808,143 +783,7 @@ const coreFragment = /* glsl */ `
 `;
 
 // ==========================================
-// 3. BOKEH + SPEED LINE SHADERS
-// ==========================================
-
-// Layer E: Bokeh — slow-drifting soft circles (normal alpha, behind particles)
-const bokehVertex = /* glsl */ `
-  uniform float uTime;
-  uniform float uSpeed;
-  attribute vec3 aInitialPos;
-  attribute vec3 aRandoms;
-
-  varying vec2 vUv;
-  varying float vDepth;
-
-  void main() {
-    vUv = uv;
-    vec3 pos = aInitialPos;
-
-    // Very slow drift — NOT the fast Z-suction of particles
-    // Gentle random walk using sin/cos with individual phase offsets
-    float phase = aRandoms.y * 6.28;
-    pos.x += sin(uTime * 0.08 + phase) * 2.0;
-    pos.y += cos(uTime * 0.06 + phase * 1.3) * 2.0;
-    pos.z += uTime * uSpeed * (0.3 + aRandoms.x * 0.2);
-    pos.z = mod(pos.z + 20.0, 30.0) - 20.0;
-
-    vDepth = clamp((pos.z + 20.0) / 25.0, 0.0, 1.0);
-
-    // Large, soft sizing — bokeh circles are big
-    float scale = (0.8 + aRandoms.x * 2.0) * (0.3 + pow(vDepth, 2.0) * 4.0);
-
-    vec4 mvPos = modelViewMatrix * vec4(pos + position * scale, 1.0);
-    gl_Position = projectionMatrix * mvPos;
-  }
-`;
-
-const bokehFragment = /* glsl */ `
-  uniform sampler2D uTexBokeh;
-  varying vec2 vUv;
-  varying float vDepth;
-
-  void main() {
-    vec4 texColor = texture2D(uTexBokeh, vUv);
-
-    // Teal/cyan tint — matches background, subtle and dreamy
-    vec3 color = mix(
-      vec3(0.04, 0.55, 0.50),   // teal (far away)
-      vec3(0.05, 0.85, 0.68),   // mint glow (close)
-      vDepth
-    );
-
-    // Very low opacity — bokeh should whisper, not shout
-    float alpha = texColor.a * 0.18;
-
-    // Fade at camera lens
-    float alphaFade = smoothstep(1.0, 0.85, vDepth);
-    gl_FragColor = vec4(color, alpha * alphaFade);
-
-    #include <colorspace_fragment>
-  }
-`;
-
-// Layer F: Speed Lines — radial burst streaks shooting outward from center (additive)
-const speedLineVertex = /* glsl */ `
-  uniform float uTime;
-  uniform float uSpeed;
-  attribute vec3 aInitialPos;
-  attribute vec3 aRandoms;
-
-  varying vec2 vUv;
-  varying float vDepth;
-  varying float vColorMix;
-
-  void main() {
-    vUv = uv;
-    vColorMix = aRandoms.x;
-    vec3 pos = aInitialPos;
-
-    // Each line has a fixed angle but its radius grows outward over time
-    float angle = aRandoms.y * 6.2832;  // fixed angle per instance
-    float speed = uSpeed * (0.8 + aRandoms.x * 0.6);
-
-    // Radius expands outward, wraps around when it goes too far
-    float radius = aRandoms.z * 12.0;   // initial radius (spread out)
-    radius += uTime * speed * 2.0;       // grow outward
-    radius = mod(radius, 14.0);          // wrap — reappears at center when far
-
-    // Convert polar to cartesian
-    pos.x = cos(angle) * radius;
-    pos.y = sin(angle) * radius;
-
-    // Z for depth scaling (closer to camera = bigger and faster)
-    pos.z = mod(uTime * speed * 3.0 + aRandoms.z * 30.0, 30.0) - 30.0;
-    vDepth = clamp((pos.z + 30.0) / 30.0, 0.0, 1.0);
-
-    // Elongated along radial direction — thin width, long length
-    float scale = 0.1 + pow(vDepth, 2.0) * 1.5;
-    vec3 transformed = position;
-
-    // Stretch along the radial direction (direction from center to this point)
-    vec2 dir = normalize(pos.xy + vec2(0.001));
-    float stretch = 1.0 + vDepth * 6.0;  // longer when closer to camera
-    transformed.xy += dir * dot(transformed.xy, dir) * (stretch - 1.0);
-
-    vec4 mvPos = modelViewMatrix * vec4(pos + transformed * scale, 1.0);
-    gl_Position = projectionMatrix * mvPos;
-  }
-`;
-
-const speedLineFragment = /* glsl */ `
-  varying vec2 vUv;
-  varying float vDepth;
-  varying float vColorMix;
-
-  void main() {
-    // Soft streak alpha — brightest at center of line, fades at edges
-    float alpha = smoothstep(0.5, 0.1, abs(vUv.y - 0.5));
-
-    // Fade at far distance and camera lens
-    float depthFade = smoothstep(0.0, 0.3, vDepth) * smoothstep(1.0, 0.85, vDepth);
-
-    // Warm color mix — yellow to pink, matching core palette
-    vec3 color = mix(
-      vec3(1.0, 0.88, 0.3),    // warm yellow
-      vec3(1.0, 0.45, 0.6),    // soft pink
-      vColorMix
-    );
-
-    alpha *= depthFade * 0.4;  // subtle — streaks whisper, not scream
-
-    gl_FragColor = vec4(color * alpha, alpha);
-
-    #include <colorspace_fragment>
-  }
-`;
-
-// ==========================================
-// 4. SCENE COMPONENT
+// 3. SCENE COMPONENT
 // ==========================================
 
 // --- Adaptive perf tier (replaces hardcoded counts) ---
@@ -970,10 +809,6 @@ const PAINT_COUNT =
   PERF_TIER === "mobile" ? 2000 : PERF_TIER === "low" ? 3500 : 5500;
 const FLARE_COUNT =
   PERF_TIER === "mobile" ? 1000 : PERF_TIER === "low" ? 1500 : 3000;
-const BOKEH_COUNT =
-  PERF_TIER === "mobile" ? 30 : PERF_TIER === "low" ? 50 : 80;
-const SPEEDLINE_COUNT =
-  PERF_TIER === "mobile" ? 80 : PERF_TIER === "low" ? 150 : 250;
 const MAX_DPR = PERF_TIER === "mobile" ? 1 : PERF_TIER === "low" ? 1.25 : 1.5;
 
 function generateInstanceData(count: number, maxRadius: number) {
@@ -999,7 +834,6 @@ function KiraKiraVortex() {
   const petalTex = useMemo(() => createPetalTexture(), []);
   const blobTex = useMemo(() => createBlobTexture(), []);
   const gradLUT = useMemo(() => createGradientLUT(), []);
-  const bokehTex = useMemo(() => createBokehTexture(), []);
   const noiseTex = useMemo(() => createNoiseTexture(), []); // unused by glow shaders (inline noise) — kept for potential future use
 
   // --- Materials (raw ShaderMaterial — no extend/TS hacks) ---
@@ -1124,40 +958,6 @@ function KiraKiraVortex() {
     [],
   );
 
-  // E: Bokeh — slow-drifting soft circles
-  const bokehMat = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        uniforms: {
-          uTime: { value: 0 },
-          uSpeed: { value: 0.05 },
-          uTexBokeh: { value: bokehTex },
-        },
-        vertexShader: bokehVertex,
-        fragmentShader: bokehFragment,
-        transparent: true,
-        depthWrite: false,
-      }),
-    [bokehTex],
-  );
-
-  // F: Speed Lines — radial burst streaks
-  const speedLineMat = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        uniforms: {
-          uTime: { value: 0 },
-          uSpeed: { value: 0.8 },
-        },
-        vertexShader: speedLineVertex,
-        fragmentShader: speedLineFragment,
-        transparent: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-      }),
-    [],
-  );
-
   // --- Geometry with instanced attributes ---
   const backdropGeo = useMemo(() => new THREE.PlaneGeometry(2, 2), []);
 
@@ -1177,29 +977,13 @@ function KiraKiraVortex() {
     return geo;
   }, []);
 
-  const bokehGeo = useMemo(() => {
-    const { pos, rand } = generateInstanceData(BOKEH_COUNT, 10.0);
-    const geo = new THREE.PlaneGeometry(1.0, 1.0);
-    geo.setAttribute("aInitialPos", new THREE.InstancedBufferAttribute(pos, 3));
-    geo.setAttribute("aRandoms", new THREE.InstancedBufferAttribute(rand, 3));
-    return geo;
-  }, []);
-
-  const speedLineGeo = useMemo(() => {
-    const { pos, rand } = generateInstanceData(SPEEDLINE_COUNT, 1.0);
-    const geo = new THREE.PlaneGeometry(0.08, 0.8);
-    geo.setAttribute("aInitialPos", new THREE.InstancedBufferAttribute(pos, 3));
-    geo.setAttribute("aRandoms", new THREE.InstancedBufferAttribute(rand, 3));
-    return geo;
-  }, []);
-
   // --- Dispose all GPU resources on unmount (prevents leaks on HMR/route change) ---
   useEffect(() => {
     return () => {
-      [starTex, petalTex, blobTex, gradLUT, bokehTex, noiseTex].forEach((t) =>
+      [starTex, petalTex, blobTex, gradLUT, noiseTex].forEach((t) =>
         t.dispose(),
       );
-      [backdropGeo, paintGeo, flareGeo, bokehGeo, speedLineGeo].forEach((g) => g.dispose());
+      [backdropGeo, paintGeo, flareGeo].forEach((g) => g.dispose());
       [
         backdropMat,
         paintMat,
@@ -1208,8 +992,6 @@ function KiraKiraVortex() {
         raysMat,
         bridgeMat,
         coreMat,
-        bokehMat,
-        speedLineMat,
       ].forEach((m) => m.dispose());
     };
   }, [
@@ -1217,13 +999,10 @@ function KiraKiraVortex() {
     petalTex,
     blobTex,
     gradLUT,
-    bokehTex,
     noiseTex,
     backdropGeo,
     paintGeo,
     flareGeo,
-    bokehGeo,
-    speedLineGeo,
     backdropMat,
     paintMat,
     flareMat,
@@ -1231,8 +1010,6 @@ function KiraKiraVortex() {
     raysMat,
     bridgeMat,
     coreMat,
-    bokehMat,
-    speedLineMat,
   ]);
 
   // --- Animation loop ---
@@ -1240,8 +1017,6 @@ function KiraKiraVortex() {
     const t = state.clock.getElapsedTime();
     paintMat.uniforms.uTime.value = t;
     flareMat.uniforms.uTime.value = t;
-    bokehMat.uniforms.uTime.value = t;
-    speedLineMat.uniforms.uTime.value = t;
     sunMat.uniforms.uTime.value = t;
     raysMat.uniforms.uTime.value = t;
     bridgeMat.uniforms.uTime.value = t;
@@ -1254,44 +1029,32 @@ function KiraKiraVortex() {
     backdropMat.uniforms.uAspect.value = aspect;
   });
 
-return (
+  return (
     <>
-      {/* 1. Backdrop (Far distance void) */}
-      <mesh geometry={backdropGeo} material={backdropMat} renderOrder={-5} />
+      {/* Layer A: Static fullscreen backdrop */}
+      <mesh geometry={backdropGeo} material={backdropMat} renderOrder={-1} />
 
-      {/* 2. Fullscreen Glow Clouds & Sun Layers (Moved BEHIND the particles) */}
-      <mesh geometry={backdropGeo} material={sunMat} renderOrder={-4} />
-      <mesh geometry={backdropGeo} material={raysMat} renderOrder={-3} />
-      <mesh geometry={backdropGeo} material={bridgeMat} renderOrder={-2} />
-      <mesh geometry={backdropGeo} material={coreMat} renderOrder={-1} />
-
-      {/* E: Bokeh — soft drifting circles (behind particles) */}
+      {/* Layer B: Fluid particles (normal alpha blending) */}
       <instancedMesh
-        args={[bokehGeo, bokehMat, BOKEH_COUNT]}
+        args={[paintGeo, paintMat, PAINT_COUNT]}
         frustumCulled={false}
-        renderOrder={0}
       />
 
-      {/* 3. Fluid Particles & Water Bubbles (Now clipping on top of the clouds seamlessly) */}
-      <instancedMesh 
-        args={[paintGeo, paintMat, PAINT_COUNT]} 
-        frustumCulled={false} 
-        renderOrder={1}
-      />
-
-      {/* 4. Saturated Star Flares (Drawn on the absolute top layer) */}
-      <instancedMesh 
-        args={[flareGeo, flareMat, FLARE_COUNT]} 
-        frustumCulled={false} 
-        renderOrder={2}
-      />
-
-      {/* F: Speed Lines — radial burst streaks (in front of everything) */}
+      {/* Layer C: Star flares (additive blending) */}
       <instancedMesh
-        args={[speedLineGeo, speedLineMat, SPEEDLINE_COUNT]}
+        args={[flareGeo, flareMat, FLARE_COUNT]}
         frustumCulled={false}
-        renderOrder={3}
       />
+
+      {/* Layer D: Four stacked fullscreen glow meshes (additive)
+          D4 = big pastel sun circle (renderOrder 1)
+          D3 = anisotropic light rays (renderOrder 2)
+          D2 = bridge glow connecting core to sun (renderOrder 3)
+          D1 = tight ignition core (renderOrder 4) */}
+      <mesh geometry={backdropGeo} material={sunMat} renderOrder={1} />
+      <mesh geometry={backdropGeo} material={raysMat} renderOrder={2} />
+      <mesh geometry={backdropGeo} material={bridgeMat} renderOrder={3} />
+      <mesh geometry={backdropGeo} material={coreMat} renderOrder={4} />
     </>
   );
 }
