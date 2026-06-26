@@ -47,6 +47,28 @@ function createStarTexture(): THREE.Texture {
   return tex;
 }
 
+function createPetalTexture(): THREE.Texture {
+  const size = 128;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  const c = size / 2;
+
+  // Soft radial alpha mask
+  const grad = ctx.createRadialGradient(c, c, 0, c, c, c * 0.65);
+  grad.addColorStop(0, "rgba(255,255,255,1)");
+  grad.addColorStop(0.4, "rgba(255,255,255,0.8)");
+  grad.addColorStop(0.7, "rgba(255,255,255,0.3)");
+  grad.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  return tex;
+}
+
 function createBlobTexture(): THREE.Texture {
   const size = 128;
   const canvas = document.createElement("canvas");
@@ -157,14 +179,8 @@ function createGradientLUT(): THREE.Texture {
     // [0.857, "#01141C"], // nearBlack
     [0.929, "#013D50"], // darkForest
     [0.945, "#072D42"], // darkJade
+    [0.929, "#000A10"], // almostBlack
     [1.0, "#000508"], // deepBlack
-
-// [0.857, "#00161d"], // deepBlue
-//     // [0.857, "#01141C"], // nearBlack
-//     [0.929, "#013D50"], // darkForest
-//     [0.945, "#072D42"], // darkJade
-//     [0.929, "#000A10"], // almostBlack
-//     [1.0, "#000508"], // deepBlack
 
 // •	Slightly Darker: [0.900, "#013b4c"], // deeperBlue
 // •	Much Darker (Midnight Teal): [0.950, "#002b38"], // midnightTeal
@@ -291,15 +307,15 @@ const particleVertex = /* glsl */ `
 `;
 
 const particleFragment = /* glsl */ `
+  uniform sampler2D uTexPetal;
   uniform sampler2D uTexBlob;
   uniform sampler2D uGradLUT;
   varying vec2 vUv;
   varying float vType;
   varying float vDepth;
 
-
   void main() {
-    vec4 texColor = vec4(1.0);
+    vec4 texColor;
     vec3 finalColor;
 
     if (vType < 0.5) {
@@ -438,11 +454,6 @@ const sunFragment = /* glsl */ `
     vec2 centered = vUv - vec2(0.5);
     centered.x *= uAspect;
     float dist = length(centered);
-
-    // Early out — skip expensive FBM for pixels outside sun radius
-    float maxAlpha = smoothstep(0.42, 0.06, dist) * 0.2;
-    if (maxAlpha < 0.001) discard;
-
     float angle = atan(centered.y, centered.x);
 
     // Fluid gas noise — FBM for rich, layered turbulence
@@ -491,14 +502,11 @@ const raysFragment = /* glsl */ `
     vec2 centered = vUv - vec2(0.5);
     centered.x *= uAspect;
     float dist = length(centered);
-
-    // Early out — rays only exist within radius 0.42
-    if (dist > 0.42) discard;
-
     float angle = atan(centered.y, centered.x);
 
     // Slow rotation — barely perceptible drift
     float a = angle + uTime * 0.03;
+
     // Primary rays (6) + secondary rays (13) — pow sharpens to thin streaks
     float rays = pow(0.5 + 0.5 * sin(a * 6.0), 8.0);
     rays += pow(0.5 + 0.5 * sin(a * 13.0 + 1.5), 16.0) * 0.4;
@@ -548,9 +556,6 @@ const bridgeFragment = /* glsl */ `
     centered.x *= uAspect;
     float dist = length(centered);
 
-    // Early out — bridge only exists within radius 0.25
-    if (dist > 0.25) discard;
-
     float gasNoise = noise(centered * 4.0 - vec2(uTime * 0.2));
     float d = dist + gasNoise * 0.012;
 
@@ -593,9 +598,6 @@ const coreFragment = /* glsl */ `
     vec2 centered = vUv - vec2(0.5);
     centered.x *= uAspect;
     float dist = length(centered);
-
-    // Early out — core only exists within radius 0.15
-    if (dist > 0.15) discard;
 
     float gasNoise = noise(centered * 6.0 - vec2(uTime * 0.5, uTime * 0.5));
     float d = dist + gasNoise * 0.01;
@@ -668,6 +670,7 @@ function generateInstanceData(count: number, maxRadius: number) {
 function KiraKiraVortex() {
   // --- Procedural textures ---
   const starTex = useMemo(() => createStarTexture(), []);
+  const petalTex = useMemo(() => createPetalTexture(), []);
   const blobTex = useMemo(() => createBlobTexture(), []);
   const gradLUT = useMemo(() => createGradientLUT(), []);
 
@@ -692,6 +695,7 @@ function KiraKiraVortex() {
         uniforms: {
           uTime: { value: 0 },
           uSpeed: { value: 0.15 },
+          uTexPetal: { value: petalTex },
           uTexBlob: { value: blobTex },
           uGradLUT: { value: gradLUT },
         },
@@ -700,7 +704,7 @@ function KiraKiraVortex() {
         transparent: true,
         depthWrite: false,
       }),
-    [blobTex, gradLUT],
+    [petalTex, blobTex, gradLUT],
   );
 
   const flareMat = useMemo(
@@ -814,7 +818,7 @@ function KiraKiraVortex() {
   // --- Dispose all GPU resources on unmount (prevents leaks on HMR/route change) ---
   useEffect(() => {
     return () => {
-      [starTex, blobTex, gradLUT].forEach((t) =>
+      [starTex, petalTex, blobTex, gradLUT].forEach((t) =>
         t.dispose(),
       );
       [backdropGeo, paintGeo, flareGeo].forEach((g) => g.dispose());
@@ -830,6 +834,7 @@ function KiraKiraVortex() {
     };
   }, [
     starTex,
+    petalTex,
     blobTex,
     gradLUT,
     backdropGeo,
