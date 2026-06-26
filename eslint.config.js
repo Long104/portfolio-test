@@ -19,4 +19,14 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  // Three.js / R3F files mutate shader uniforms per-frame in useFrame.
+  // React Compiler's immutability + refs-during-render rules are
+  // fundamentally incompatible with this imperative pattern.
+  {
+    files: ['src/Scene.tsx'],
+    rules: {
+      'react-hooks/immutability': 'off',
+      'react-hooks/refs': 'off',
+    },
+  },
 ])
