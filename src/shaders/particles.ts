@@ -1,5 +1,6 @@
 // Layer B: Fluid particles (petals + blobs, normal alpha blending)
-// Audio: mid frequencies only — particles lag behind the beat (smoothing 0.20)
+// Audio: per-instance twinkle only — ~30% of petals flash on mid hits,
+// rest stay completely still. No uniform reactivity.
 export const particleVertex = /* glsl */ `
   uniform float uTime;
   uniform float uSpeed;
@@ -19,7 +20,7 @@ export const particleVertex = /* glsl */ `
     vRand = aRandoms.x;
     vec3 pos = aInitialPos;
 
-    // Z-Axis flow — constant speed, no audio speed boost (prevents lurching)
+    // Z-Axis flow — constant speed, no audio
     pos.z += uTime * uSpeed * (1.2 + aRandoms.x * 0.4);
     pos.z = mod(pos.z + 60.0, 70.0) - 60.0;
 
@@ -27,19 +28,16 @@ export const particleVertex = /* glsl */ `
     float r = length(pos.xy);
     if (r < 5.0) pos.xy = normalize(pos.xy + 0.001) * (5.0 + aRandoms.x * 3.0);
 
-    // Liquid water-flow math — mid gently sways the wave amplitude
-    float waveAmp = 0.5 + uMid * 0.5;
-    float wave = sin(pos.z * 0.8 + uTime + aRandoms.y * 6.28) * waveAmp;
+    // Liquid water-flow math — constant amplitude, no audio
+    float wave = sin(pos.z * 0.8 + uTime + aRandoms.y * 6.28) * 0.5;
     pos.x += cos(wave) * 0.5;
     pos.y += sin(wave) * 0.5;
 
     vDepth = pow(clamp((pos.z + 60.0) / 65.0, 0.0, 1.0), 1.6);
 
-    // Scale: microscopic far away, massive near camera
-    // Mid gives a subtle bloom — particles "breathe" with the music
-    float audioScale = 1.0 + uMid * 0.4;
+    // Scale — constant, no uniform audio bloom
     float baseScale = (vType < 0.5) ? 1.0 : 2.5;
-    float scale = baseScale * (0.2 + vDepth * vDepth * vDepth * 15.0) * audioScale;
+    float scale = baseScale * (0.2 + vDepth * vDepth * vDepth * 15.0);
 
     vMidPulse = uMid;
 
@@ -69,26 +67,27 @@ export const particleFragment = /* glsl */ `
     vec4 texColor;
     vec3 finalColor;
 
+    // Per-instance twinkle: ~30% react to mid, 70% stay completely still
+    float reactive = smoothstep(0.6, 0.85, vRand);
+    float twinkle = reactive * vMidPulse;
+
     if (vType < 0.5) {
       // Ghost-teal petals — semi-transparent liquid glass
       texColor = texture2D(uTexPetal, vUv);
       finalColor = vec3(0.106, 0.737, 0.698); // #1BBCB2
-      // #51C3C4
-      // #32F9E6
       texColor.a *= 0.25;
-      // Twinkle: ~30% of petals flash brighter on mid hits
-      float twinkle = smoothstep(0.6, 0.85, vRand) * vMidPulse;
-      texColor.a *= 1.0 + twinkle * 0.4;
-      finalColor *= 1.0 + twinkle * 0.2;
+      // ONLY reactive petals flash — rest stay at baseline
+      texColor.a *= 1.0 + twinkle * 0.8;
+      finalColor *= 1.0 + twinkle * 0.4;
     } else {
-      // Dark framing blobs — color from baked 15-stop depth gradient LUT.
+      // Dark framing blobs — color from baked depth gradient LUT
       texColor = texture2D(uTexBlob, vUv);
       finalColor = texture2D(uGradLUT, vec2(vDepth, 0.5)).rgb;
-      // Subtle mid-driven brightness — barely perceptible color lift
-      finalColor *= 1.0 + vMidPulse * 0.15;
+      // ONLY reactive blobs brighten — rest stay at baseline
+      finalColor *= 1.0 + twinkle * 0.3;
     }
 
-    // Proximity fade — disappear at camera lens to prevent screen blocking
+    // Proximity fade
     float alphaFade = smoothstep(1.0, 0.85, vDepth);
     gl_FragColor = vec4(finalColor, texColor.a * alphaFade);
 

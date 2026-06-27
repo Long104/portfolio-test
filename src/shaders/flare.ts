@@ -1,5 +1,6 @@
 // Layer C: Radiant star flares (additive blending)
-// Audio: treble only — ~40% of flares flash bright, rest subtle sparkle
+// Audio: per-instance twinkle only — ~40% of flares flash on treble,
+// rest stay completely still. No uniform reactivity.
 export const flareVertex = /* glsl */ `
   uniform float uTime;
   uniform float uSpeed;
@@ -16,7 +17,7 @@ export const flareVertex = /* glsl */ `
     vColorMix = aRandoms.x;
     vec3 pos = aInitialPos;
 
-    // Constant speed — no audio lurching
+    // Constant speed — no audio
     pos.z += uTime * uSpeed * (1.2 + aRandoms.x * 0.5);
     pos.z = mod(pos.z + 60.0, 70.0) - 60.0;
 
@@ -24,12 +25,12 @@ export const flareVertex = /* glsl */ `
     if (r < 4.0) pos.xy = normalize(pos.xy + 0.001) * (4.0 + aRandoms.x * 2.0);
 
     vDepth = clamp((pos.z + 60.0) / 65.0, 0.0, 1.0);
-    // Per-instance scale: ~40% of flares react strongly, rest subtle
-    float flareReactive = smoothstep(0.6, 0.85, vColorMix);
-    float audioScale = 1.0 + uTreble * (0.1 + flareReactive * 0.3);
+    // Per-instance: reactive flares scale up, non-reactive stay constant
+    float reactive = smoothstep(0.6, 0.85, vColorMix);
+    float audioScale = 1.0 + uTreble * reactive * 0.4;
     float scale = 0.5 * (0.2 + vDepth * vDepth * sqrt(vDepth) * 6.0) * audioScale;
 
-    // Radial forward-motion streak — constant stretch, no audio
+    // Radial forward-motion streak
     vec3 transformed = position;
     vec2 dir = normalize(pos.xy + 0.001);
     float stretch = 1.0 + (vDepth * 3.0);
@@ -69,9 +70,9 @@ export const flareFragment = /* glsl */ `
     index = clamp(index, 0, 9);
 
     vec3 glow = colors[index];
-    // Per-instance: ~40% of flares flash bright, rest get subtle sparkle
-    float flareReactive = smoothstep(0.6, 0.85, vColorMix);
-    glow *= 1.0 + vTreblePulse * (0.15 + flareReactive * 0.5);
+    // ONLY reactive flares flash — 60% stay at baseline color
+    float reactive = smoothstep(0.6, 0.85, vColorMix);
+    glow *= 1.0 + vTreblePulse * reactive * 0.6;
 
     float alphaFade = smoothstep(1.0, 0.80, vDepth);
     gl_FragColor = vec4(glow, texColor.a * alphaFade);
