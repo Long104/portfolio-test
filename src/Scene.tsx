@@ -278,9 +278,9 @@ const backdropFragment = /* glsl */ `
     vec3 mint     = vec3(0.047, 0.89, 0.714); // #0ce3b6 — teal kicks in further out
     vec3 teal     = vec3(0.004, 0.165, 0.18); // #012a2e — outer tunnel
 
-    vec3 color = mix(darkPink, midAura, smoothstep(0.0, 0.15, dist));
-    color = mix(color, mint, smoothstep(0.15, 0.35, dist));
-    if (dist > 0.40) color = mix(color, teal, smoothstep(0.40, 0.70, dist));
+    vec3 color = mix(darkPink, midAura, smoothstep(0.0, 0.30, dist));
+    color = mix(color, mint, smoothstep(0.30, 0.55, dist));
+    if (dist > 0.60) color = mix(color, teal, smoothstep(0.60, 1.0, dist));
 
     gl_FragColor = vec4(color, 1.0);
 
@@ -659,11 +659,11 @@ const coreFragment = /* glsl */ `
     color = mix(color, sunYellow, smoothstep(0.10, 0.03, d));
     color = mix(color, whiteCore, smoothstep(0.01, 0.00, d));
 
-    float alpha = smoothstep(0.15, 0.01, d);
+    float alpha = smoothstep(0.17, 0.01, d);
 
     if (alpha < 0.001) discard;
 
-    gl_FragColor = vec4(color * 1.6, alpha);
+    gl_FragColor = vec4(color * 1.3, alpha);
 
     #include <colorspace_fragment>
   }
