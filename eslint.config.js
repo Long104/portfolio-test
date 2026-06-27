@@ -23,7 +23,7 @@ export default defineConfig([
   // React Compiler's immutability + refs-during-render rules are
   // fundamentally incompatible with this imperative pattern.
   {
-    files: ['src/Scene.tsx'],
+    files: ['src/KiraKiraVortex.tsx'],
     rules: {
       'react-hooks/immutability': 'off',
       'react-hooks/refs': 'off',
