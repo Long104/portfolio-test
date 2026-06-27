@@ -1,5 +1,5 @@
 // Layer B: Fluid particles (petals + blobs, normal alpha blending)
-// Audio: mid frequencies only — particles lag behind the beat (smoothing 0.12)
+// Audio: mid frequencies only — particles lag behind the beat (smoothing 0.20)
 export const particleVertex = /* glsl */ `
   uniform float uTime;
   uniform float uSpeed;
@@ -11,10 +11,12 @@ export const particleVertex = /* glsl */ `
   varying float vType;
   varying float vDepth;
   varying float vMidPulse;
+  varying float vRand;
 
   void main() {
     vUv = uv;
     vType = aRandoms.z;
+    vRand = aRandoms.x;
     vec3 pos = aInitialPos;
 
     // Z-Axis flow — constant speed, no audio speed boost (prevents lurching)
@@ -61,6 +63,7 @@ export const particleFragment = /* glsl */ `
   varying float vType;
   varying float vDepth;
   varying float vMidPulse;
+  varying float vRand;
 
   void main() {
     vec4 texColor;
@@ -70,7 +73,13 @@ export const particleFragment = /* glsl */ `
       // Ghost-teal petals — semi-transparent liquid glass
       texColor = texture2D(uTexPetal, vUv);
       finalColor = vec3(0.106, 0.737, 0.698); // #1BBCB2
-      texColor.a *= 0.18;
+      // #51C3C4
+      // #32F9E6
+      texColor.a *= 0.25;
+      // Twinkle: ~30% of petals flash brighter on mid hits
+      float twinkle = smoothstep(0.6, 0.85, vRand) * vMidPulse;
+      texColor.a *= 1.0 + twinkle * 0.4;
+      finalColor *= 1.0 + twinkle * 0.2;
     } else {
       // Dark framing blobs — color from baked 15-stop depth gradient LUT.
       texColor = texture2D(uTexBlob, vUv);
