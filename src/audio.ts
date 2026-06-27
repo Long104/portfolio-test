@@ -45,8 +45,8 @@ export class AudioEngine {
     this.gainNode.connect(this.ctx.destination);
 
     // Load audio file
-    const resp = await fetch("/music.mp3");
-    if (!resp.ok) throw new Error("Failed to load /music.mp3 — place your MP3 in public/");
+    const resp = await fetch("/far_beyond-the-stars.mp3");
+    if (!resp.ok) throw new Error("Failed to load /far_beyond-the-stars.mp3 — place your MP3 in public/");
     const arrayBuffer = await resp.arrayBuffer();
     this._audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
   }
