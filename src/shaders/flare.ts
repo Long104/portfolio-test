@@ -1,42 +1,40 @@
 // Layer C: Radiant star flares (additive blending)
+// Audio: treble only — flares sparkle gently on high frequencies (smoothing 0.35)
 export const flareVertex = /* glsl */ `
   uniform float uTime;
   uniform float uSpeed;
-  uniform float uBass;
   uniform float uTreble;
-  uniform float uAudioLevel;
   attribute vec3 aInitialPos;
   attribute vec3 aRandoms;
   varying vec2 vUv;
   varying float vDepth;
   varying float vColorMix;
-  varying float vFlarePulse;
+  varying float vTreblePulse;
 
   void main() {
     vUv = uv;
     vColorMix = aRandoms.x;
     vec3 pos = aInitialPos;
 
-    // Speed — bass accelerates the vortex pull
-    float speedMult = 1.0 + uBass * 1.2;
-    pos.z += uTime * uSpeed * (1.2 + aRandoms.x * 0.5) * speedMult;
+    // Constant speed — no audio lurching
+    pos.z += uTime * uSpeed * (1.2 + aRandoms.x * 0.5);
     pos.z = mod(pos.z + 60.0, 70.0) - 60.0;
 
     float r = length(pos.xy);
     if (r < 4.0) pos.xy = normalize(pos.xy + 0.001) * (4.0 + aRandoms.x * 2.0);
 
     vDepth = clamp((pos.z + 60.0) / 65.0, 0.0, 1.0);
-    // Scale — bass makes flares bloom, treble adds sparkle
-    float audioScale = 1.0 + uBass * 0.7 + uTreble * 0.5;
+    // Treble gives subtle scale lift — gentle sparkle, not a bloom
+    float audioScale = 1.0 + uTreble * 0.15;
     float scale = 0.5 * (0.2 + vDepth * vDepth * sqrt(vDepth) * 6.0) * audioScale;
 
-    // Radial forward-motion streak — audio level stretches the streaks
+    // Radial forward-motion streak — constant stretch, no audio
     vec3 transformed = position;
     vec2 dir = normalize(pos.xy + 0.001);
-    float stretch = 1.0 + (vDepth * 3.0) + uAudioLevel * 2.0;
+    float stretch = 1.0 + (vDepth * 3.0);
     transformed.xy += dir * dot(transformed.xy, dir) * (stretch - 1.0);
 
-    vFlarePulse = uTreble;
+    vTreblePulse = uTreble;
 
     vec4 mvPos = modelViewMatrix * vec4(pos + transformed * scale, 1.0);
     gl_Position = projectionMatrix * mvPos;
@@ -48,7 +46,7 @@ export const flareFragment = /* glsl */ `
   varying vec2 vUv;
   varying float vDepth;
   varying float vColorMix;
-  varying float vFlarePulse;
+  varying float vTreblePulse;
 
   void main() {
      vec4 texColor = texture2D(uTexStar, vUv);
@@ -70,8 +68,8 @@ export const flareFragment = /* glsl */ `
     index = clamp(index, 0, 9);
 
     vec3 glow = colors[index];
-    // Treble pulse — flares sparkle brighter on high frequencies
-    glow *= 1.0 + vFlarePulse * 0.8;
+    // Treble adds gentle sparkle — subtle brightness lift, not a flash
+    glow *= 1.0 + vTreblePulse * 0.2;
 
     float alphaFade = smoothstep(1.0, 0.80, vDepth);
     gl_FragColor = vec4(glow, texColor.a * alphaFade);

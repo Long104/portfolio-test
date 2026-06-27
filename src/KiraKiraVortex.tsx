@@ -40,6 +40,19 @@ export default function KiraKiraVortex() {
   // --- Audio reactivity ---
   const { getData } = useAudioEngine();
 
+  // Per-layer smoothing — each visual element responds at a different speed.
+  // This creates a staggered cascade: core snaps fast, particles lag behind.
+  // Lower factor = slower response = laggy/heavier feel.
+  const smooth = useRef({
+    coreBass: 0,       // 0.50 — fast attack, the heart pulses with the kick
+    sunBass: 0,        // 0.25 — medium, sun follows bass a beat later
+    raysTreble: 0,     // 0.40 — rays shimmer with highs
+    bridgeMid: 0,      // 0.30 — bridge glows with mids
+    particlesMid: 0,   // 0.12 — laggy, particles drift behind the beat
+    flaresTreble: 0,   // 0.35 — flares sparkle on treble
+    backdropBass: 0,   // 0.08 — barely moves, void breathes slowly
+  });
+
   // --- StrictMode-safe dispose flag ---
   // In dev StrictMode, React mount→unmount→mount. The cleanup would dispose
   // GPU resources that the second mount still references. Deferring disposal
@@ -82,9 +95,7 @@ export default function KiraKiraVortex() {
           uTexPetal: { value: petalTex },
           uTexBlob: { value: blobTex },
           uGradLUT: { value: gradLUT },
-          uBass: { value: 0 },
-          uMid: { value: 0 },
-          uTreble: { value: 0 },
+          uMid: { value: 0 }, // particles follow mid only — laggy drift
         },
         vertexShader: particleVertex,
         fragmentShader: particleFragment,
@@ -101,9 +112,7 @@ export default function KiraKiraVortex() {
           uTime: { value: 0 },
           uSpeed: { value: 0.2 },
           uTexStar: { value: starTex },
-          uBass: { value: 0 },
-          uTreble: { value: 0 },
-          uAudioLevel: { value: 0 },
+          uTreble: { value: 0 }, // flares sparkle on treble only
         },
         vertexShader: flareVertex,
         fragmentShader: flareFragment,
@@ -115,16 +124,17 @@ export default function KiraKiraVortex() {
   );
 
   // MERGED GLOW: Sun + Rays + Bridge + Core in 1 pass
+  // Each sub-layer gets its own smoothed uniform for staggered response
   const glowMat = useMemo(
     () =>
       new ShaderMaterial({
         uniforms: {
           uAspect: { value: window.innerWidth / window.innerHeight },
           uTime: { value: 0 },
-          uBass: { value: 0 },
-          uMid: { value: 0 },
-          uTreble: { value: 0 },
-          uAudioLevel: { value: 0 },
+          uCoreBass: { value: 0 },    // core — fast bass
+          uSunBass: { value: 0 },     // sun — slow bass
+          uRaysTreble: { value: 0 },  // rays — treble
+          uBridgeMid: { value: 0 },   // bridge — mid
         },
         vertexShader: glowVertex,
         fragmentShader: glowFragment,
@@ -178,33 +188,45 @@ export default function KiraKiraVortex() {
   // --- Animation loop ---
   useFrame((state) => {
     const t = state.clock.getElapsedTime();
-    const audio = getData();
+    const raw = getData(); // raw frequency data from AudioEngine
+    const s = smooth.current;
+
+    // Per-layer temporal smoothing — each approaches raw value at its own speed
+    // Lower factor = more lag = heavier/slower feel
+    s.coreBass     = s.coreBass     + (raw.bass   - s.coreBass)     * 0.50;
+    s.sunBass      = s.sunBass      + (raw.bass   - s.sunBass)      * 0.25;
+    s.raysTreble   = s.raysTreble   + (raw.treble - s.raysTreble)   * 0.40;
+    s.bridgeMid    = s.bridgeMid    + (raw.mid    - s.bridgeMid)    * 0.30;
+    s.particlesMid = s.particlesMid + (raw.mid    - s.particlesMid) * 0.12;
+    s.flaresTreble = s.flaresTreble + (raw.treble - s.flaresTreble) * 0.35;
+    s.backdropBass = s.backdropBass + (raw.bass   - s.backdropBass) * 0.08;
+
     const aspect = state.size.width / state.size.height;
 
-    // Time uniforms
+    // Time
     paintMat.uniforms.uTime.value = t;
     flareMat.uniforms.uTime.value = t;
     glowMat.uniforms.uTime.value = t;
 
-    // Aspect uniforms
+    // Aspect
     glowMat.uniforms.uAspect.value = aspect;
     backdropMat.uniforms.uAspect.value = aspect;
 
-    // Audio uniforms → push to all materials
-    paintMat.uniforms.uBass.value = audio.bass;
-    paintMat.uniforms.uMid.value = audio.mid;
-    paintMat.uniforms.uTreble.value = audio.treble;
+    // Push smoothed audio → materials
+    // Glow: 4 sub-layers, each with dedicated smoothed value
+    glowMat.uniforms.uCoreBass.value = s.coreBass;
+    glowMat.uniforms.uSunBass.value = s.sunBass;
+    glowMat.uniforms.uRaysTreble.value = s.raysTreble;
+    glowMat.uniforms.uBridgeMid.value = s.bridgeMid;
 
-    flareMat.uniforms.uBass.value = audio.bass;
-    flareMat.uniforms.uTreble.value = audio.treble;
-    flareMat.uniforms.uAudioLevel.value = audio.level;
+    // Particles: laggy mid only
+    paintMat.uniforms.uMid.value = s.particlesMid;
 
-    glowMat.uniforms.uBass.value = audio.bass;
-    glowMat.uniforms.uMid.value = audio.mid;
-    glowMat.uniforms.uTreble.value = audio.treble;
-    glowMat.uniforms.uAudioLevel.value = audio.level;
+    // Flares: treble sparkle
+    flareMat.uniforms.uTreble.value = s.flaresTreble;
 
-    backdropMat.uniforms.uBass.value = audio.bass;
+    // Backdrop: barely-there bass breathing
+    backdropMat.uniforms.uBass.value = s.backdropBass;
   });
 
   return (
