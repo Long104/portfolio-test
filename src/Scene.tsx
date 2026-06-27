@@ -317,7 +317,7 @@ const particleVertex = /* glsl */ `
     pos.x += cos(wave) * 0.5;
     pos.y += sin(wave) * 0.5;
 
-    vDepth = pow(clamp((pos.z + 60.0) / 65.0, 0.0, 1.0), 1.5);
+    vDepth = pow(clamp((pos.z + 60.0) / 65.0, 0.0, 1.0), 1.6);
 
     // Scale: microscopic far away, massive near camera
     float baseScale = (vType < 0.5) ? 1.0 : 2.5;
@@ -624,7 +624,7 @@ const bridgeFragment = /* glsl */ `
   }
 `;
 
-// ── D1: CORE — turbulent sun surface with domain-warped FBM ──
+// ── D1: CORE — tight ignition point (from really-like-it.md) ──
 const coreFragment = /* glsl */ `
   uniform float uAspect;
   uniform float uTime;
@@ -634,52 +634,37 @@ const coreFragment = /* glsl */ `
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
   }
   float noise(vec2 p) {
-    vec2 i = floor(p); vec2 f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(mix(hash(i), hash(i + vec2(1,0)), u.x),
-               mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), u.x), u.y);
-  }
-  float fbm(vec2 p) {
-    float v = 0.0, a = 0.5;
-    mat2 rot = mat2(0.8, 0.6, -0.6, 0.8);   // ~37° rotation per octave
-    for (int i = 0; i < 5; ++i) {
-      v += a * noise(p);
-      p = rot * p * 2.0 + vec2(1.7, 9.2);   // scale + offset each octave
-      a *= 0.5;
-    }
-    return v;
+    vec2 i = floor(p); vec2 f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i + vec2(0.0,0.0)), hash(i + vec2(1.0,0.0)), u.x),
+               mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
   }
 
   void main() {
     vec2 centered = vUv - vec2(0.5);
     centered.x *= uAspect;
     float dist = length(centered);
+
+    // Early out — core only exists within radius 0.15
     if (dist > 0.15) discard;
 
-    // ── 3-layer domain warping = swirling convection ──
-    float warp1   = fbm(centered * 12.0 + vec2( uTime * 0.15,  uTime * 0.10));
-    float warp2   = fbm(centered * 12.0 + warp1 * 2.0 + vec2(-uTime * 0.20,  uTime * 0.12));
-    float surface = fbm(centered * 20.0 + warp2 * 1.5 + vec2( uTime * 0.30, -uTime * 0.25));
+    float gasNoise = noise(centered * 6.0 - vec2(uTime * 0.5, uTime * 0.5));
+    float d = dist + gasNoise * 0.01;
 
-    // ── Noise deforms the core edge (organic, not a perfect circle) ──
-    float d = dist + warp2 * 0.015 + surface * 0.008;
+    // Core palette (outside → inside) — yellow dominant, white pinpoint center
+    vec3 softPink  = vec3(1.0, 0.92, 0.0);
+    vec3 whiteCore = vec3(1.0, 1.0, 0.9);
+    vec3 sunYellow = vec3(1.0, 0.85, 0.15);
 
-    // ── Turbulent brightness: hot spots flare, cool spots dim ──
-    float hotspot = smoothstep(0.3, 0.7, warp2);
-    vec3 coolAmber  = vec3(1.0, 0.60, 0.05);    // convection cell edge
-    vec3 warmYellow = vec3(1.0, 0.85, 0.15);    // average surface
-    vec3 hotWhite   = vec3(1.0, 0.97, 0.85);    // bright flare-up
+    vec3 color = softPink;
+    color = mix(color, sunYellow, smoothstep(0.10, 0.03, d));
+    color = mix(color, whiteCore, smoothstep(0.01, 0.00, d));
 
-    vec3 color = coolAmber;
-    color = mix(color, warmYellow, smoothstep(0.12, 0.04, d));
-    color = mix(color, hotWhite, smoothstep(0.04, 0.0, d) * (0.6 + hotspot * 0.4));
-
-    // ── Flicker: surface noise modulates brightness per-pixel ──
-    float flicker = 0.85 + surface * 0.5;
     float alpha = smoothstep(0.15, 0.01, d);
 
     if (alpha < 0.001) discard;
-    gl_FragColor = vec4(color * 1.5 * flicker, alpha);
+
+    gl_FragColor = vec4(color * 1.6, alpha);
+
     #include <colorspace_fragment>
   }
 `;
