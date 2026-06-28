@@ -411,3 +411,51 @@ html.lenis body {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* ── Scroll progress bar ── */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.6);
+  z-index: 60;
+  pointer-events: none;
+  transition: width 0.1s linear;
+}
+
+/* ── Fade-in animation for section content ── */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.section[data-section-index] > * {
+  animation: fadeUp 0.8s ease-out both;
+}
+
+.section[data-section-index] > *:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.section[data-section-index] > *:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+/* ── Custom scrollbar ── */
+::-webkit-scrollbar {
+  width: 0;
+  display: none;
+}
+
+/* ── Selection ── */
+::selection {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 1);
+}

@@ -2,6 +2,13 @@
 // Always-visible corner labels. Fixed position. Non-interactive.
 // Monospace, dim, terminal-style system readout.
 
+const SECTION_TAGS = [
+  "building things that feel alive",
+  "engineering × visual art",
+  "selected work",
+  "let's talk",
+];
+
 interface HUDProps {
   sectionIndex: number;
   totalSections: number;
@@ -29,6 +36,11 @@ export function HUD({
       <div className="hud hud--tr">
         <div>{audioStatus}</div>
         <div className="hud__hint">{trackName}</div>
+      </div>
+
+      {/* Bottom-left: contextual tagline */}
+      <div className="hud hud--bl">
+        <div className="hud__counter">{SECTION_TAGS[sectionIndex]}</div>
       </div>
 
       {/* Bottom-right: section counter */}

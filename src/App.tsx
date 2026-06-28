@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import "@fontsource-variable/jetbrains-mono/index.css";
 
 import Scene from "./Scene";
@@ -17,6 +17,7 @@ const TOTAL_SECTIONS = 4;
 function App() {
   const [started, setStarted] = useState(false);
   const [activeSection, setActiveSection] = useState(0);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const {
     isLoading,
     error,
@@ -25,6 +26,17 @@ function App() {
     currentTrack,
     loadTrack,
   } = useAudioEngine();
+
+  // ── Scroll progress tracking ──
+  useEffect(() => {
+    if (!started) return;
+    function onScroll() {
+      const max = document.body.scrollHeight - window.innerHeight;
+      setScrollProgress(max > 0 ? (window.scrollY / max) * 100 : 0);
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [started]);
 
   const handleStart = useCallback(async () => {
     await loadTrack(currentTrack);
@@ -61,12 +73,18 @@ function App() {
 
       {/* ── Layer 2: HUD (always visible after start) ── */}
       {started && (
-        <HUD
-          sectionIndex={activeSection}
-          totalSections={TOTAL_SECTIONS}
-          audioStatus={isPlaying ? "audio: on" : "audio: off"}
-          trackName={activeTrackName}
-        />
+        <>
+          <div
+            className="scroll-progress"
+            style={{ width: `${scrollProgress}%` }}
+          />
+          <HUD
+            sectionIndex={activeSection}
+            totalSections={TOTAL_SECTIONS}
+            audioStatus={isPlaying ? "audio: on" : "audio: off"}
+            trackName={activeTrackName}
+          />
+        </>
       )}
 
       {/* ── Click-to-start overlay ── */}
