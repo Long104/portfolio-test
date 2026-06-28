@@ -1,3 +1,6 @@
+import { refractive } from "refractive";
+import { refraction } from "./refraction";
+
 interface ProjectCardProps {
   title: string;
   description: string;
@@ -7,7 +10,8 @@ interface ProjectCardProps {
 
 export default function ProjectCard({ title, description, tags, index }: ProjectCardProps) {
   return (
-    <div
+    <refractive.div
+      refraction={refraction}
       className="glass"
       data-cursor="card"
       style={{
@@ -90,6 +94,6 @@ export default function ProjectCard({ title, description, tags, index }: Project
           </span>
         ))}
       </div>
-    </div>
+    </refractive.div>
   );
 }

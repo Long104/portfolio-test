@@ -1,7 +1,11 @@
+import { refractive } from "refractive";
+import { refraction } from "./refraction";
+
 export default function AboutSection() {
   return (
     <section className="section">
-      <div
+      <refractive.div
+        refraction={refraction}
         className="glass"
         style={{
           maxWidth: "640px",
@@ -95,7 +99,7 @@ export default function AboutSection() {
             </span>
           ))}
         </div>
-      </div>
+      </refractive.div>
     </section>
   );
 }

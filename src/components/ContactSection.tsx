@@ -1,7 +1,11 @@
+import { refractive } from "refractive";
+import { refraction } from "./refraction";
+
 export default function ContactSection() {
   return (
     <section className="section">
-      <div
+      <refractive.div
+        refraction={refraction}
         className="glass"
         style={{
           maxWidth: "520px",
@@ -144,7 +148,7 @@ export default function ContactSection() {
         >
           Pantorn &copy; {new Date().getFullYear()}
         </p>
-      </div>
+      </refractive.div>
     </section>
   );
 }

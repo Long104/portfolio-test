@@ -1,3 +1,6 @@
+import { refractive } from "refractive";
+import { refraction } from "./refraction";
+
 interface ExperienceItem {
   role: string;
   company: string;
@@ -62,8 +65,9 @@ export default function ExperienceSection() {
         }}
       >
         {EXPERIENCES.map((exp, i) => (
-          <div
+          <refractive.div
             key={i}
+            refraction={refraction}
             className="glass"
             data-cursor="card"
             style={{
@@ -144,7 +148,7 @@ export default function ExperienceSection() {
                 </span>
               ))}
             </div>
-          </div>
+          </refractive.div>
         ))}
       </div>
     </section>

@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { refractive } from "refractive";
+import { refraction } from "./refraction";
 
 const ROLES = ["Software Engineer", "Creative Developer", "Problem Solver"];
 
@@ -20,7 +22,8 @@ export default function HeroSection() {
 
   return (
     <section className="section">
-      <div
+      <refractive.div
+        refraction={refraction}
         className="glass"
         style={{
           maxWidth: "720px",
@@ -113,7 +116,7 @@ export default function HeroSection() {
             Scroll
           </span>
         </div>
-      </div>
+      </refractive.div>
 
       {/* Keyframes for scroll bounce */}
       <style>{`
