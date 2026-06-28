@@ -1,6 +1,6 @@
 // Layer B: Fluid particles (petals + blobs, normal alpha blending)
-// Audio: per-instance twinkle only — ~30% of petals flash on mid hits,
-// rest stay completely still. No uniform reactivity.
+// AUDIO STRATEGY: baseline ghostly/dim. Only ~30% react to mid — they flash
+// bright. 70% stay at baseline. Maximum contrast between reactive and still.
 export const particleVertex = /* glsl */ `
   uniform float uTime;
   uniform float uSpeed;
@@ -67,24 +67,23 @@ export const particleFragment = /* glsl */ `
     vec4 texColor;
     vec3 finalColor;
 
-    // Per-instance twinkle: ~30% react to mid, 70% stay completely still
+    // Per-instance: ~30% react to mid, 70% stay ghostly
     float reactive = smoothstep(0.6, 0.85, vRand);
     float twinkle = reactive * vMidPulse;
 
     if (vType < 0.5) {
-      // Ghost-teal petals — semi-transparent liquid glass
+      // Ghost-teal petals — very faint at rest, reactive ones flash bright
       texColor = texture2D(uTexPetal, vUv);
       finalColor = vec3(0.106, 0.737, 0.698); // #1BBCB2
-      texColor.a *= 0.25;
-      // ONLY reactive petals flash — rest stay at baseline
-      texColor.a *= 1.0 + twinkle * 0.8;
-      finalColor *= 1.0 + twinkle * 0.4;
+      texColor.a *= 0.12;
+      // Reactive petals: ghostly → visible (up to 3x brighter)
+      texColor.a *= 1.0 + twinkle * 2.0;
+      finalColor *= 1.0 + twinkle * 0.5;
     } else {
-      // Dark framing blobs — color from baked depth gradient LUT
+      // Dark framing blobs — dimmer at rest, reactive ones brighten
       texColor = texture2D(uTexBlob, vUv);
       finalColor = texture2D(uGradLUT, vec2(vDepth, 0.5)).rgb;
-      // ONLY reactive blobs brighten — rest stay at baseline
-      finalColor *= 1.0 + twinkle * 0.3;
+      finalColor *= 0.5 + twinkle * 0.6;
     }
 
     // Proximity fade

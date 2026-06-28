@@ -23,6 +23,7 @@ export function createStarTexture(): Texture {
   const grad = ctx.createRadialGradient(c, c, 0, c, c, c * 0.5);
   grad.addColorStop(0, "rgba(255,255,255,1)");
   grad.addColorStop(0.2, "rgba(255,255,220,0.9)");
+  // here
   grad.addColorStop(0.5, "rgba(255,230,150,0.3)");
   grad.addColorStop(1, "rgba(255,230,150,0)");
   ctx.fillStyle = grad;

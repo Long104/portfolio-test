@@ -1,8 +1,12 @@
 // Layer D: Four stacked fullscreen meshes with additive blending.
-// D4 = big pastel sun circle (extra-light.md — wide, FBM noise, breathing)
-// D3 = anisotropic light rays (NEW — directional streaks radiating outward)
-// D2 = bridge glow (NEW — medium radial fill, connects core to sun)
-// D1 = tight ignition core (really-like-it.md — small, bright, hot)
+// D4 = big pastel sun circle
+// D3 = anisotropic light rays
+// D2 = bridge glow
+// D1 = tight ignition core
+//
+// AUDIO STRATEGY: baselines are DIM. Audio brings layers UP to full brightness.
+// At rest: everything is faint/ghostly. On beat: surges to bright.
+// This creates maximum perceptual contrast (Weber's Law).
 // All use inline GLSL hash/noise (per-pixel, full resolution, no texture tiling).
 
 export const glowVertex = /* glsl */ `
@@ -13,10 +17,6 @@ export const glowVertex = /* glsl */ `
   }
 `;
 
-// ── MERGED GLOW: Sun + Rays + Bridge + Core in a single fullscreen pass ──
-// Replaces 4 separate additive-blend passes with 1.
-// Each layer's contribution = color * alpha (additive blending math).
-// Final output = sum of all 4, alpha=1.0, blended once onto backdrop.
 export const glowFragment = /* glsl */ `
   uniform float uAspect;
   uniform float uTime;
@@ -74,12 +74,9 @@ export const glowFragment = /* glsl */ `
       color = mix(color, yellow,    smoothstep(0.09, 0.03, d + gasNoise * 0.015));
       color = mix(color, whiteCore, smoothstep(0.02, 0.0, d + gasNoise * 0.015));
 
-      float glow = min(exp(-d * 8.0) + 0.4, 0.85);
-      float alpha = smoothstep(0.42, 0.06, d) * (0.1 + gasNoise * 0.1);
-
-      // Audio: slow bass intensifies the sun — visible breathing
-      glow *= 1.0 + uSunBass * 0.35;
-      alpha *= 1.0 + uSunBass * 0.25;
+      // Baseline dimmed to 0.4, audio brings glow up to ~1.0
+      float glow = min(exp(-d * 8.0) + 0.4, 0.85) * (0.4 + uSunBass * 0.6);
+      float alpha = smoothstep(0.42, 0.06, d) * (0.1 + gasNoise * 0.1) * (0.5 + uSunBass * 0.5);
 
       totalColor += color * glow * alpha;
     }
@@ -101,10 +98,8 @@ export const glowFragment = /* glsl */ `
         smoothstep(0.05, 0.3, dist)
       );
 
-      float alpha = rays * distFade * 0.2;
-
-      // Audio: treble sharpens rays — visible shimmer
-      alpha *= 1.0 + uRaysTreble * 0.6;
+      // Baseline faint at 0.35, treble brings up to ~1.0
+      float alpha = rays * distFade * 0.2 * (0.35 + uRaysTreble * 1.0);
 
       totalColor += rayColor * alpha * alpha;
     }
@@ -122,11 +117,9 @@ export const glowFragment = /* glsl */ `
       color = mix(color, gold,      smoothstep(0.15, 0.06, d));
       color = mix(color, whiteCore, smoothstep(0.04, 0.0, d));
 
-      float glow = exp(-d * 6.0);
+      // Baseline dimmed to 0.5, mid brings up to ~1.0
+      float glow = exp(-d * 6.0) * (0.5 + uBridgeMid * 0.5);
       float alpha = smoothstep(0.25, 0.05, d);
-
-      // Audio: mid pulses the bridge
-      glow *= 1.0 + uBridgeMid * 0.25;
 
       totalColor += color * glow * 0.8 * alpha * 0.5;
     }
@@ -146,8 +139,8 @@ export const glowFragment = /* glsl */ `
 
       float alpha = smoothstep(0.17, 0.01, d);
 
-      // Audio: core is the main responder — fast bass makes the heart pulse
-      float coreBoost = 1.6 + uCoreBass * 0.8;
+      // Baseline dim at 0.7, bass brings up to ~2.0 (current brightness)
+      float coreBoost = 0.7 + uCoreBass * 1.7;
 
       totalColor += color * coreBoost * alpha;
     }
