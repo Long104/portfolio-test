@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import Lenis from "lenis";
+import "lenis/dist/lenis.css";
 import HeroSection from "./HeroSection";
 import ProjectsSection from "./ProjectsSection";
 import ContactSection from "./ContactSection";
@@ -22,9 +23,7 @@ export default function PortfolioContent({ onScrollProgress }: PortfolioContentP
       content,
       lerp: 0.08,
       wheelMultiplier: 1,
-      // Tweak these to taste:
-      //   lerp lower = smoother but more lag
-      //   wheelMultiplier higher = faster scroll
+      autoRaf: true, // required — runs RAF loop internally
     });
 
     lenis.on("scroll", (l) => {
