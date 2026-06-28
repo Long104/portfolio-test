@@ -121,13 +121,16 @@ interface Sparkle {
   cr: number; cg: number; cb: number;
   birthTime: number; lifetime: number;
   active: boolean;
+  big: boolean;
 }
 
 export default function SparkleSystem() {
   const { getData } = useAudioEngine();
   const meshRef = useRef<InstancedMesh>(null);
-  const prevBass = useRef(0);
-  const prevTreble = useRef(0);
+  const bassAvg = useRef(0);
+  const trebleAvg = useRef(0);
+  const smoothBass = useRef(0);
+  const smoothTreble = useRef(0);
   const spawnTimer = useRef(0);
   const ambientTimer = useRef(0);
 
@@ -199,7 +202,7 @@ export default function SparkleSystem() {
         x: 0, y: 0, z: -100,
         rot: 0, size: 0,
         cr: 1, cg: 1, cb: 1,
-        birthTime: -1, lifetime: 0, active: false,
+        birthTime: -1, lifetime: 0, active: false, big: false,
       });
     }
     return arr;
@@ -233,6 +236,7 @@ export default function SparkleSystem() {
 
       s.birthTime = time;
       s.lifetime = 0.3 + Math.random() * 0.5;
+      s.big = big;
       s.active = true;
       spawned++;
     }
@@ -242,11 +246,16 @@ export default function SparkleSystem() {
     const time = state.clock.getElapsedTime();
     const audio = getData();
 
-    const bassBeat = audio.bass > 0.4 && audio.bass > prevBass.current * 1.12;
-    prevBass.current = audio.bass;
+    // Moving-average beat detection — adapts to overall loudness
+    bassAvg.current = bassAvg.current * 0.95 + audio.bass * 0.05;
+    trebleAvg.current = trebleAvg.current * 0.92 + audio.treble * 0.08;
 
-    const trebleSpark = audio.treble > 0.10 && audio.treble > prevTreble.current * 1.25;
-    prevTreble.current = audio.treble;
+    const bassBeat = audio.bass > bassAvg.current * 1.04 && audio.bass > 0.3;
+    const trebleSpark = audio.treble > trebleAvg.current * 1.15 && audio.treble > 0.05;
+
+    // Smoothed audio for visual modulation of living sparkles
+    smoothBass.current += (audio.bass - smoothBass.current) * 0.30;
+    smoothTreble.current += (audio.treble - smoothTreble.current) * 0.30;
 
     spawnTimer.current += delta;
 
@@ -296,7 +305,9 @@ export default function SparkleSystem() {
         if (t < 0.15) {
           stretchX = 1.0 + (t / 0.15) * 2.0; // 1x → 3x
         } else if (t < 0.40) {
-          stretchX = 3.0; // hold at max streak
+          // Streak extends further with audio — beam shoots longer on strong beats
+          const audioStreak = s.big ? smoothBass.current : smoothTreble.current;
+          stretchX = 3.0 + audioStreak * 2.0; // 3x → up to 5x
         } else {
           const deathT = (t - 0.40) / 0.60;
           stretchX = Math.max(1.0, 3.0 - deathT * 4.0); // 3x → 1x quickly
@@ -309,10 +320,14 @@ export default function SparkleSystem() {
         mesh.setMatrixAt(i, dummy.matrix);
 
         const flashBoost = t < 0.40 ? 1.0 + (1.0 - t / 0.40) * 0.5 : 1.0;
+        // Living sparkles pulse with audio — big follows bass, small follows treble
+        const audioLevel = s.big ? smoothBass.current : smoothTreble.current;
+        const audioBoost = 1.0 + audioLevel * 0.8;
+        const totalBrightness = brightness * flashBoost * audioBoost;
         tmpColor.setRGB(
-          s.cr * brightness * flashBoost,
-          s.cg * brightness * flashBoost,
-          s.cb * brightness * flashBoost,
+          s.cr * totalBrightness,
+          s.cg * totalBrightness,
+          s.cb * totalBrightness,
         );
         mesh.setColorAt(i, tmpColor);
       } else {
