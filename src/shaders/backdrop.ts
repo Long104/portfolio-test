@@ -18,20 +18,20 @@ export const backdropFragment = /* glsl */ `
     float dist = length(centered);
 
     // Inner: dark nebula — warm rose → desaturates through mauve/gray
-    // Outer: blooms into bright mint ring → dark teal tunnel (matches glow textures)
+    // Outer: blooms into bright teal ring → dark teal tunnel (same unified hue)
     vec3 darkVoid = vec3(0.08, 0.00, 0.06);   // dark pink void
     vec3 c1       = vec3(0.16, 0.02, 0.08);   // dark rose
     vec3 c2       = vec3(0.14, 0.04, 0.10);   // dark mauve
     vec3 c3       = vec3(0.12, 0.06, 0.10);   // grayish mauve
     vec3 c4       = vec3(0.10, 0.08, 0.10);   // dark neutral gray
-    vec3 mint     = vec3(0.047, 0.89, 0.714); // #0ce3b6 — teal ring
-    vec3 teal     = vec3(0.004, 0.165, 0.18); // #012a2e — outer tunnel
+    vec3 ringTeal = vec3(0.020, 0.400, 0.440); // blue-teal ring (matches tunnel hue, brighter)
+    vec3 teal     = vec3(0.004, 0.165, 0.180); // #012a2e — outer tunnel
 
     vec3 color = mix(darkVoid, c1, smoothstep(0.0, 0.08, dist));
     color = mix(color, c2, smoothstep(0.08, 0.18, dist));
     color = mix(color, c3, smoothstep(0.18, 0.28, dist));
     color = mix(color, c4, smoothstep(0.28, 0.40, dist));
-    color = mix(color, mint, smoothstep(0.40, 0.55, dist));
+    color = mix(color, ringTeal, smoothstep(0.40, 0.55, dist));
     if (dist > 0.55) color = mix(color, teal, smoothstep(0.55, 0.75, dist));
 
     // Audio: bass makes the void breathe — barely perceptible
