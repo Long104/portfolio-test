@@ -18,13 +18,13 @@ export const backdropFragment = /* glsl */ `
     float dist = length(centered);
 
     // Dark void at center → blooms through warm pinks → desaturates to gray → cools to teal edge
-    vec3 darkVoid = vec3(0.08, 0.0, 0.06);    // dark pink void
-    vec3 c1       = vec3(0.992, 0.553, 0.592); // #FD8D97 — salmon pink
-    vec3 c2       = vec3(0.992, 0.671, 0.725); // #FDABB9 — light pink
-    vec3 c3       = vec3(0.980, 0.702, 0.812); // #FAB3CF — mauve pink
-    vec3 c4       = vec3(0.867, 0.792, 0.847); // #DDCAD8 — gray lavender
-    vec3 c5       = vec3(0.780, 0.820, 0.839); // #C7D1D6 — silver gray
-    vec3 c6       = vec3(0.584, 0.827, 0.816); // #95D3D0 — muted teal
+    vec3 darkVoid = vec3(0.08, 0.0, 0.06);     // dark pink void
+    vec3 c1       = vec3(0.347, 0.194, 0.207); // #FD8D97×0.35 — salmon pink
+    vec3 c2       = vec3(0.347, 0.235, 0.254); // #FDABB9×0.35 — light pink
+    vec3 c3       = vec3(0.343, 0.246, 0.284); // #FAB3CF×0.35 — mauve pink
+    vec3 c4       = vec3(0.303, 0.277, 0.296); // #DDCAD8×0.35 — gray lavender
+    vec3 c5       = vec3(0.273, 0.287, 0.294); // #C7D1D6×0.35 — silver gray
+    vec3 c6       = vec3(0.204, 0.289, 0.286); // #95D3D0×0.35 — muted teal
 
     vec3 color = mix(darkVoid, c1, smoothstep(0.0, 0.08, dist));
     color = mix(color, c2, smoothstep(0.08, 0.18, dist));
