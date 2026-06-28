@@ -17,14 +17,15 @@ export const backdropFragment = /* glsl */ `
     centered.x *= uAspect;
     float dist = length(centered);
 
-    // Dark void at center → blooms through warm pinks → desaturates to gray → cools to teal edge
-    vec3 darkVoid = vec3(0.08, 0.0, 0.06);     // dark pink void
-    vec3 c1       = vec3(0.347, 0.194, 0.207); // #FD8D97×0.35 — salmon pink
-    vec3 c2       = vec3(0.347, 0.235, 0.254); // #FDABB9×0.35 — light pink
-    vec3 c3       = vec3(0.343, 0.246, 0.284); // #FAB3CF×0.35 — mauve pink
-    vec3 c4       = vec3(0.303, 0.277, 0.296); // #DDCAD8×0.35 — gray lavender
-    vec3 c5       = vec3(0.273, 0.287, 0.294); // #C7D1D6×0.35 — silver gray
-    vec3 c6       = vec3(0.204, 0.289, 0.286); // #95D3D0×0.35 — muted teal
+    // Dark nebula — warm rose center → desaturates through mauve/gray → cool teal edge
+    // All colors stay in dark range (0.04–0.18) so additive glow layers don't blow out
+    vec3 darkVoid = vec3(0.08, 0.00, 0.06);   // dark pink void
+    vec3 c1       = vec3(0.16, 0.02, 0.08);   // dark rose
+    vec3 c2       = vec3(0.14, 0.04, 0.10);   // dark mauve
+    vec3 c3       = vec3(0.12, 0.06, 0.10);   // grayish mauve
+    vec3 c4       = vec3(0.10, 0.08, 0.10);   // dark neutral gray
+    vec3 c5       = vec3(0.08, 0.10, 0.12);   // gray-blue
+    vec3 c6       = vec3(0.04, 0.12, 0.14);   // dark teal
 
     vec3 color = mix(darkVoid, c1, smoothstep(0.0, 0.08, dist));
     color = mix(color, c2, smoothstep(0.08, 0.18, dist));
