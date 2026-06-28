@@ -1,58 +1,29 @@
 import { useState, useCallback } from "react";
+import "@fontsource-variable/jetbrains-mono/index.css";
+
 import Scene from "./Scene";
 import { useAudioEngine, TRACKS } from "./useAudioEngine";
+import { HUD } from "./components/HUD";
+import { ScrollContainer } from "./components/ScrollContainer";
+import {
+  HeroSection,
+  AboutSection,
+  WorkSection,
+  ContactSection,
+} from "./components/Sections";
 
-const overlayStyle: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  zIndex: 100,
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "rgba(0, 0, 0, 0.85)",
-  backdropFilter: "blur(8px)",
-  cursor: "pointer",
-  userSelect: "none",
-};
-
-const titleStyle: React.CSSProperties = {
-  color: "rgba(255,255,255,0.9)",
-  fontSize: "13px",
-  letterSpacing: "0.4em",
-  textTransform: "uppercase",
-  fontFamily: "monospace",
-  margin: 0,
-};
-
-const subtitleStyle: React.CSSProperties = {
-  color: "rgba(255,255,255,0.3)",
-  fontSize: "10px",
-  letterSpacing: "0.2em",
-  fontFamily: "monospace",
-  marginTop: "8px",
-};
-
-function pillStyle(active: boolean): React.CSSProperties {
-  return {
-    background: active ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.05)",
-    border: active ? "1px solid rgba(255,255,255,0.3)" : "1px solid rgba(255,255,255,0.1)",
-    borderRadius: "20px",
-    padding: "6px 16px",
-    color: active ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.5)",
-    fontSize: "11px",
-    fontFamily: "monospace",
-    letterSpacing: "0.1em",
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-  };
-}
+const TOTAL_SECTIONS = 4;
 
 function App() {
   const [started, setStarted] = useState(false);
+  const [activeSection, setActiveSection] = useState(0);
   const {
-    isLoading, error, isPlaying,
-    toggle, currentTrack, loadTrack,
+    isLoading,
+    error,
+    isPlaying,
+    toggle,
+    currentTrack,
+    loadTrack,
   } = useAudioEngine();
 
   const handleStart = useCallback(async () => {
@@ -65,35 +36,64 @@ function App() {
     setStarted(true);
   }, [loadTrack]);
 
+  const handleSectionChange = useCallback((index: number) => {
+    setActiveSection(index);
+  }, []);
+
+  const activeTrackName = TRACKS.find((t) => t.url === currentTrack)?.name ?? "";
+
   return (
     <>
-      <Scene />
+      {/* ── Layer 0: Fixed 3D canvas (vortex) ── */}
+      <div className="canvas-layer">
+        <Scene />
+      </div>
 
-      {/* Click-to-start overlay */}
+      {/* ── Layer 1: Scrollable content ── */}
+      {started && (
+        <ScrollContainer onSectionChange={handleSectionChange}>
+          <HeroSection />
+          <AboutSection />
+          <WorkSection />
+          <ContactSection />
+        </ScrollContainer>
+      )}
+
+      {/* ── Layer 2: HUD (always visible after start) ── */}
+      {started && (
+        <HUD
+          sectionIndex={activeSection}
+          totalSections={TOTAL_SECTIONS}
+          audioStatus={isPlaying ? "audio: on" : "audio: off"}
+          trackName={activeTrackName}
+        />
+      )}
+
+      {/* ── Click-to-start overlay ── */}
       {!started && (
-        <div
-          onClick={handleStart}
-          style={overlayStyle}
-        >
+        <div className="start-overlay" onClick={handleStart}>
           {error ? (
-            <p style={{ color: "#ff6b6b", fontSize: "14px", fontFamily: "monospace" }}>
+            <p style={{ color: "#ff6b6b", fontSize: "14px", fontFamily: "var(--mono)" }}>
               {error}
             </p>
           ) : (
             <>
-              <p style={titleStyle}>
-                {isLoading ? "Loading..." : "Click to Enter"}
+              <p className="start-overlay__title">
+                {isLoading ? "loading..." : "click to enter"}
               </p>
-              <p style={subtitleStyle}>
-                AUDIO-REACTIVE EXPERIENCE
-              </p>
-              {/* Song pills on start screen */}
-              <div style={{ display: "flex", gap: "8px", marginTop: "24px" }}>
+              <p className="start-overlay__subtitle">audio-reactive experience</p>
+              <div className="track-pills">
                 {TRACKS.map((track) => (
                   <button
                     key={track.url}
-                    onClick={(e) => { e.stopPropagation(); handleSelectTrack(track.url); }}
-                    style={pillStyle(currentTrack === track.url)}
+                    className={
+                      "track-pill" +
+                      (currentTrack === track.url ? " track-pill--active" : "")
+                    }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectTrack(track.url);
+                    }}
                   >
                     {track.name}
                   </button>
@@ -104,66 +104,27 @@ function App() {
         </div>
       )}
 
-      {/* Control bar — bottom center */}
+      {/* ── Audio control bar ── */}
       {started && (
-        <div
-          style={{
-            position: "fixed",
-            bottom: "20px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 100,
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            background: "rgba(0,0,0,0.5)",
-            backdropFilter: "blur(8px)",
-            borderRadius: "24px",
-            padding: "6px 12px",
-            border: "1px solid rgba(255,255,255,0.08)",
-          }}
-        >
-          {/* Play/pause */}
+        <div className="audio-bar">
           <button
+            className="audio-bar__btn"
             onClick={toggle}
-            style={{
-              background: "none",
-              border: "none",
-              color: "rgba(255,255,255,0.7)",
-              cursor: "pointer",
-              fontSize: "16px",
-              width: "28px",
-              height: "28px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
             aria-label={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? "\u23F8" : "\u25B6"}
           </button>
 
-          <div style={{ width: "1px", height: "16px", background: "rgba(255,255,255,0.1)" }} />
+          <div className="audio-bar__divider" />
 
-          {/* Track pills */}
           {TRACKS.map((track) => (
             <button
               key={track.url}
+              className={
+                "audio-bar__track" +
+                (currentTrack === track.url ? " audio-bar__track--active" : "")
+              }
               onClick={() => handleSelectTrack(track.url)}
-              style={{
-                background: currentTrack === track.url
-                  ? "rgba(255,255,255,0.12)" : "transparent",
-                border: "none",
-                borderRadius: "16px",
-                padding: "4px 12px",
-                color: currentTrack === track.url
-                  ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.4)",
-                fontSize: "11px",
-                fontFamily: "monospace",
-                letterSpacing: "0.05em",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-              }}
             >
               {track.name}
             </button>

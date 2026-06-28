@@ -6,16 +6,7 @@ import { PERF_TIER, MAX_DPR } from "./perf";
 
 export default function Scene() {
   return (
-    <div
-      style={{
-        width: "100vw",
-        height: "100vh",
-        overflow: "hidden",
-        // background: "#000406",
-        // background: "#032034",
-        background: "#01314A",
-      }}
-    >
+    <div style={{ width: "100%", height: "100%", overflow: "hidden" }}>
       <Canvas
         frameloop="demand"
         camera={{ position: [0, 0, 5], fov: 75 }}
@@ -24,6 +15,7 @@ export default function Scene() {
           antialias: false, // additive particles + glow — MSAA is wasted cost
           powerPreference: "high-performance",
           alpha: false,
+          preserveDrawingBuffer: true, // needed for refractive snapshot fallback (Firefox/Safari)
         }}
         performance={{ min: 0.5 }} // R3F adaptive: drops DPR if FPS dips
       >
