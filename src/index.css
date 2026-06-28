@@ -4,13 +4,86 @@
   box-sizing: border-box;
 }
 
-html,
-body,
+html {
+  background: #01314A;
+}
+
+body {
+  background: #01314A;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+}
+
 #root {
   width: 100%;
-  height: 100%;
-  overflow: hidden;
-  /* background: #020d12; */
-  /* background: #032034; */
-  background: #01314A;
+  min-height: 100dvh;
+}
+
+/* ── Scroll container ── */
+.scroll-container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+}
+
+/* ── Sections ── */
+.section {
+  position: relative;
+  width: 100%;
+  min-height: 100dvh;
+  scroll-snap-align: start;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+/* ── Glass card ── */
+.glass {
+  background: rgba(1, 49, 74, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 2rem;
+}
+
+/* Reduced blur on low-end devices */
+@media (max-width: 768px) {
+  .glass {
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+}
+
+/* ── Text utilities ── */
+.text-glow {
+  text-shadow: 0 0 20px rgba(100, 200, 255, 0.3);
+}
+
+.font-mono {
+  font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+}
+
+/* ── Scrollbar ── */
+.scroll-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroll-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
+.scroll-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
