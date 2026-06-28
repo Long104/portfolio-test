@@ -1,5 +1,6 @@
 import { Canvas } from "@react-three/fiber";
 import KiraKiraVortex from "./KiraKiraVortex";
+import SparkleSystem from "./SparkleSystem";
 import FrameLimiter from "./FrameLimiter";
 import { PERF_TIER, MAX_DPR } from "./perf";
 
@@ -28,6 +29,7 @@ export default function Scene() {
       >
         <FrameLimiter fps={30} />
         <KiraKiraVortex />
+        <SparkleSystem />
       </Canvas>
     </div>
   );
