@@ -219,8 +219,8 @@ export default function SparkleSystem() {
 
       const angle = Math.random() * Math.PI * 2;
       const radius = big
-        ? 4.0 + Math.random() * 7    // outer ring: 4-11 from center
-        : 5.0 + Math.random() * 7;   // further out: 5-12 from center
+        ? 6.0 + Math.random() * 8    // outer: 6-14 from center
+        : 7.0 + Math.random() * 9;   // wider: 7-16 from center
 
       s.x = Math.cos(angle) * radius;
       s.y = Math.sin(angle) * radius * 0.8;

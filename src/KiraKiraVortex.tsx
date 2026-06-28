@@ -151,7 +151,7 @@ export default function KiraKiraVortex() {
 
   const paintGeo = useMemo(() => {
     // here make the hole bigger
-    const { pos, rand } = generateInstanceData(PAINT_COUNT, 36.0);
+    const { pos, rand } = generateInstanceData(PAINT_COUNT, 64.0);
     const geo = new PlaneGeometry(0.4, 0.4);
     geo.setAttribute("aInitialPos", new InstancedBufferAttribute(pos, 3));
     geo.setAttribute("aRandoms", new InstancedBufferAttribute(rand, 3));
