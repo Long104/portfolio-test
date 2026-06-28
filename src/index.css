@@ -4,6 +4,12 @@
   box-sizing: border-box;
 }
 
+/* Hide native cursor when custom cursor is active */
+body.custom-cursor,
+body.custom-cursor * {
+  cursor: none !important;
+}
+
 html {
   background: #01314A;
 }

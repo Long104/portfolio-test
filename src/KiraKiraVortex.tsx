@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import {
   AdditiveBlending,
   InstancedBufferAttribute,
+  InstancedMesh,
   PlaneGeometry,
   ShaderMaterial,
 } from "three";
@@ -36,9 +37,17 @@ function generateInstanceData(count: number, maxRadius: number) {
   return { pos, rand };
 }
 
-export default function KiraKiraVortex() {
+interface KiraKiraVortexProps {
+  scrollProgress?: number;
+}
+
+export default function KiraKiraVortex({ scrollProgress = 0 }: KiraKiraVortexProps) {
   // --- Audio reactivity ---
   const { getData } = useAudioEngine();
+
+  // --- Mesh refs for layer rotation (Option B) ---
+  const paintRef = useRef<InstancedMesh>(null);
+  const flareRef = useRef<InstancedMesh>(null);
 
   // Per-layer smoothing — each visual element responds at a different speed.
   // This creates a staggered cascade: core snaps fast, particles lag behind.
@@ -54,9 +63,6 @@ export default function KiraKiraVortex() {
   });
 
   // --- StrictMode-safe dispose flag ---
-  // In dev StrictMode, React mount→unmount→mount. The cleanup would dispose
-  // GPU resources that the second mount still references. Deferring disposal
-  // to a setTimeout ensures we only dispose on REAL unmount.
   const mountedRef = useRef(true);
 
   // --- Procedural textures ---
@@ -65,12 +71,7 @@ export default function KiraKiraVortex() {
   const blobTex = useMemo(() => createBlobTexture(), []);
   const gradLUT = useMemo(() => createGradientLUT(), []);
 
-  // --- Materials (useMemo — immutable identity, used in JSX render) ---
-  // Note: uniforms are mutated per-frame in useFrame below.
-  // This is the standard R3F pattern; the react-hooks/immutability
-  // and react-hooks/refs rules are disabled for this file in eslint.config.js
-  // because React Compiler's purity model is fundamentally incompatible
-  // with imperative Three.js uniform mutations.
+  // --- Materials ---
   const backdropMat = useMemo(
     () =>
       new ShaderMaterial({
@@ -95,7 +96,7 @@ export default function KiraKiraVortex() {
           uTexPetal: { value: petalTex },
           uTexBlob: { value: blobTex },
           uGradLUT: { value: gradLUT },
-          uMid: { value: 0 }, // particles follow mid only — laggy drift
+          uMid: { value: 0 },
         },
         vertexShader: particleVertex,
         fragmentShader: particleFragment,
@@ -112,7 +113,7 @@ export default function KiraKiraVortex() {
           uTime: { value: 0 },
           uSpeed: { value: 0.2 },
           uTexStar: { value: starTex },
-          uTreble: { value: 0 }, // flares sparkle on treble only
+          uTreble: { value: 0 },
         },
         vertexShader: flareVertex,
         fragmentShader: flareFragment,
@@ -124,17 +125,19 @@ export default function KiraKiraVortex() {
   );
 
   // MERGED GLOW: Sun + Rays + Bridge + Core in 1 pass
-  // Each sub-layer gets its own smoothed uniform for staggered response
+  // Now with scroll-based uScroll + uBreath uniforms for color shift & breath
   const glowMat = useMemo(
     () =>
       new ShaderMaterial({
         uniforms: {
           uAspect: { value: window.innerWidth / window.innerHeight },
           uTime: { value: 0 },
-          uCoreBass: { value: 0 },    // core — fast bass
-          uSunBass: { value: 0 },     // sun — slow bass
-          uRaysTreble: { value: 0 },  // rays — treble
-          uBridgeMid: { value: 0 },   // bridge — mid
+          uCoreBass: { value: 0 },
+          uSunBass: { value: 0 },
+          uRaysTreble: { value: 0 },
+          uBridgeMid: { value: 0 },
+          uScroll: { value: 0 },    // Option C: color shift
+          uBreath: { value: 0 },    // Option C: intensity swell
         },
         vertexShader: glowVertex,
         fragmentShader: glowFragment,
@@ -150,7 +153,6 @@ export default function KiraKiraVortex() {
   const backdropGeo = useMemo(() => new PlaneGeometry(2, 2), []);
 
   const paintGeo = useMemo(() => {
-    // here make the hole bigger
     const { pos, rand } = generateInstanceData(PAINT_COUNT, 38.0);
     const geo = new PlaneGeometry(0.4, 0.4);
     geo.setAttribute("aInitialPos", new InstancedBufferAttribute(pos, 3));
@@ -166,16 +168,13 @@ export default function KiraKiraVortex() {
     return geo;
   }, []);
 
-  // --- Dispose all GPU resources on unmount (prevents leaks on HMR/route change) ---
-  // Deferred: in StrictMode dev, the re-mount sets mountedRef back to true
-  // before this timeout fires, so we skip disposal. On real unmount, the
-  // ref stays false and disposal proceeds.
+  // --- Dispose all GPU resources on unmount ---
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
       setTimeout(() => {
-        if (mountedRef.current) return; // StrictMode re-mounted
+        if (mountedRef.current) return;
         [starTex, petalTex, blobTex, gradLUT].forEach((t) => t.dispose());
         [backdropGeo, paintGeo, flareGeo].forEach((g) => g.dispose());
         [backdropMat, paintMat, flareMat, glowMat].forEach((m) =>
@@ -188,54 +187,70 @@ export default function KiraKiraVortex() {
   // --- Animation loop ---
   useFrame((state) => {
     const t = state.clock.getElapsedTime();
-    const raw = getData(); // raw frequency data from AudioEngine
+    const raw = getData();
     const s = smooth.current;
 
-    // Asymmetric envelope per layer — smooth build on attack, gentle fade on decay.
-    // Different timing per layer creates natural depth: some elements react fast,
-    // others swell slowly. Like different stars twinkling at different speeds
-    // in a real galaxy.
-    //
-    // envelope(current, target, attack, decay)
-    // attack = how fast it builds when audio hits (higher = snappier)
-    // decay  = how slow it fades after audio passes (lower = longer tail)
+    // Asymmetric envelope per layer
     const env = (cur: number, target: number, atk: number, dec: number) =>
       cur + (target - cur) * (target > cur ? atk : dec);
 
-    s.coreBass     = env(s.coreBass,     raw.bass,   0.40, 0.08); // clear pulse, medium fade
-    s.sunBass      = env(s.sunBass,      raw.bass,   0.20, 0.04); // slow swell, long tail
-    s.raysTreble   = env(s.raysTreble,   raw.treble, 0.35, 0.12); // quick shimmer
-    s.bridgeMid    = env(s.bridgeMid,    raw.mid,    0.25, 0.06); // medium build
-    s.particlesMid = env(s.particlesMid, raw.mid,    0.15, 0.04); // gentle drift
-    s.flaresTreble = env(s.flaresTreble, raw.treble, 0.40, 0.10); // quick sparkle
-    s.backdropBass = env(s.backdropBass, raw.bass,   0.08, 0.02); // barely breathes
+    s.coreBass     = env(s.coreBass,     raw.bass,   0.40, 0.08);
+    s.sunBass      = env(s.sunBass,      raw.bass,   0.20, 0.04);
+    s.raysTreble   = env(s.raysTreble,   raw.treble, 0.35, 0.12);
+    s.bridgeMid    = env(s.bridgeMid,    raw.mid,    0.25, 0.06);
+    s.particlesMid = env(s.particlesMid, raw.mid,    0.15, 0.04);
+    s.flaresTreble = env(s.flaresTreble, raw.treble, 0.40, 0.10);
+    s.backdropBass = env(s.backdropBass, raw.bass,   0.08, 0.02);
 
     const aspect = state.size.width / state.size.height;
 
-    // Time
+    // ── TIMING ──
     paintMat.uniforms.uTime.value = t;
     flareMat.uniforms.uTime.value = t;
     glowMat.uniforms.uTime.value = t;
 
-    // Aspect
+    // ── ASPECT ──
     glowMat.uniforms.uAspect.value = aspect;
     backdropMat.uniforms.uAspect.value = aspect;
 
-    // Push smoothed audio → materials
-    // Glow: 4 sub-layers, each with dedicated smoothed value
+    // ── AUDIO → MATERIALS (unchanged) ──
     glowMat.uniforms.uCoreBass.value = s.coreBass;
     glowMat.uniforms.uSunBass.value = s.sunBass;
     glowMat.uniforms.uRaysTreble.value = s.raysTreble;
     glowMat.uniforms.uBridgeMid.value = s.bridgeMid;
-
-    // Particles: laggy mid only
     paintMat.uniforms.uMid.value = s.particlesMid;
-
-    // Flares: treble sparkle
     flareMat.uniforms.uTreble.value = s.flaresTreble;
-
-    // Backdrop: barely-there bass breathing
     backdropMat.uniforms.uBass.value = s.backdropBass;
+
+    // ══════════════════════════════════════════════
+    // OPTION B: Layer rotation (parallax scroll)
+    // Each layer rotates at a different speed around Y
+    // to create depth: flares (fast) → particles (mid) → glow/core (static)
+    // ══════════════════════════════════════════════
+    const scrollAngle = scrollProgress * Math.PI * 2;
+
+    if (paintRef.current) {
+      paintRef.current.rotation.y = scrollAngle * 1.0;
+    }
+    if (flareRef.current) {
+      flareRef.current.rotation.y = scrollAngle * 1.8;
+    }
+
+    // ══════════════════════════════════════════════
+    // OPTION C: Scroll-driven effects
+    // ══════════════════════════════════════════════
+
+    // Speed pulse — particles + flares speed up in middle, slow at ends
+    const speedCurve = 1.0 + Math.sin(scrollProgress * Math.PI) * 1.0;
+    paintMat.uniforms.uSpeed.value = 0.15 * speedCurve;
+    flareMat.uniforms.uSpeed.value = 0.2 * speedCurve;
+
+    // Color shift + Breath → passed to glow shader
+    glowMat.uniforms.uScroll.value = scrollProgress;
+
+    // Breath: sinusoidal swell that peaks at mid-scroll (0→1→0)
+    const breath = 0.5 + 0.5 * Math.sin(scrollProgress * Math.PI);
+    glowMat.uniforms.uBreath.value = breath;
   });
 
   return (
@@ -246,15 +261,17 @@ export default function KiraKiraVortex() {
       {/* 2. Merged Glow (Sun + Rays + Bridge + Core — single pass) */}
       <mesh geometry={backdropGeo} material={glowMat} renderOrder={-4} />
 
-      {/* 3. Fluid Particles & Water Bubbles (Now clipping on top of the clouds seamlessly) */}
+      {/* 3. Fluid Particles — rotates with scroll (1x) */}
       <instancedMesh
+        ref={paintRef}
         args={[paintGeo, paintMat, PAINT_COUNT]}
         frustumCulled={false}
         renderOrder={1}
       />
 
-      {/* 4. Saturated Star Flares (Drawn on the absolute top layer) */}
+      {/* 4. Saturated Star Flares — rotates with scroll (1.8x, parallax closer) */}
       <instancedMesh 
+        ref={flareRef}
         args={[flareGeo, flareMat, FLARE_COUNT]} 
         frustumCulled={false} 
         renderOrder={2}

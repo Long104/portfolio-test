@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import Scene from "./Scene";
 import PortfolioContent from "./components/PortfolioContent";
+import Cursor from "./components/Cursor";
 import { useAudioEngine } from "./useAudioEngine";
 
 function App() {
@@ -81,6 +82,9 @@ function App() {
           )}
         </div>
       )}
+
+      {/* 2D smooth cursor — only after start to avoid overlay conflicts */}
+      {started && <Cursor />}
 
       {/* Mute/unmute toggle */}
       {started && (

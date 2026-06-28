@@ -18,6 +18,8 @@ export const glowFragment = /* glsl */ `
   uniform float uSunBass;     // sun — slow bass (smoothing 0.25)
   uniform float uRaysTreble;  // rays — treble (smoothing 0.40)
   uniform float uBridgeMid;   // bridge — mid (smoothing 0.30)
+  uniform float uScroll;      // scroll progress 0–1, drives color shift
+  uniform float uBreath;      // scroll-based intensity swell 0–1
   varying vec2 vUv;
 
   float hash(vec2 p) {
@@ -141,6 +143,20 @@ export const glowFragment = /* glsl */ `
     }
 
     if (dot(totalColor, totalColor) < 0.000001) discard;
+
+    // Scroll-based color shift: warm gold → cool teal → deep violet
+    vec3 warmTint = vec3(1.0, 0.85, 0.35); // gold
+    vec3 midTint  = vec3(0.2, 0.7, 0.8);   // teal
+    vec3 deepTint = vec3(0.5, 0.15, 0.9);  // violet
+
+    vec3 scrollColor = mix(warmTint, midTint, smoothstep(0.0, 0.5, uScroll));
+    scrollColor = mix(scrollColor, deepTint, smoothstep(0.5, 1.0, uScroll));
+
+    totalColor = mix(totalColor, totalColor * scrollColor, 0.35 * uScroll);
+
+    // Breath: subtler intensity swell that peaks mid-scroll
+    float breathFactor = 0.78 + uBreath * 0.22;
+    totalColor *= breathFactor;
 
     gl_FragColor = vec4(totalColor, 1.0);
 

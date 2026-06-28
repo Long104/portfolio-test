@@ -9,6 +9,7 @@ export default function ProjectCard({ title, description, tags, index }: Project
   return (
     <div
       className="glass"
+      data-cursor="card"
       style={{
         padding: "1.5rem 2rem",
         maxWidth: "580px",

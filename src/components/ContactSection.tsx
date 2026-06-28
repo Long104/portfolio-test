@@ -38,6 +38,7 @@ export default function ContactSection() {
         {/* Email */}
         <a
           href="mailto:hello@pantorn.dev"
+          data-cursor="link"
           style={{
             display: "inline-block",
             marginTop: "1.5rem",
