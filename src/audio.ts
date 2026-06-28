@@ -42,18 +42,23 @@ export class AudioEngine {
     // analyser → gain → destination
     this.analyser.connect(this.gainNode);
     this.gainNode.connect(this.ctx.destination);
+  }
 
-    // Load audio file
-    const resp = await fetch("/far_beyond-the-stars.mp3");
-    if (!resp.ok) throw new Error("Failed to load /far_beyond-the-stars.mp3 — place your MP3 in public/");
+  async loadTrack(url: string) {
+    if (!this.ctx) await this.init();
+    if (!this.ctx) throw new Error("AudioContext not available");
+
+    // Stop current playback
+    if (this._isPlaying) this.pause();
+
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error("Failed to load " + url);
     const arrayBuffer = await resp.arrayBuffer();
     this._audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+    this._offset = 0;
   }
 
   async start() {
-    if (!this.ctx || !this.analyser || !this._audioBuffer) {
-      await this.init();
-    }
     if (!this.ctx || !this.analyser || !this._audioBuffer) return;
 
     // Resume context (autoplay policy)

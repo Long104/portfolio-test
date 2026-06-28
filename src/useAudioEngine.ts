@@ -1,8 +1,12 @@
 import { useCallback, useRef, useState } from "react";
 import { AudioEngine, type AudioData } from "./audio";
 
+export const TRACKS = [
+  { name: "Instrumental", url: "/far-beyond-the-starts-instrusmental.mp3" },
+  { name: "Original", url: "/far_beyond-the-stars.mp3" },
+];
+
 // Singleton — one AudioEngine shared across all components.
-// Created on first use, disposed on page unload.
 let engineSingleton: AudioEngine | null = null;
 
 function getEngine() {
@@ -15,6 +19,24 @@ export function useAudioEngine() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentTrack, setCurrentTrack] = useState(TRACKS[0].url);
+
+  const loadTrack = useCallback(async (url: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await engineRef.current.loadTrack(url);
+      setCurrentTrack(url);
+      await engineRef.current.start();
+      setIsPlaying(true);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to load track";
+      setError(msg);
+      console.error("[AudioEngine]", msg);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const start = useCallback(async () => {
     setIsLoading(true);
@@ -41,10 +63,13 @@ export function useAudioEngine() {
     else start();
   }, [isPlaying, start, pause]);
 
-  // Call every frame to get smoothed audio data
   const getData = useCallback((): AudioData => {
     return engineRef.current.getData();
   }, []);
 
-  return { isPlaying, isLoading, error, start, pause, toggle, getData };
+  return {
+    isPlaying, isLoading, error,
+    currentTrack, loadTrack,
+    start, pause, toggle, getData,
+  };
 }
