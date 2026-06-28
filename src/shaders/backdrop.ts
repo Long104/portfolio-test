@@ -24,7 +24,7 @@ export const backdropFragment = /* glsl */ `
     vec3 c2       = vec3(0.14, 0.04, 0.10);   // dark mauve
     vec3 c3       = vec3(0.12, 0.06, 0.10);   // grayish mauve
     vec3 c4       = vec3(0.10, 0.08, 0.10);   // dark neutral gray
-    vec3 ringTeal = vec3(0.020, 0.400, 0.440); // blue-teal ring (matches tunnel hue, brighter)
+    vec3 ringTeal = vec3(0.114, 0.537, 0.498); // #1D897F — teal ring (brighter, green-teal)
     vec3 teal     = vec3(0.004, 0.165, 0.180); // #012a2e — outer tunnel
 
     vec3 color = mix(darkVoid, c1, smoothstep(0.0, 0.08, dist));
