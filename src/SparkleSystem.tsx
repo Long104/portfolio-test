@@ -223,7 +223,7 @@ export default function SparkleSystem() {
       s.y = Math.sin(angle) * radius * 0.8;
       s.z = -1 - Math.random() * 14;
 
-      s.rot = Math.random() * Math.PI * 2;
+      s.rot = (Math.random() - 0.5) * 0.3; // near-horizontal for anamorphic streak
       s.size = big
         ? 0.6 + Math.random() * 0.7
         : 0.3 + Math.random() * 0.4;
@@ -290,9 +290,21 @@ export default function SparkleSystem() {
         const renderScale = scale * s.size;
         const brightness = Math.max(0, scale);
 
+        // Anamorphic horizontal streak — stretch X during flash phase
+        // Birth: streak grows (1x→3x), Flash: hold at 3x, Death: shrink back to 1x
+        let stretchX = 1.0;
+        if (t < 0.15) {
+          stretchX = 1.0 + (t / 0.15) * 2.0; // 1x → 3x
+        } else if (t < 0.40) {
+          stretchX = 3.0; // hold at max streak
+        } else {
+          const deathT = (t - 0.40) / 0.60;
+          stretchX = Math.max(1.0, 3.0 - deathT * 4.0); // 3x → 1x quickly
+        }
+
         dummy.position.set(s.x, s.y, s.z);
         dummy.rotation.set(0, 0, s.rot);
-        dummy.scale.setScalar(renderScale);
+        dummy.scale.set(renderScale * stretchX, renderScale, 1);
         dummy.updateMatrix();
         mesh.setMatrixAt(i, dummy.matrix);
 
