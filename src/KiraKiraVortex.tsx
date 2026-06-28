@@ -193,13 +193,13 @@ export default function KiraKiraVortex() {
 
     // Per-layer temporal smoothing — each approaches raw value at its own speed
     // Lower factor = more lag = heavier/slower feel
-    s.coreBass     = s.coreBass     + (raw.bass   - s.coreBass)     * 0.50;
-    s.sunBass      = s.sunBass      + (raw.bass   - s.sunBass)      * 0.25;
-    s.raysTreble   = s.raysTreble   + (raw.treble - s.raysTreble)   * 0.40;
-    s.bridgeMid    = s.bridgeMid    + (raw.mid    - s.bridgeMid)    * 0.30;
-    s.particlesMid = s.particlesMid + (raw.mid    - s.particlesMid) * 0.20;
-    s.flaresTreble = s.flaresTreble + (raw.treble - s.flaresTreble) * 0.35;
-    s.backdropBass = s.backdropBass + (raw.bass   - s.backdropBass) * 0.08;
+    s.coreBass     = s.coreBass     + (raw.bass   - s.coreBass)     * 0.70;
+    s.sunBass      = s.sunBass      + (raw.bass   - s.sunBass)      * 0.30;
+    s.raysTreble   = s.raysTreble   + (raw.treble - s.raysTreble)   * 0.50;
+    s.bridgeMid    = s.bridgeMid    + (raw.mid    - s.bridgeMid)    * 0.35;
+    s.particlesMid = s.particlesMid + (raw.mid    - s.particlesMid) * 0.40;
+    s.flaresTreble = s.flaresTreble + (raw.treble - s.flaresTreble) * 0.60;
+    s.backdropBass = s.backdropBass + (raw.bass   - s.backdropBass) * 0.10;
 
     const aspect = state.size.width / state.size.height;
 

@@ -1,12 +1,6 @@
 // Layer D: Four stacked fullscreen meshes with additive blending.
-// D4 = big pastel sun circle
-// D3 = anisotropic light rays
-// D2 = bridge glow
-// D1 = tight ignition core
-//
-// AUDIO STRATEGY: baselines are DIM. Audio brings layers UP to full brightness.
-// At rest: everything is faint/ghostly. On beat: surges to bright.
-// This creates maximum perceptual contrast (Weber's Law).
+// AUDIO STRATEGY: near-dark at rest, EXPLODES bright on beat.
+// Maximum perceptual contrast — punchy visual response.
 // All use inline GLSL hash/noise (per-pixel, full resolution, no texture tiling).
 
 export const glowVertex = /* glsl */ `
@@ -20,7 +14,7 @@ export const glowVertex = /* glsl */ `
 export const glowFragment = /* glsl */ `
   uniform float uAspect;
   uniform float uTime;
-  uniform float uCoreBass;    // core — fast bass (smoothing 0.50)
+  uniform float uCoreBass;    // core — fast bass (smoothing 0.70)
   uniform float uSunBass;     // sun — slow bass (smoothing 0.25)
   uniform float uRaysTreble;  // rays — treble (smoothing 0.40)
   uniform float uBridgeMid;   // bridge — mid (smoothing 0.30)
@@ -52,8 +46,8 @@ export const glowFragment = /* glsl */ `
     centered.x *= uAspect;
     float dist = length(centered);
 
-    // Master early-out — sun bass slightly expands the reach
-    if (dist > 0.42 + uSunBass * 0.04) discard;
+    // Master early-out — sun bass expands the reach on beat
+    if (dist > 0.42 + uSunBass * 0.06) discard;
 
     float angle = atan(centered.y, centered.x);
     vec3 totalColor = vec3(0.0);
@@ -74,9 +68,9 @@ export const glowFragment = /* glsl */ `
       color = mix(color, yellow,    smoothstep(0.09, 0.03, d + gasNoise * 0.015));
       color = mix(color, whiteCore, smoothstep(0.02, 0.0, d + gasNoise * 0.015));
 
-      // Baseline dimmed to 0.4, audio brings glow up to ~1.0
-      float glow = min(exp(-d * 8.0) + 0.4, 0.85) * (0.4 + uSunBass * 0.6);
-      float alpha = smoothstep(0.42, 0.06, d) * (0.1 + gasNoise * 0.1) * (0.5 + uSunBass * 0.5);
+      // Near-dark at rest (×0.15), bright on bass (×0.98)
+      float glow = min(exp(-d * 8.0) + 0.4, 0.85) * (0.15 + uSunBass * 0.85);
+      float alpha = smoothstep(0.42, 0.06, d) * (0.1 + gasNoise * 0.1) * (0.2 + uSunBass * 0.8);
 
       totalColor += color * glow * alpha;
     }
@@ -98,8 +92,8 @@ export const glowFragment = /* glsl */ `
         smoothstep(0.05, 0.3, dist)
       );
 
-      // Baseline faint at 0.35, treble brings up to ~1.0
-      float alpha = rays * distFade * 0.2 * (0.35 + uRaysTreble * 1.0);
+      // Near-invisible at rest (×0.15), explode on treble
+      float alpha = rays * distFade * 0.2 * (0.15 + uRaysTreble * 1.5);
 
       totalColor += rayColor * alpha * alpha;
     }
@@ -117,8 +111,8 @@ export const glowFragment = /* glsl */ `
       color = mix(color, gold,      smoothstep(0.15, 0.06, d));
       color = mix(color, whiteCore, smoothstep(0.04, 0.0, d));
 
-      // Baseline dimmed to 0.5, mid brings up to ~1.0
-      float glow = exp(-d * 6.0) * (0.5 + uBridgeMid * 0.5);
+      // Near-dark at rest (×0.2), bright on mid
+      float glow = exp(-d * 6.0) * (0.2 + uBridgeMid * 0.8);
       float alpha = smoothstep(0.25, 0.05, d);
 
       totalColor += color * glow * 0.8 * alpha * 0.5;
@@ -139,8 +133,8 @@ export const glowFragment = /* glsl */ `
 
       float alpha = smoothstep(0.17, 0.01, d);
 
-      // Baseline dim at 0.7, bass brings up to ~2.0 (current brightness)
-      float coreBoost = 0.7 + uCoreBass * 1.7;
+      // Near-dark ember at rest (0.2), EXPLODES on kick (2.65)
+      float coreBoost = 0.2 + uCoreBass * 2.5;
 
       totalColor += color * coreBoost * alpha;
     }

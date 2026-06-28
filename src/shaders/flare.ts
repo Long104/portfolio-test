@@ -1,6 +1,6 @@
 // Layer C: Radiant star flares (additive blending)
-// AUDIO STRATEGY: baseline dim at 0.35x. ~40% of flares flash to full brightness
-// on treble. 60% stay dim. Clear firefly-like contrast.
+// AUDIO STRATEGY: near-dark at rest (×0.12). ~65% flash bright on treble.
+// Punchy starburst effect — flares explode on hi-hats and synths.
 export const flareVertex = /* glsl */ `
   uniform float uTime;
   uniform float uSpeed;
@@ -25,9 +25,9 @@ export const flareVertex = /* glsl */ `
     if (r < 4.0) pos.xy = normalize(pos.xy + 0.001) * (4.0 + aRandoms.x * 2.0);
 
     vDepth = clamp((pos.z + 60.0) / 65.0, 0.0, 1.0);
-    // Per-instance: reactive flares scale up, rest stay constant
-    float reactive = smoothstep(0.6, 0.85, vColorMix);
-    float audioScale = 1.0 + uTreble * reactive * 0.5;
+    // ~65% reactive flares scale up on treble
+    float reactive = smoothstep(0.3, 0.6, vColorMix);
+    float audioScale = 1.0 + uTreble * reactive * 0.6;
     float scale = 0.5 * (0.2 + vDepth * vDepth * sqrt(vDepth) * 6.0) * audioScale;
 
     // Radial forward-motion streak
@@ -70,10 +70,9 @@ export const flareFragment = /* glsl */ `
     index = clamp(index, 0, 9);
 
     vec3 glow = colors[index];
-    // Baseline dim at 0.35. Reactive flares flash to ~0.7+ on treble.
-    // Non-reactive flares stay at 0.35 — clearly dimmer.
-    float reactive = smoothstep(0.6, 0.85, vColorMix);
-    glow *= 0.35 + vTreblePulse * reactive * 1.2;
+    // Near-dark at rest (×0.12). Reactive flares explode on treble.
+    float reactive = smoothstep(0.3, 0.6, vColorMix);
+    glow *= 0.12 + vTreblePulse * reactive * 2.0;
 
     float alphaFade = smoothstep(1.0, 0.80, vDepth);
     gl_FragColor = vec4(glow, texColor.a * alphaFade);

@@ -1,6 +1,6 @@
 // Layer B: Fluid particles (petals + blobs, normal alpha blending)
-// AUDIO STRATEGY: baseline ghostly/dim. Only ~30% react to mid — they flash
-// bright. 70% stay at baseline. Maximum contrast between reactive and still.
+// AUDIO STRATEGY: near-invisible at rest. ~60% flash bright on mid.
+// Punchy firefly effect — petals explode into visibility on beats.
 export const particleVertex = /* glsl */ `
   uniform float uTime;
   uniform float uSpeed;
@@ -67,23 +67,23 @@ export const particleFragment = /* glsl */ `
     vec4 texColor;
     vec3 finalColor;
 
-    // Per-instance: ~30% react to mid, 70% stay ghostly
-    float reactive = smoothstep(0.6, 0.85, vRand);
+    // ~60% of particles react to mid (smoothstep 0.3, 0.6)
+    float reactive = smoothstep(0.3, 0.6, vRand);
     float twinkle = reactive * vMidPulse;
 
     if (vType < 0.5) {
-      // Ghost-teal petals — very faint at rest, reactive ones flash bright
+      // Ghost-teal petals — nearly invisible at rest, explode on mid
       texColor = texture2D(uTexPetal, vUv);
       finalColor = vec3(0.106, 0.737, 0.698); // #1BBCB2
-      texColor.a *= 0.12;
-      // Reactive petals: ghostly → visible (up to 3x brighter)
-      texColor.a *= 1.0 + twinkle * 2.0;
-      finalColor *= 1.0 + twinkle * 0.5;
+      texColor.a *= 0.04;
+      // Reactive petals: ghostly → bright flash (up to 5x)
+      texColor.a *= 1.0 + twinkle * 4.0;
+      finalColor *= 1.0 + twinkle * 0.6;
     } else {
-      // Dark framing blobs — dimmer at rest, reactive ones brighten
+      // Dark framing blobs — dim at rest, brighten on mid
       texColor = texture2D(uTexBlob, vUv);
       finalColor = texture2D(uGradLUT, vec2(vDepth, 0.5)).rgb;
-      finalColor *= 0.5 + twinkle * 0.6;
+      finalColor *= 0.2 + twinkle * 0.8;
     }
 
     // Proximity fade
