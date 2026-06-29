@@ -18,6 +18,8 @@ const PALETTE = [
 const MAX_SPARKLES = 120;
 const DOT_LERP = 1; // instant — tracks mouse 1:1
 const RING_LERP = 1; // instant — tracks mouse 1:1
+const IDLE_CUTOFF_MS = 2000; // no movement → throttle kicks in
+const IDLE_FRAME_MS = 66;    // ~15fps when idle (vs 60fps active)
 const BEAT_HISTORY = 26;
 const BEAT_DEBOUNCE_MS = 110;
 const IDLE_INTERVAL_MS = 80;
@@ -381,11 +383,26 @@ export function CursorOverlay() {
 
     let rafId = 0;
     let lastT = performance.now();
+    let lastFrameTime = 0; // for idle throttle
 
     const frame = (t: number): void => {
       rafId = requestAnimationFrame(frame);
       const dt = Math.min((t - lastT) / 1000, 0.05);
       lastT = t;
+
+      // ── Idle throttle: drop to ~15fps (66ms between frames) when cursor
+      // hasn't moved for IDLE_CUTOFF_MS. Frees CPU for the 3D loop.
+      // On next pointermove, full 60fps resumes within 1 frame (~16ms).
+      if (t - lastMoveTime > IDLE_CUTOFF_MS) {
+        if (t - lastFrameTime < IDLE_FRAME_MS) {
+          // Still need to update rotation or it'll snap when resuming
+          const targetRotSpeed = hover ? 0 : 0.3;
+          rotSpeed += (targetRotSpeed - rotSpeed) * 0.08;
+          rotation += dt * rotSpeed;
+          return;
+        }
+      }
+      lastFrameTime = t;
 
       const audio = getAudioData();
 
