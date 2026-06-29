@@ -1001,7 +1001,7 @@ html.cursor-hidden * {
 }
 
 .nav-pill__item--active {
-  background: rgba(255, 255, 255, 0.12);
+  background: color-mix(in srgb, var(--theme) 25%, transparent);
   color: rgba(255, 255, 255, 1);
 }
 
