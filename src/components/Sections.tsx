@@ -61,27 +61,29 @@ export function ExperienceSection() {
   return (
     <section className="section" data-section-index={2}>
       <div className="section-label">// experience</div>
-      <div className="experience">
-        {EXPERIENCE.map((job, i) => (
-          <div key={i} className="exp-item">
-            <div className="exp-item__period">{job.period}</div>
-            <div className="exp-item__body">
-              <div className="exp-item__role">{job.role}</div>
-              <div className="exp-item__company">{job.company}</div>
-              <div className="exp-item__desc">{job.description}</div>
+      <GlassPanel>
+        <div className="experience">
+          {EXPERIENCE.map((job, i) => (
+            <div key={i} className="exp-item">
+              <div className="exp-item__period">{job.period}</div>
+              <div className="exp-item__body">
+                <div className="exp-item__role">{job.role}</div>
+                <div className="exp-item__company">{job.company}</div>
+                <div className="exp-item__desc">{job.description}</div>
+              </div>
             </div>
-          </div>
-        ))}
-        {/* Current status */}
-        <div className="exp-item exp-item--current">
-          <div className="exp-item__period exp-item__period--current">now</div>
-          <div className="exp-item__body">
-            <div className="exp-item__role exp-item__role--current">
-              {CURRENT_STATUS}
+          ))}
+          {/* Current status */}
+          <div className="exp-item exp-item--current">
+            <div className="exp-item__period exp-item__period--current">now</div>
+            <div className="exp-item__body">
+              <div className="exp-item__role exp-item__role--current">
+                {CURRENT_STATUS}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </GlassPanel>
     </section>
   );
 }

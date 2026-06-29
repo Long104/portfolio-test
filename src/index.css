@@ -155,10 +155,10 @@ html.cursor-hidden * {
 .section-label {
   font-family: var(--mono);
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.85);
   letter-spacing: 0.05em;
   margin-bottom: 32px;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 /* ── Hero ── */
@@ -391,7 +391,7 @@ html.cursor-hidden * {
 
 .contact__footer {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.65);
   margin-top: 48px;
   letter-spacing: 0.05em;
   text-align: center;
