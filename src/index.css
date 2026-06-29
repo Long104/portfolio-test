@@ -171,6 +171,7 @@ html.cursor-hidden * {
   font-family: var(--mono);
   font-size: 12px;
   color: rgba(255, 255, 255, 0.85);
+  text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 32px;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
@@ -225,6 +226,7 @@ html.cursor-hidden * {
 
 .stack-col__label {
   font-size: 10px;
+  text-transform: uppercase;
   letter-spacing: 0.05em;
   color: rgba(255, 255, 255, 0.5);
   margin-bottom: 12px;
@@ -343,6 +345,7 @@ html.cursor-hidden * {
 
 .exp-item__period {
   font-size: 11px;
+  text-transform: uppercase;
   letter-spacing: 0.05em;
   color: rgba(255, 255, 255, 0.5);
   padding-top: 2px;
@@ -495,6 +498,7 @@ html.cursor-hidden * {
   font-size: 10px;
   color: rgba(255, 255, 255, 0.65);
   margin-top: 48px;
+  text-transform: uppercase;
   letter-spacing: 0.05em;
   text-align: center;
 }
@@ -581,6 +585,7 @@ html.cursor-hidden * {
 .psycommu-boot__addr {
   color: rgba(255, 75, 216, 0.8);
   font-size: 11px;
+  text-transform: uppercase;
   letter-spacing: 0.05em;
   min-width: 44px;
   flex-shrink: 0;
@@ -916,6 +921,7 @@ html.cursor-hidden * {
   font-size: 11px;
   font-family: var(--mono);
   font-weight: 600;
+  text-transform: uppercase;
   letter-spacing: 0.05em;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -971,6 +977,7 @@ html.cursor-hidden * {
   font-size: 11px;
   font-family: var(--mono);
   font-weight: 600;
+  text-transform: uppercase;
   letter-spacing: 0.05em;
   cursor: pointer;
   transition: all 0.2s ease;
