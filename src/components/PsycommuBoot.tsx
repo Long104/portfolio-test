@@ -106,7 +106,7 @@ export function PsycommuBoot({
     onWarmUp?.(); // user gesture → AudioContext can resume
     startedRef.current = true;
     setFadeOut(true);
-    setTimeout(() => onStart(), 600);
+    onStart(); // mount content immediately — entrance animations play under fading overlay
   }, [isLoading, onStart, onWarmUp]);
 
   const handleSelect = useCallback(
@@ -115,7 +115,7 @@ export function PsycommuBoot({
       onWarmUp?.(); // user gesture → AudioContext can resume
       startedRef.current = true;
       setFadeOut(true);
-      setTimeout(() => onSelectTrack(url), 600);
+      onSelectTrack(url); // mount content immediately
     },
     [isLoading, onSelectTrack, onWarmUp],
   );
