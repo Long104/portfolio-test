@@ -16,8 +16,8 @@ const PALETTE = [
 ];
 
 const MAX_SPARKLES = 120;
-const DOT_LERP = 0.92; // nearly instant — feels like normal cursor
-const RING_LERP = 0.80; // barely behind dot — just a whisper of smoothness
+const DOT_LERP = 0.95; // nearly instant — feels like normal cursor
+const RING_LERP = 0.95; // matches dot — no visible separation, unified smooth cursor
 const BEAT_HISTORY = 26;
 const BEAT_DEBOUNCE_MS = 110;
 const IDLE_INTERVAL_MS = 80;
