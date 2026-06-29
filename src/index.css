@@ -5,7 +5,7 @@
 }
 
 :root {
-  --hud-opacity: 0.5;
+  --hud-opacity: 0.75;
   --glass-bg: rgba(0, 0, 0, 0.25);
   --glass-border: rgba(255, 255, 255, 0.12);
   --glass-border-hover: rgba(255, 255, 255, 0.4);
@@ -25,7 +25,7 @@ body,
 
 body {
   font-family: var(--mono);
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.9);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
@@ -84,7 +84,7 @@ html.cursor-hidden * {
   inset: 0;
   background: radial-gradient(
     ellipse at center,
-    rgba(1, 49, 74, 0.3) 0%,
+    rgba(1, 49, 74, 0.55) 0%,
     transparent 70%
   );
   pointer-events: none;
@@ -112,6 +112,7 @@ html.cursor-hidden * {
   color: rgba(255, 255, 255, var(--hud-opacity));
   pointer-events: none;
   user-select: none;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 .hud--tl { top: 24px; left: 32px; }
@@ -122,8 +123,9 @@ html.cursor-hidden * {
 .hud__name {
   font-size: 16px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.95);
   letter-spacing: 0.02em;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 .hud__role {
@@ -134,21 +136,24 @@ html.cursor-hidden * {
 .hud__counter {
   font-size: 13px;
   letter-spacing: 0.1em;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 .hud__hint {
   font-size: 11px;
   margin-top: 5px;
-  opacity: 0.6;
+  opacity: 0.8;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 /* ── Section label (// about, // work) ── */
 .section-label {
   font-family: var(--mono);
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.6);
   letter-spacing: 0.05em;
   margin-bottom: 32px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 /* ── Hero ── */
@@ -162,15 +167,16 @@ html.cursor-hidden * {
 
 .hero__tagline {
   font-size: clamp(28px, 5vw, 56px);
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.1;
   letter-spacing: -0.02em;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.95);
   max-width: 600px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 .hero__tagline span {
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 /* ── About ── */
@@ -181,12 +187,12 @@ html.cursor-hidden * {
 .about__text {
   font-size: clamp(18px, 2.5vw, 28px);
   line-height: 1.5;
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .about__text span {
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 /* ── Stack grid (categorized) ── */
@@ -200,7 +206,7 @@ html.cursor-hidden * {
 .stack-col__label {
   font-size: 10px;
   letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.5);
   margin-bottom: 12px;
 }
 
@@ -211,13 +217,13 @@ html.cursor-hidden * {
 
 .stack-col__item {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.8);
   padding: 3px 0;
   transition: color 0.2s ease;
 }
 
 .stack-col__item:hover {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 1);
 }
 
 /* ── Glass panel (refractive wrapper) ── */
@@ -256,37 +262,37 @@ html.cursor-hidden * {
 .exp-item__period {
   font-size: 11px;
   letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.5);
   padding-top: 2px;
 }
 
 .exp-item__period--current {
-  color: rgba(120, 220, 120, 0.7);
+  color: rgba(120, 220, 120, 0.85);
 }
 
 .exp-item__role {
   font-size: 16px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
   margin-bottom: 4px;
 }
 
 .exp-item__role--current {
-  color: rgba(120, 220, 120, 0.9);
+  color: rgba(120, 220, 120, 1);
   font-size: 14px;
 }
 
 .exp-item__company {
   font-size: 11px;
   letter-spacing: 0.03em;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.6);
   margin-bottom: 8px;
 }
 
 .exp-item__desc {
   font-size: 13px;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 /* ── Work grid ── */
@@ -320,21 +326,21 @@ html.cursor-hidden * {
 .project-card__num {
   font-size: 10px;
   letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.5);
   margin-bottom: 16px;
 }
 
 .project-card__title {
   font-size: 18px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 1);
   margin-bottom: 8px;
 }
 
 .project-card__stack {
   font-size: 10px;
   letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.55);
   text-transform: uppercase;
 }
 
@@ -343,7 +349,7 @@ html.cursor-hidden * {
   bottom: 20px;
   right: 20px;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.5);
   transition: color 0.2s ease, transform 0.2s ease;
 }
 
@@ -364,12 +370,13 @@ html.cursor-hidden * {
 .contact__link {
   font-family: var(--mono);
   font-size: clamp(24px, 4vw, 42px);
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
   text-decoration: none;
   letter-spacing: -0.01em;
   transition: color 0.2s ease, transform 0.2s ease;
   pointer-events: auto;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .contact__link:hover {
@@ -379,7 +386,7 @@ html.cursor-hidden * {
 
 .contact__footer {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.45);
   margin-top: 48px;
   letter-spacing: 0.05em;
   text-align: center;
@@ -465,7 +472,7 @@ html.cursor-hidden * {
 .audio-bar__btn {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.85);
   cursor: pointer;
   font-size: 16px;
   width: 28px;
@@ -486,7 +493,7 @@ html.cursor-hidden * {
   border: none;
   border-radius: 16px;
   padding: 4px 12px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.6);
   font-size: 11px;
   font-family: var(--mono);
   letter-spacing: 0.05em;
@@ -496,7 +503,7 @@ html.cursor-hidden * {
 
 .audio-bar__track--active {
   background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 1);
 }
 
 /* ── Nav pill (liquid glass — refractive takes over backdrop-filter & borderRadius) ── */
@@ -524,7 +531,7 @@ html.cursor-hidden * {
   border: none;
   border-radius: 16px;
   padding: 6px 14px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.6);
   font-size: 11px;
   font-family: var(--mono);
   letter-spacing: 0.05em;
@@ -533,12 +540,12 @@ html.cursor-hidden * {
 }
 
 .nav-pill__item:hover {
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .nav-pill__item--active {
   background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 1);
 }
 
 /* ── Responsive ── */
