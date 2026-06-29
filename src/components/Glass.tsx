@@ -12,7 +12,7 @@ export const RefractiveDiv = refractive.div;
 // Shared refraction config — tuned for vortex backdrop
 export const refractionConfig = {
   radius: 16,
-  blur: 2,
+  blur: 4,
   bezelWidth: 12,
   specularOpacity: 0.15,
 } as const;
@@ -36,7 +36,7 @@ export function ProjectCard({
     <RefractiveDiv
       refraction={{
         radius: 14,
-        blur: 1,
+        blur: 3,
         bezelWidth: 10,
         specularOpacity: 0.1,
       }}
