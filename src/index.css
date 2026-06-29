@@ -377,21 +377,16 @@ html.cursor-hidden * {
   color: rgba(255, 255, 255, 0.7);
 }
 
-/* ── Work grid ── */
+/* ── Work grid (flex — not grid, avoids Chrome backdrop-filter bug) ── */
 .work-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 16px;
   max-width: 720px;
 }
 
-/* Last card in odd-numbered grid spans full width */
-.project-card:last-child:nth-child(odd) {
-  grid-column: 1 / -1;
-  max-width: calc(50% - 8px);
-}
-
 .project-card {
+  flex: 0 0 calc(50% - 8px);
   position: relative;
   background: var(--glass-bg);
   padding: 28px 24px;
