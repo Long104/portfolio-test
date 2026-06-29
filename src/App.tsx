@@ -5,6 +5,7 @@ import Scene from "./Scene";
 import { useAudioEngine, TRACKS } from "./useAudioEngine";
 import { HUD } from "./components/HUD";
 import { PsycommuBoot } from "./components/PsycommuBoot";
+import { PsycommuWaveform } from "./components/PsycommuWaveform";
 import { ScrollContainer, type ScrollContainerHandle } from "./components/ScrollContainer";
 import { NavPill } from "./components/NavPill";
 import { CursorOverlay } from "./components/CursorOverlay";
@@ -137,6 +138,8 @@ function App() {
           >
             {isPlaying ? "\u23F8" : "\u25B6"}
           </button>
+
+          <PsycommuWaveform />
 
           <div className="audio-bar__divider" />
 
