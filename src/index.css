@@ -91,6 +91,11 @@ html.cursor-hidden * {
   z-index: -1;
 }
 
+/* Hero section: no vignette — full 3D view unobstructed */
+.hero::before {
+  background: none;
+}
+
 /* Centered variant (contact section) */
 .section--centered {
   align-items: center;
