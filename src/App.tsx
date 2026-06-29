@@ -174,6 +174,7 @@ function App() {
 
           <div className="audio-bar__divider" />
 
+          <div className="audio-bar__segmented">
           {TRACKS.map((track) => (
             <button
               key={track.url}
@@ -186,6 +187,7 @@ function App() {
               {track.name}
             </button>
           ))}
+          </div>
 
           <div className="audio-bar__divider" />
 

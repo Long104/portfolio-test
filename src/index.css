@@ -912,11 +912,19 @@ html.cursor-hidden * {
   background: rgba(255, 255, 255, 0.1);
 }
 
+.audio-bar__segmented {
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+  padding: 3px;
+  gap: 3px;
+}
+
 .audio-bar__track {
   background: transparent;
   border: none;
-  border-radius: 16px;
-  padding: 4px 12px;
+  border-radius: 11px;
+  padding: 2px 10px;
   color: rgba(255, 255, 255, 0.6);
   font-size: 11px;
   font-family: var(--mono);
@@ -928,8 +936,12 @@ html.cursor-hidden * {
 }
 
 .audio-bar__track--active {
-  background: rgba(255, 255, 255, 0.12);
+  background: color-mix(in srgb, var(--theme) 25%, transparent);
   color: rgba(255, 255, 255, 1);
+}
+
+.audio-bar__track:hover:not(.audio-bar__track--active) {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .audio-bar__theme {
