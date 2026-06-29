@@ -45,11 +45,19 @@ export class AudioEngine {
   }
 
   async loadTrack(url: string) {
+    await this.preloadTrack(url);
+    // loadTrack also starts playback; preloadTrack just loads.
+  }
+
+  /** Fetch + decode audio into memory without starting playback.
+   *  Safe to call early — on mount, before user interaction.
+   *  Call start() later for instant playback. */
+  async preloadTrack(url: string) {
     if (!this.ctx) await this.init();
     if (!this.ctx) throw new Error("AudioContext not available");
 
-    // Stop current playback
-    if (this._isPlaying) this.pause();
+    // Skip if already loaded (same track)
+    if (this._audioBuffer) return;
 
     const resp = await fetch(url);
     if (!resp.ok) throw new Error("Failed to load " + url);

@@ -45,10 +45,18 @@ function App() {
     isLoading,
     error,
     isPlaying,
+    isPreloaded,
     toggle,
     currentTrack,
+    preload,
+    engage,
     loadTrack,
   } = useAudioEngine();
+
+  // ── Preload default audio track on mount — happens during Psycommu boot ──
+  useEffect(() => {
+    if (!isPreloaded) preload(currentTrack);
+  }, []); // mount only
 
   // ── Scroll progress tracking (rAF-throttled — prevents 120 re-renders/sec) ──
   useEffect(() => {
@@ -68,14 +76,22 @@ function App() {
   }, [started]);
 
   const handleStart = useCallback(async () => {
-    await loadTrack(currentTrack);
+    if (isPreloaded) {
+      await engage();
+    } else {
+      await loadTrack(currentTrack);
+    }
     setStarted(true);
-  }, [loadTrack, currentTrack]);
+  }, [isPreloaded, engage, loadTrack, currentTrack]);
 
   const handleSelectTrack = useCallback(async (url: string) => {
-    await loadTrack(url);
+    if (isPreloaded && url === currentTrack) {
+      await engage();
+    } else {
+      await loadTrack(url);
+    }
     setStarted(true);
-  }, [loadTrack]);
+  }, [isPreloaded, engage, loadTrack, currentTrack]);
 
   const handleSectionChange = useCallback((index: number) => {
     setActiveSection(index);

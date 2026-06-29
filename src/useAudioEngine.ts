@@ -25,8 +25,25 @@ export function useAudioEngine() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isPreloaded, setIsPreloaded] = useState(false);
   const [currentTrack, setCurrentTrack] = useState(TRACKS[0].url);
 
+  /** Preload default track in background during boot — no playback. */
+  const preload = useCallback(async (url: string) => {
+    if (isPreloaded) return;
+    setError(null);
+    try {
+      await engineRef.current.preloadTrack(url);
+      setCurrentTrack(url);
+      setIsPreloaded(true);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to preload";
+      setError(msg);
+      console.error("[AudioEngine]", msg);
+    }
+  }, [isPreloaded]);
+
+  /** Full load + immediate playback (fallback if not preloaded). */
   const loadTrack = useCallback(async (url: string) => {
     setIsLoading(true);
     setError(null);
@@ -44,7 +61,8 @@ export function useAudioEngine() {
     }
   }, []);
 
-  const start = useCallback(async () => {
+  /** Start playback from preloaded buffer — near-instant. */
+  const engage = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -66,8 +84,8 @@ export function useAudioEngine() {
 
   const toggle = useCallback(() => {
     if (isPlaying) pause();
-    else start();
-  }, [isPlaying, start, pause]);
+    else engage();
+  }, [isPlaying, engage, pause]);
 
   const getData = useCallback((): AudioData => {
     return engineRef.current.getData();
@@ -75,7 +93,8 @@ export function useAudioEngine() {
 
   return {
     isPlaying, isLoading, error,
-    currentTrack, loadTrack,
-    start, pause, toggle, getData,
+    isPreloaded, currentTrack,
+    preload, loadTrack, engage,
+    pause, toggle, getData,
   };
 }
