@@ -142,8 +142,13 @@ function drawReticle(
   bass: number,
 ): void {
   const color = hover ? "#FF4FD8" : "#FFFFFF";
-  const baseR = hover ? 17 : 12;
+  const baseR = hover ? 26 : 18;
   const ringR = baseR * (1 + bass * 0.35) * (clicking ? 0.75 : 1);
+
+  // ── Dark glow for contrast against bright vortex particles ──
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,0.85)";
+  ctx.shadowBlur = 5;
 
   // ═══ Rotating elements: ring + tick marks (scanning) ═══
   ctx.save();
@@ -151,36 +156,35 @@ function drawReticle(
   ctx.rotate(rotation);
 
   // Outer ring
-  ctx.strokeStyle = hexA(color, 0.4 + lockAlpha * 0.4);
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = hexA(color, 0.55 + lockAlpha * 0.35);
+  ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.arc(0, 0, ringR, 0, Math.PI * 2);
   ctx.stroke();
 
   // Main ticks at 0°, 90°, 180°, 270°
-  ctx.lineWidth = 1.5;
-  ctx.strokeStyle = hexA(color, 0.55 + lockAlpha * 0.3);
+  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = hexA(color, 0.7 + lockAlpha * 0.25);
   for (let i = 0; i < 4; i++) {
-    drawTick(ctx, (i / 4) * Math.PI * 2, ringR, 5);
+    drawTick(ctx, (i / 4) * Math.PI * 2, ringR, 7);
   }
 
   // Minor ticks at 45°, 135°, 225°, 315°
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = hexA(color, 0.25 + lockAlpha * 0.2);
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = hexA(color, 0.4 + lockAlpha * 0.2);
   for (let i = 0; i < 4; i++) {
-    drawTick(ctx, ((i + 0.5) / 4) * Math.PI * 2, ringR, 3);
+    drawTick(ctx, ((i + 0.5) / 4) * Math.PI * 2, ringR, 4);
   }
 
   ctx.restore();
 
   // ═══ Fixed elements: corner brackets (screen-aligned targeting frame) ═══
-  // On lock-on: brackets contract inward + tighten
   const bo = hover ? ringR * 0.5 : ringR + 5;
-  const bl = hover ? 6 : 8;
-  const ba = hover ? 0.9 : 0.45;
+  const bl = hover ? 7 : 10;
+  const ba = hover ? 0.95 : 0.6;
 
   ctx.strokeStyle = hexA(color, ba);
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 2.5;
   drawBracket(ctx, rx - bo, ry - bo, bl, 1, 1);    // NW
   drawBracket(ctx, rx + bo, ry - bo, bl, -1, 1);   // NE
   drawBracket(ctx, rx - bo, ry + bo, bl, 1, -1);   // SW
@@ -190,8 +194,8 @@ function drawReticle(
   const gap = 5;
   const armEnd = ringR - 2;
   if (armEnd > gap + 2) {
-    ctx.strokeStyle = hexA(color, 0.3 + lockAlpha * 0.3);
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = hexA(color, 0.5 + lockAlpha * 0.3);
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(rx + gap, ry); ctx.lineTo(rx + armEnd, ry);
     ctx.moveTo(rx - gap, ry); ctx.lineTo(rx - armEnd, ry);
@@ -202,19 +206,35 @@ function drawReticle(
 
   // ═══ Lock-on micro-text ═══
   if (lockAlpha > 0.03) {
-    ctx.font = "8px 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace";
-    ctx.fillStyle = hexA("#FF4FD8", lockAlpha * 0.7);
+    ctx.shadowBlur = 3;
+    ctx.font = "9px 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace";
+    ctx.fillStyle = hexA("#FF4FD8", lockAlpha * 0.85);
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
-    ctx.fillText("◉ LOCK", rx + ringR + 10, ry);
+    ctx.fillText("◉ LOCK", rx + ringR + 12, ry);
+    ctx.shadowBlur = 5;
   }
 
-  // ═══ Center dot — dim precision marker, no glow halo ═══
-  ctx.globalAlpha = 0.7;
-  ctx.fillStyle = "#FFFFFF";
+  ctx.restore(); // pop shadow
+
+  // ═══ Center dot — dark outline + bright fill for max visibility ═══
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,0.9)";
+  ctx.shadowBlur = 3;
+
+  // Dark outline ring
   ctx.beginPath();
-  ctx.arc(dx, dy, 1.5, 0, Math.PI * 2);
+  ctx.arc(dx, dy, 3.5, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(0,0,0,0.7)";
   ctx.fill();
+
+  // Bright inner dot
+  ctx.beginPath();
+  ctx.arc(dx, dy, 2.5, 0, Math.PI * 2);
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fill();
+
+  ctx.restore();
 }
 
 export function CursorOverlay() {
