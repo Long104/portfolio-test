@@ -1,9 +1,10 @@
 // ── Kira-Kira Cursor Overlay ─────────────────────────────
 // SEED-mode cross sparkles that trail the cursor, audio-reactive.
 // Runs on its own 60fps rAF loop — independent of R3F's 30fps demand loop.
-// Self-gates: desktop only (pointer: fine), respects prefers-reduced-motion.
+// Self-gates: desktop only (pointer: fine).
 //
 // Architecture:
+//   • Dual-element cursor: dot (snappy) + ring (laggy) = elastic premium feel
 //   • Object pool of 120 sparkles (ring buffer, no GC churn)
 //   • Pre-rendered sprite per palette color (drawImage = GPU, not gradient creation)
 //   • Energy-based beat detection on bass band
@@ -22,7 +23,8 @@ const PALETTE = [
 ];
 
 const MAX_SPARKLES = 120;
-const LERP = 0.13; // silky follow, matches Lenis/vortex vocabulary
+const DOT_LERP = 0.22; // snappy — marks exact click position
+const RING_LERP = 0.12; // laggy — creates elastic, premium feel
 const BEAT_HISTORY = 26; // ~430ms at 60fps
 const BEAT_DEBOUNCE_MS = 110;
 const IDLE_INTERVAL_MS = 80;
@@ -111,51 +113,56 @@ function makeSparkleSprite(color: string): HTMLCanvasElement {
   return c;
 }
 
-// ── Cursor renderer (1 draw per frame, direct is fine) ──
-function drawCursor(
+// ── Ring renderer (outer, laggy — visual anchor) ────────
+function drawRing(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   r: number,
   color: string,
-  ring: boolean,
+  alpha: number,
   treble: number,
+): void {
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(x, y, r + treble * 2, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+// ── Dot renderer (inner, snappy — precise click point) ──
+function drawDot(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  r: number,
+  bass: number,
 ): void {
   ctx.globalAlpha = 1;
 
-  // Outer glow
-  const halo = ctx.createRadialGradient(x, y, 0, x, y, r * 3);
-  halo.addColorStop(0, hexA(color, 0.5));
-  halo.addColorStop(0.4, hexA(color, 0.15));
-  halo.addColorStop(1, hexA(color, 0));
-  ctx.fillStyle = halo;
-  ctx.fillRect(x - r * 3, y - r * 3, r * 6, r * 6);
+  // Glow halo
+  const glow = ctx.createRadialGradient(x, y, 0, x, y, r * 5);
+  glow.addColorStop(0, hexA("#FFFFFF", 0.35 + bass * 0.3));
+  glow.addColorStop(0.4, hexA("#FFFFFF", 0.06));
+  glow.addColorStop(1, hexA("#FFFFFF", 0));
+  ctx.fillStyle = glow;
+  ctx.fillRect(x - r * 5, y - r * 5, r * 10, r * 10);
 
-  // Core star
+  // Core
   ctx.fillStyle = "#FFFFFF";
   ctx.beginPath();
-  ctx.arc(x, y, r * 0.5, 0, Math.PI * 2);
+  ctx.arc(x, y, r * (1 + bass * 0.3), 0, Math.PI * 2);
   ctx.fill();
-
-  // Hover ring (expands with treble shimmer)
-  if (ring) {
-    ctx.strokeStyle = hexA(color, 0.7 + treble * 0.3);
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(x, y, r * 1.6 + treble * 3, 0, Math.PI * 2);
-    ctx.stroke();
-  }
 }
 
 export function CursorOverlay() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Gate: desktop pointer + motion allowed
+  // Gate: desktop pointer only (no touch).
   const enabled = useMemo(() => {
     if (typeof window === "undefined") return false;
-    const fine = window.matchMedia("(pointer: fine)").matches;
-    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    return fine && !calm;
+    return window.matchMedia("(pointer: fine)").matches;
   }, []);
 
   useEffect(() => {
@@ -189,21 +196,22 @@ export function CursorOverlay() {
     const sprites: Record<string, HTMLCanvasElement> = {};
     for (const c of PALETTE) sprites[c.hex] = makeSparkleSprite(c.hex);
 
-    // ── Pointer state ──
+    // ── Pointer state — dual element ──
     const target = { x: w / 2, y: h / 2 };
-    const cur = { x: w / 2, y: h / 2 };
-    let prevX = cur.x;
-    let prevY = cur.y;
+    const dot = { x: w / 2, y: h / 2 };   // fast follow — precise click point
+    const ring = { x: w / 2, y: h / 2 };  // slow follow — visual anchor
+    let prevX = dot.x;
+    let prevY = dot.y;
     let firstMove = false;
     let hover = false;
     let clicking = false;
 
     const onMove = (e: PointerEvent): void => {
       if (!firstMove) {
-        cur.x = target.x = e.clientX;
-        cur.y = target.y = e.clientY;
-        prevX = cur.x;
-        prevY = cur.y;
+        dot.x = ring.x = target.x = e.clientX;
+        dot.y = ring.y = target.y = e.clientY;
+        prevX = dot.x;
+        prevY = dot.y;
         firstMove = true;
         return;
       }
@@ -216,10 +224,10 @@ export function CursorOverlay() {
     };
     const onDown = (): void => {
       clicking = true;
-      // Click sparkle burst
+      // Click sparkle burst from dot position
       for (let i = 0; i < 4; i++) {
         const a = (i / 4) * Math.PI * 2 + Math.random() * 0.4;
-        spawn(cur.x + Math.cos(a) * 8, cur.y + Math.sin(a) * 8, {
+        spawn(dot.x + Math.cos(a) * 8, dot.y + Math.sin(a) * 8, {
           vx: Math.cos(a) * 1.2,
           vy: Math.sin(a) * 1.2,
         });
@@ -271,8 +279,8 @@ export function CursorOverlay() {
       for (let i = 0; i < count; i++) {
         const a = (i / count) * Math.PI * 2 + Math.random() * 0.3;
         spawn(
-          cur.x + Math.cos(a) * radius,
-          cur.y + Math.sin(a) * radius,
+          dot.x + Math.cos(a) * radius,
+          dot.y + Math.sin(a) * radius,
           {
             vx: Math.cos(a) * speed,
             vy: Math.sin(a) * speed,
@@ -308,30 +316,35 @@ export function CursorOverlay() {
 
       const audio = getAudioData();
 
-      // Lerp cursor toward target
-      cur.x += (target.x - cur.x) * LERP;
-      cur.y += (target.y - cur.y) * LERP;
-      const speed = Math.hypot(cur.x - prevX, cur.y - prevY);
-      prevX = cur.x;
-      prevY = cur.y;
+      // ── Dual-element lerp: dot snaps fast, ring lags behind ──
+      dot.x += (target.x - dot.x) * DOT_LERP;
+      dot.y += (target.y - dot.y) * DOT_LERP;
+      ring.x += (target.x - ring.x) * RING_LERP;
+      ring.y += (target.y - ring.y) * RING_LERP;
+
+      // Speed based on dot (the precise one)
+      const speed = Math.hypot(dot.x - prevX, dot.y - prevY);
+      prevX = dot.x;
+      prevY = dot.y;
 
       // Pre-first-move: render cursor at center, no sparkles yet
       if (!firstMove) {
         ctx.clearRect(0, 0, w, h);
-        drawCursor(ctx, cur.x, cur.y, 6, "#FFFFFF", false, 0);
+        drawRing(ctx, ring.x, ring.y, 16, "#FFFFFF", 0.6, 0);
+        drawDot(ctx, dot.x, dot.y, 3, 0);
         return;
       }
 
       // ── Spawn: movement-driven ──
       if (speed > 2) {
         const n = Math.min(4, Math.ceil(speed / 40 + audio.level * 2));
-        for (let i = 0; i < n; i++) spawn(cur.x, cur.y);
+        for (let i = 0; i < n; i++) spawn(dot.x, dot.y);
       }
 
       // ── Spawn: idle ambient trickle ──
       if (t - lastIdle > IDLE_INTERVAL_MS) {
         lastIdle = t;
-        spawn(cur.x, cur.y, { size: 4 + Math.random() * 4 });
+        spawn(dot.x, dot.y, { size: 4 + Math.random() * 4 });
       }
 
       // ── Beat detection ──
@@ -374,6 +387,7 @@ export function CursorOverlay() {
       ctx.clearRect(0, 0, w, h);
       ctx.globalCompositeOperation = "lighter";
 
+      // Sparkles (additive)
       const time = t / 1000;
       for (let i = 0; i < MAX_SPARKLES; i++) {
         const s = pool[i];
@@ -391,10 +405,15 @@ export function CursorOverlay() {
         ctx.restore();
       }
 
-      // ── Main cursor ──
-      const baseR = hover ? 9 : 6;
-      const punchR = baseR * (1 + audio.bass * 0.8) * (clicking ? 0.7 : 1);
-      drawCursor(ctx, cur.x, cur.y, punchR, hover ? "#FF4FD8" : "#FFFFFF", hover, audio.treble);
+      // ── Ring (outer, laggy — visual anchor) ──
+      const ringBaseR = hover ? 24 : 16;
+      const ringR = ringBaseR * (1 + audio.bass * 0.5) * (clicking ? 0.75 : 1);
+      const ringColor = hover ? "#FF4FD8" : "#FFFFFF";
+      const ringAlpha = hover ? 0.85 : 0.5;
+      drawRing(ctx, ring.x, ring.y, ringR, ringColor, ringAlpha, audio.treble);
+
+      // ── Dot (inner, snappy — precise click point) ──
+      drawDot(ctx, dot.x, dot.y, 3, audio.bass);
 
       ctx.globalCompositeOperation = "source-over";
       ctx.globalAlpha = 1;
