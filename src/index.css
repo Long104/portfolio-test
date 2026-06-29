@@ -106,25 +106,9 @@ html.cursor-hidden * {
   position: relative;
 }
 
-/* Subtle radial vignette so text stays readable over the bright vortex.
-   Vortex glow bleeds through at edges — glass panels refract it. */
+/* Section backgrounds — no vignette, let 3D vortex show through cleanly */
 .section::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(var(--theme-bg-r), var(--theme-bg-g), var(--theme-bg-b), 0.55) 0%,
-    transparent 70%
-  );
-  pointer-events: none;
-  z-index: -1;
-  transition: background 0.5s ease;
-}
-
-/* Hero section: no vignette — full 3D view unobstructed */
-.hero::before {
-  background: none;
+  content: none;
 }
 
 /* Centered variant (contact section) */
