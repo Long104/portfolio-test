@@ -255,7 +255,6 @@ html.cursor-hidden * {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 16px 48px rgba(0, 0, 0, 0.4);
-  border: 0.5px solid rgba(255, 255, 255, 0.06);
 }
 
 /* ── Gundam corner brackets ──
@@ -386,7 +385,6 @@ html.cursor-hidden * {
   box-shadow:
     inset 0 0.5px 0 rgba(255, 255, 255, 0.08),
     0 8px 32px rgba(0, 0, 0, 0.3);
-  border: 0.5px solid rgba(255, 255, 255, 0.06);
 }
 
 .project-card:hover {
@@ -873,15 +871,9 @@ html.cursor-hidden * {
   gap: 8px;
   background: var(--glass-bg);
   padding: 6px 12px;
-  border: 1px solid var(--glass-border);
   box-shadow:
     inset 0 0.5px 0 rgba(255, 255, 255, 0.08),
     0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: border-color 0.3s ease;
-}
-
-.audio-bar:hover {
-  border-color: var(--glass-border-hover);
 }
 
 .audio-bar__btn {
@@ -953,15 +945,9 @@ html.cursor-hidden * {
   gap: 4px;
   background: var(--glass-bg);
   padding: 6px 12px;
-  border: 1px solid var(--glass-border);
   box-shadow:
     inset 0 0.5px 0 rgba(255, 255, 255, 0.08),
     0 8px 32px rgba(0, 0, 0, 0.3);
-  transition: border-color 0.3s ease;
-}
-
-.nav-pill:hover {
-  border-color: var(--glass-border-hover);
 }
 
 .nav-pill__item {
