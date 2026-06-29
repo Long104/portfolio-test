@@ -72,8 +72,21 @@ export const ScrollContainer = forwardRef<ScrollContainerHandle, ScrollContainer
         }
       }
 
-      // Listen to Lenis scroll
-      lenis.on("scroll", updateActiveSection);
+      // Throttle section tracking to ~30fps — getBoundingClientRect() forces
+      // synchronous layout, so halving its rate reduces layout thrashing
+      // during scroll. Section changes happen over seconds; 33ms latency is
+      // invisible.
+      const THROTTLE_MS = 33;
+      let lastSectionUpdate = 0;
+      function throttledSectionUpdate() {
+        const now = performance.now();
+        if (now - lastSectionUpdate < THROTTLE_MS) return;
+        lastSectionUpdate = now;
+        updateActiveSection();
+      }
+
+      // Listen to Lenis scroll (throttled)
+      lenis.on("scroll", throttledSectionUpdate);
 
       // RAF loop for Lenis
       let frameId = 0;
