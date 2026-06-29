@@ -7,7 +7,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 
 interface Props {
   isLoading: boolean;
-  isPreloaded: boolean;
   error: string | null;
   currentTrack: string;
   onStart: () => void;
@@ -31,7 +30,6 @@ const LINE_PAUSE_MS = 60;  // pause between lines (was 120)
 
 export function PsycommuBoot({
   isLoading,
-  isPreloaded,
   error,
   currentTrack,
   onStart,
@@ -124,13 +122,6 @@ export function PsycommuBoot({
 
   const isComplete = phase === "complete" || phase === "skip";
 
-  // ── Auto-engage when boot complete + audio preloaded ──
-  useEffect(() => {
-    if (!isComplete || !isPreloaded || startedRef.current) return;
-    const t = setTimeout(() => handleEngage(), 1200);
-    return () => clearTimeout(t);
-  }, [isComplete, isPreloaded, handleEngage]);
-
   return (
     <div
       className={`psycommu-boot ${fadeOut ? "psycommu-boot--fadeout" : ""}`}
@@ -210,6 +201,19 @@ export function PsycommuBoot({
               <p className="psycommu-boot__error">{error}</p>
             ) : (
               <>
+                <div className="psycommu-boot__launch">
+                  <button
+                    className="psycommu-boot__launch-btn"
+                    onClick={handleEngage}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "LOADING" : "LAUNCH"}
+                  </button>
+                  <div className="psycommu-boot__launch-sub">
+                    click to deploy mobile suit
+                  </div>
+                </div>
+
                 <div className="track-pills">
                   {tracks.map((track) => (
                     <button
@@ -228,9 +232,6 @@ export function PsycommuBoot({
                       {track.name}
                     </button>
                   ))}
-                </div>
-                <div className="psycommu-boot__hint">
-                  {isLoading ? "loading…" : "select track or click to engage ›"}
                 </div>
               </>
             )}

@@ -142,7 +142,6 @@ function App() {
       {!started && (
         <PsycommuBoot
           isLoading={isLoading}
-          isPreloaded={isPreloaded}
           error={error}
           currentTrack={currentTrack}
           onStart={handleStart}
