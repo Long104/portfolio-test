@@ -142,7 +142,7 @@ function drawReticle(
   bass: number,
 ): void {
   const color = hover ? "#FF4FD8" : "#FFFFFF";
-  const baseR = hover ? 22 : 16;
+  const baseR = hover ? 17 : 12;
   const ringR = baseR * (1 + bass * 0.35) * (clicking ? 0.75 : 1);
 
   // ═══ Rotating elements: ring + tick marks (scanning) ═══
@@ -448,8 +448,8 @@ export function CursorOverlay() {
         if (s.life <= 0) continue;
         const sprite = sprites[s.color] ?? sprites["#FFFFFF"];
         const twinkle = 0.4 + 0.6 * Math.sin(time * 8 + s.phase);
-        const alpha = Math.max(0, s.life * twinkle * (0.7 + audio.mid * 0.6));
-        const drawSize = s.size * 5 * (0.5 + s.life * 0.5);
+        const alpha = Math.max(0, s.life * twinkle * (0.3 + audio.mid * 0.4));
+        const drawSize = s.size * 3 * (0.5 + s.life * 0.5);
 
         ctx.save();
         ctx.globalAlpha = alpha;
