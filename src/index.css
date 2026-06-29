@@ -297,6 +297,22 @@ html.cursor-hidden * {
   --bracket-color: var(--bracket-color-hover);
 }
 
+/* ── CRT scanline overlay on glass panels ── */
+.glass-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 3px,
+    rgba(0, 0, 0, 0.06) 3px,
+    rgba(0, 0, 0, 0.06) 4px
+  );
+}
+
 /* ── Experience timeline ── */
 .experience {
   max-width: 640px;
