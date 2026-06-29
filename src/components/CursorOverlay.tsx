@@ -209,19 +209,11 @@ function drawReticle(
     ctx.fillText("◉ LOCK", rx + ringR + 10, ry);
   }
 
-  // ═══ Center dot (at snappy position — precise click point) ═══
-  ctx.globalAlpha = 1;
-  const glowR = 14;
-  const glow = ctx.createRadialGradient(dx, dy, 0, dx, dy, glowR);
-  glow.addColorStop(0, hexA("#FFFFFF", 0.3 + bass * 0.3));
-  glow.addColorStop(0.4, hexA("#FFFFFF", 0.06));
-  glow.addColorStop(1, hexA("#FFFFFF", 0));
-  ctx.fillStyle = glow;
-  ctx.fillRect(dx - glowR, dy - glowR, glowR * 2, glowR * 2);
-
+  // ═══ Center dot — dim precision marker, no glow halo ═══
+  ctx.globalAlpha = 0.7;
   ctx.fillStyle = "#FFFFFF";
   ctx.beginPath();
-  ctx.arc(dx, dy, 2 + bass, 0, Math.PI * 2);
+  ctx.arc(dx, dy, 1.5, 0, Math.PI * 2);
   ctx.fill();
 }
 
