@@ -106,7 +106,7 @@ html.cursor-hidden * {
   position: fixed;
   z-index: 50;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.08em;
   text-transform: lowercase;
   color: rgba(255, 255, 255, var(--hud-opacity));
@@ -120,25 +120,25 @@ html.cursor-hidden * {
 .hud--br { bottom: 24px; right: 32px; text-align: right; }
 
 .hud__name {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.8);
   letter-spacing: 0.02em;
 }
 
 .hud__role {
-  font-size: 10px;
-  margin-top: 2px;
+  font-size: 12px;
+  margin-top: 3px;
 }
 
 .hud__counter {
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.1em;
 }
 
 .hud__hint {
-  font-size: 9px;
-  margin-top: 4px;
+  font-size: 11px;
+  margin-top: 5px;
   opacity: 0.6;
 }
 
@@ -510,7 +510,7 @@ html.cursor-hidden * {
   align-items: center;
   gap: 4px;
   background: var(--glass-bg);
-  padding: 5px 10px;
+  padding: 6px 12px;
   border: 1px solid var(--glass-border);
   transition: border-color 0.3s ease;
 }
@@ -523,11 +523,11 @@ html.cursor-hidden * {
   background: transparent;
   border: none;
   border-radius: 16px;
-  padding: 4px 10px;
+  padding: 4px 12px;
   color: rgba(255, 255, 255, 0.4);
-  font-size: 10px;
+  font-size: 11px;
   font-family: var(--mono);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -565,15 +565,20 @@ html.cursor-hidden * {
   .hud--bl { left: 20px; bottom: 20px; }
   .hud--br { right: 20px; bottom: 20px; }
 
+  .hud__name { font-size: 14px; }
+  .hud__role { font-size: 11px; }
+  .hud__counter { font-size: 12px; }
+  .hud__hint { font-size: 10px; }
+
   .nav-pill {
     top: 12px;
     gap: 2px;
-    padding: 4px 8px;
+    padding: 5px 10px;
   }
 
   .nav-pill__item {
-    font-size: 9px;
-    padding: 3px 6px;
+    font-size: 10px;
+    padding: 4px 8px;
   }
 }
 
