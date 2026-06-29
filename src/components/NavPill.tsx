@@ -14,13 +14,13 @@ export function NavPill({ activeIndex, onNavigate }: NavPillProps) {
     <RefractiveDiv
       className="nav-pill"
       refraction={{
-        radius: 24,
-        blur: 12,
-        glassThickness: 20,
+        radius: 28,
+        blur: 4,
+        glassThickness: 80,
         bezelWidth: 24,
-        refractiveIndex: 1.05,
-        specularOpacity: 0.08,
-        specularAngle: Math.PI / 3,
+        refractiveIndex: 1.45,
+        specularOpacity: 0.72,
+        specularAngle: 2.007,
       }}
     >
       {SECTIONS.map((name, i) => (

@@ -159,13 +159,13 @@ function App() {
         <RefractiveDiv
           className="audio-bar"
           refraction={{
-            radius: 24,
-            blur: 12,
-            glassThickness: 20,
+            radius: 28,
+            blur: 4,
+            glassThickness: 80,
             bezelWidth: 24,
-            refractiveIndex: 1.05,
-            specularOpacity: 0.08,
-            specularAngle: Math.PI / 3,
+            refractiveIndex: 1.45,
+            specularOpacity: 0.72,
+            specularAngle: 2.007,
           }}
         >
           <button
