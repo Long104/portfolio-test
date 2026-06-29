@@ -257,6 +257,21 @@ html.cursor-hidden * {
     0 16px 48px rgba(0, 0, 0, 0.4);
 }
 
+/* ── Text contrast inside glass panels — dark halo for readability over 3D vortex ── */
+.about__text,
+.about__text span,
+.stack-col__label,
+.stack-col__item,
+.exp-item__period,
+.exp-item__role,
+.exp-item__company,
+.exp-item__desc,
+.project-card__num,
+.project-card__title,
+.project-card__stack {
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+}
+
 /* ── Gundam corner brackets ──
    Each corner has two 1px-thick lines forming an L-shape with a small gap.
    Uses 8 layered linear-gradients with opacity transition for hover. */
