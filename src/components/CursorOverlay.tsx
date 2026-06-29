@@ -142,7 +142,7 @@ function drawReticle(
   bass: number,
 ): void {
   const color = hover ? "#FF4FD8" : "#FFFFFF";
-  const baseR = hover ? 22 : 15;
+  const baseR = hover ? 19 : 13;
   const ringR = baseR * (1 + bass * 0.35) * (clicking ? 0.75 : 1);
 
   // ── Dark glow for contrast against bright vortex particles ──
