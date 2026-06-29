@@ -182,22 +182,35 @@ html.lenis body {
   color: rgba(255, 255, 255, 0.4);
 }
 
-.about__skills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+/* ── Stack grid (categorized) ── */
+.stack-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
   margin-top: 32px;
 }
 
-.about__skill {
-  font-family: var(--mono);
+.stack-col__label {
   font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.5);
-  padding: 6px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.3);
+  margin-bottom: 12px;
+}
+
+.stack-col__list {
+  list-style: none;
+  padding: 0;
+}
+
+.stack-col__item {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 3px 0;
+  transition: color 0.2s ease;
+}
+
+.stack-col__item:hover {
+  color: rgba(255, 255, 255, 0.9);
 }
 
 /* ── Glass panel (refractive wrapper) ── */
@@ -488,6 +501,11 @@ html.lenis body {
 
   .glass-panel {
     padding: 28px;
+  }
+
+  .stack-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
   }
 
   .hud--tl { left: 20px; top: 20px; }

@@ -19,12 +19,13 @@ export function HeroSection() {
 }
 
 // ── About (section 1) ──
-export function AboutSection() {
-  const skills = [
-    "typescript", "react", "three.js", "webgl", "glsl",
-    "node", "python", "postgres", "aws", "docker", "cloudflare",
-  ];
+const STACK = {
+  languages: ["typescript", "python", "glsl", "rust"],
+  frameworks: ["react", "three.js", "node", "vite"],
+  tools: ["git", "docker", "cloudflare", "aws", "postgres"],
+};
 
+export function AboutSection() {
   return (
     <section className="section" data-section-index={1}>
       <div className="section-label">// about</div>
@@ -37,11 +38,17 @@ export function AboutSection() {
             shouldn't run at 60fps but do.
           </span>
         </p>
-        <div className="about__skills">
-          {skills.map((skill) => (
-            <span key={skill} className="about__skill">
-              {skill}
-            </span>
+
+        <div className="stack-grid">
+          {Object.entries(STACK).map(([category, items]) => (
+            <div key={category} className="stack-col">
+              <div className="stack-col__label">// {category}</div>
+              <ul className="stack-col__list">
+                {items.map((item) => (
+                  <li key={item} className="stack-col__item">{item}</li>
+                ))}
+              </ul>
+            </div>
           ))}
         </div>
       </GlassPanel>
