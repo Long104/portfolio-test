@@ -16,8 +16,8 @@ const PALETTE = [
 ];
 
 const MAX_SPARKLES = 120;
-const DOT_LERP = 0.60; // snappy — marks exact click position
-const RING_LERP = 0.38; // laggy — creates elastic, premium feel
+const DOT_LERP = 0.92; // nearly instant — feels like normal cursor
+const RING_LERP = 0.80; // barely behind dot — just a whisper of smoothness
 const BEAT_HISTORY = 26;
 const BEAT_DEBOUNCE_MS = 110;
 const IDLE_INTERVAL_MS = 80;
