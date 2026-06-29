@@ -17,7 +17,7 @@ export function NavPill({ activeIndex, onNavigate }: NavPillProps) {
         radius: 24,
         blur: 12,
         glassThickness: 20,
-        bezelWidth: 6,
+        bezelWidth: 24,
         refractiveIndex: 1.05,
         specularOpacity: 0.08,
         specularAngle: Math.PI / 3,
