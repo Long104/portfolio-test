@@ -6,6 +6,7 @@ import { useAudioEngine, TRACKS } from "./useAudioEngine";
 import { HUD } from "./components/HUD";
 import { ScrollContainer } from "./components/ScrollContainer";
 import { CursorOverlay } from "./components/CursorOverlay";
+import { RefractiveDiv } from "./components/Glass";
 import {
   HeroSection,
   AboutSection,
@@ -130,7 +131,15 @@ function App() {
 
       {/* ── Audio control bar ── */}
       {started && (
-        <div className="audio-bar">
+        <RefractiveDiv
+          className="audio-bar"
+          refraction={{
+            radius: 24,
+            blur: 2,
+            bezelWidth: 8,
+            specularOpacity: 0.12,
+          }}
+        >
           <button
             className="audio-bar__btn"
             onClick={toggle}
@@ -153,7 +162,7 @@ function App() {
               {track.name}
             </button>
           ))}
-        </div>
+        </RefractiveDiv>
       )}
     </>
   );

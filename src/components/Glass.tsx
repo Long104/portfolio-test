@@ -7,10 +7,10 @@ import { PROJECTS } from "./projects";
 // Firefox/Safari: snapshot fallback (captures backdrop, applies same filter)
 // Mobile/perf-conscious: can pass fallbackMode: "simple" for blur-only
 
-const RefractiveDiv = refractive.div;
+export const RefractiveDiv = refractive.div;
 
 // Shared refraction config — tuned for vortex backdrop
-const refractionConfig = {
+export const refractionConfig = {
   radius: 16,
   blur: 2,
   bezelWidth: 12,

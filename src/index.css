@@ -442,7 +442,7 @@ html.cursor-hidden * {
   color: rgba(255, 255, 255, 0.9);
 }
 
-/* ── Audio control bar ── */
+/* ── Audio control bar (liquid glass — refractive takes over backdrop-filter & borderRadius) ── */
 .audio-bar {
   position: fixed;
   bottom: 20px;
@@ -452,11 +452,14 @@ html.cursor-hidden * {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
-  border-radius: 24px;
+  background: var(--glass-bg);
   padding: 6px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-border);
+  transition: border-color 0.3s ease;
+}
+
+.audio-bar:hover {
+  border-color: var(--glass-border-hover);
 }
 
 .audio-bar__btn {
