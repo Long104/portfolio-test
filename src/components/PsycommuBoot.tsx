@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 
 interface Props {
   isLoading: boolean;
+  isPreloaded: boolean;
   error: string | null;
   currentTrack: string;
   onStart: () => void;
@@ -15,20 +16,21 @@ interface Props {
 }
 
 const BOOT_LINES = [
-  { addr: "PSY", val: "OMEGA-TYPE v2.5.1 — initializing psycommu system" },
+  { addr: "PSY", val: "OMEGA-TYPE v2.5.1 — booting" },
   { addr: "DEV", val: "boot device / limiter — DETECTED" },
-  { addr: "PSW", val: "psychowave scan — NEWTYPE SIGNATURE FOUND (coherence: 98.7%)" },
-  { addr: "NLT", val: "neural link — synchronizing ██████████ 100%" },
-  { addr: "SYN", val: "sync established — 99.2% frame coherence" },
+  { addr: "PSW", val: "psychowave scan — NEWTYPE SIGNATURE FOUND" },
+  { addr: "NLT", val: "neural link — synced 100%" },
+  { addr: "SYN", val: "frame coherence — 99.2%" },
   { addr: "RST", val: "restraints: ██ released" },
   { addr: "SYS", val: "SYSTEM ONLINE — omega psycommu active" },
 ];
 
-const CHAR_MS = 28;       // ms per character
-const LINE_PAUSE_MS = 300; // pause between lines
+const CHAR_MS = 15;       // ms per character (was 28)
+const LINE_PAUSE_MS = 120; // pause between lines (was 300)
 
 export function PsycommuBoot({
   isLoading,
+  isPreloaded,
   error,
   currentTrack,
   onStart,
@@ -42,6 +44,16 @@ export function PsycommuBoot({
   const [fadeOut, setFadeOut] = useState(false);
   const skipRef = useRef(false);
   const startedRef = useRef(false); // prevent double-start
+
+  // ── Auto-complete boot when audio preloaded ──
+  useEffect(() => {
+    if (!isPreloaded || phase === "complete" || phase === "skip") return;
+    skipRef.current = true;
+    setBootLine(BOOT_LINES.length - 1);
+    setBootChar(BOOT_LINES[BOOT_LINES.length - 1].val.length);
+    setProgress(100);
+    setPhase("complete");
+  }, [isPreloaded, phase]);
 
   // ── Boot sequence state machine ──
   useEffect(() => {
@@ -68,14 +80,14 @@ export function PsycommuBoot({
 
     // Line fully typed — flash if restraint release, then advance
     if (bootLine === 5) {
-      // "restraints released" flashes
+      // "restraints released" flash
       setPhase("flash");
       const t = setTimeout(() => {
         if (skipRef.current) return;
         setPhase("booting");
         setBootLine((l) => l + 1);
         setBootChar(0);
-      }, 600);
+      }, 350); // was 600
       return () => clearTimeout(t);
     }
 
