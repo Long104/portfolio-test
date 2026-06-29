@@ -9,12 +9,15 @@ import { PROJECTS } from "./projects";
 
 export const RefractiveDiv = refractive.div;
 
-// Shared refraction config — experiment: clear glass, no blur
+// Shared refraction config — clear glass slab
 export const refractionConfig = {
   radius: 16,
-  blur: 0,
-  bezelWidth: 12,
-  specularOpacity: 0.2,
+  blur: 12,
+  glassThickness: 40,
+  bezelWidth: 8,
+  refractiveIndex: 1.05,
+  specularOpacity: 0.08,
+  specularAngle: Math.PI / 3,
 } as const;
 
 // ── Glass Panel (for About section) ──
@@ -36,9 +39,12 @@ export function ProjectCard({
     <RefractiveDiv
       refraction={{
         radius: 14,
-        blur: 0,
-        bezelWidth: 10,
-        specularOpacity: 0.15,
+        blur: 12,
+        glassThickness: 32,
+        bezelWidth: 6,
+        refractiveIndex: 1.05,
+        specularOpacity: 0.08,
+        specularAngle: Math.PI / 3,
       }}
       className="project-card"
     >
