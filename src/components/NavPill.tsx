@@ -17,6 +17,7 @@ export function NavPill({ activeIndex, onNavigate }: NavPillProps) {
       className="nav-pill"
       refraction={buildNavConfig(specularAngle)}
     >
+      <div className="nav-pill__segmented">
       {SECTIONS.map((name, i) => (
         <button
           key={name}
@@ -29,6 +30,7 @@ export function NavPill({ activeIndex, onNavigate }: NavPillProps) {
           {name}
         </button>
       ))}
+      </div>
     </RefractiveDiv>
   );
 }
