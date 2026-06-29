@@ -994,7 +994,6 @@ html.cursor-hidden * {
   cursor: pointer;
   transition: all 0.2s ease;
   line-height: 1;
-  text-transform: uppercase;
 }
 
 .nav-pill__item:hover {
