@@ -8,11 +8,12 @@ import { ScrollContainer } from "./components/ScrollContainer";
 import {
   HeroSection,
   AboutSection,
+  ExperienceSection,
   WorkSection,
   ContactSection,
 } from "./components/Sections";
 
-const TOTAL_SECTIONS = 4;
+const TOTAL_SECTIONS = 5;
 
 function App() {
   const [started, setStarted] = useState(false);
@@ -66,6 +67,7 @@ function App() {
         <ScrollContainer onSectionChange={handleSectionChange}>
           <HeroSection />
           <AboutSection />
+          <ExperienceSection />
           <WorkSection />
           <ContactSection />
         </ScrollContainer>

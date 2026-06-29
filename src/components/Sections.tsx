@@ -4,6 +4,7 @@
 
 import { GlassPanel, ProjectCard } from "./Glass";
 import { PROJECTS } from "./projects";
+import { EXPERIENCE, CURRENT_STATUS } from "./experience";
 
 // ── Hero (section 0) ──
 export function HeroSection() {
@@ -48,10 +49,40 @@ export function AboutSection() {
   );
 }
 
-// ── Work (section 2) ──
-export function WorkSection() {
+// ── Experience (section 2) ──
+export function ExperienceSection() {
   return (
     <section className="section" data-section-index={2}>
+      <div className="section-label">// experience</div>
+      <div className="experience">
+        {EXPERIENCE.map((job, i) => (
+          <div key={i} className="exp-item">
+            <div className="exp-item__period">{job.period}</div>
+            <div className="exp-item__body">
+              <div className="exp-item__role">{job.role}</div>
+              <div className="exp-item__company">{job.company}</div>
+              <div className="exp-item__desc">{job.description}</div>
+            </div>
+          </div>
+        ))}
+        {/* Current status */}
+        <div className="exp-item exp-item--current">
+          <div className="exp-item__period exp-item__period--current">now</div>
+          <div className="exp-item__body">
+            <div className="exp-item__role exp-item__role--current">
+              {CURRENT_STATUS}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Work (section 3) ──
+export function WorkSection() {
+  return (
+    <section className="section" data-section-index={3}>
       <div className="section-label">// selected work</div>
       <div className="work-grid">
         {PROJECTS.map((project) => (
@@ -62,10 +93,10 @@ export function WorkSection() {
   );
 }
 
-// ── Contact (section 3) ──
+// ── Contact (section 4) ──
 export function ContactSection() {
   return (
-    <section className="section section--centered" data-section-index={3}>
+    <section className="section section--centered" data-section-index={4}>
       <div className="section-label section-label--center">// let's talk</div>
       <div className="contact">
         <a className="contact__link" href="https://github.com" target="_blank" rel="noreferrer">

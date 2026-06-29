@@ -5,6 +5,7 @@
 const SECTION_TAGS = [
   "building things that feel alive",
   "engineering × visual art",
+  "where i've worked",
   "selected work",
   "let's talk",
 ];

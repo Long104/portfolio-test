@@ -213,6 +213,62 @@ html.lenis body {
   border-color: var(--glass-border-hover);
 }
 
+/* ── Experience timeline ── */
+.experience {
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.exp-item {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 24px;
+  padding: 20px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.exp-item:last-child {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.exp-item__period {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.35);
+  padding-top: 2px;
+}
+
+.exp-item__period--current {
+  color: rgba(120, 220, 120, 0.7);
+}
+
+.exp-item__role {
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 4px;
+}
+
+.exp-item__role--current {
+  color: rgba(120, 220, 120, 0.9);
+  font-size: 14px;
+}
+
+.exp-item__company {
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 8px;
+}
+
+.exp-item__desc {
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.5);
+}
+
 /* ── Work grid ── */
 .work-grid {
   display: grid;
