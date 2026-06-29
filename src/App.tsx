@@ -1,7 +1,7 @@
-import { useState, useCallback, useEffect, useRef } from "react";
-import "@fontsource-variable/jetbrains-mono/index.css";
+import { useState, useCallback, useEffect, useRef, lazy, Suspense } from "react";
+import "./fonts.css";
 
-import Scene from "./Scene";
+const Scene = lazy(() => import("./Scene"));
 import { useAudioEngine, TRACKS } from "./useAudioEngine";
 import { HUD } from "./components/HUD";
 import { PsycommuBoot } from "./components/PsycommuBoot";
@@ -106,7 +106,9 @@ function App() {
     <>
       {/* ── Layer 0: Fixed 3D canvas (vortex) ── */}
       <div className="canvas-layer">
-        <Scene />
+        <Suspense fallback={null}>
+          <Scene />
+        </Suspense>
       </div>
 
       {/* ── Layer 1: Scrollable content ── */}
