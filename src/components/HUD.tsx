@@ -29,8 +29,7 @@ export function HUD({
     <>
       {/* Top-left: identity */}
       <div className="hud hud--tl">
-        <div className="hud__name">pantorn</div>
-        <div className="hud__role">software engineer</div>
+        <div className="hud__name">pantorn chavalvalee</div>
       </div>
 
       {/* Top-right: audio status */}
