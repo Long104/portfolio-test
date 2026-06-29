@@ -2,7 +2,7 @@
 
 import { RefractiveDiv } from "./Glass";
 
-const SECTIONS = ["hero", "about", "experience", "work", "contact"] as const;
+const SECTIONS = ["pilot", "about", "experience", "work", "contact"] as const;
 
 interface NavPillProps {
   activeIndex: number;
