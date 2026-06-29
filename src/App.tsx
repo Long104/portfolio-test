@@ -6,6 +6,7 @@ import { useAudioEngine, TRACKS } from "./useAudioEngine";
 
 function App() {
   const [started, setStarted] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const {
     isLoading, error, isPlaying,
     toggle, currentTrack, loadTrack,
@@ -21,13 +22,17 @@ function App() {
     setStarted(true);
   }, [loadTrack]);
 
+  const handleScrollProgress = useCallback((progress: number) => {
+    setScrollProgress(progress);
+  }, []);
+
   return (
     <>
-      {/* Fixed 3D background — pure audio-reactive, no scroll interaction */}
-      <Scene />
+      {/* Fixed 3D background — audio-reactive + scroll Z-dolly */}
+      <Scene scrollProgress={scrollProgress} />
 
       {/* Scrollable portfolio content — visible only after start */}
-      {started && <PortfolioContent />}
+      {started && <PortfolioContent onScrollProgress={handleScrollProgress} />}
 
       {/* Click-to-start overlay — blocks everything until user interacts */}
       {!started && (

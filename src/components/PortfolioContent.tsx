@@ -7,7 +7,11 @@ import ProjectsSection from "./ProjectsSection";
 import ExperienceSection from "./ExperienceSection";
 import ContactSection from "./ContactSection";
 
-export default function PortfolioContent() {
+interface PortfolioContentProps {
+  onScrollProgress: (progress: number) => void;
+}
+
+export default function PortfolioContent({ onScrollProgress }: PortfolioContentProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -24,10 +28,14 @@ export default function PortfolioContent() {
       autoRaf: true,
     });
 
+    lenis.on("scroll", (l) => {
+      onScrollProgress(Math.min(Math.max(l.progress, 0), 1));
+    });
+
     return () => {
       lenis.destroy();
     };
-  }, []);
+  }, [onScrollProgress]);
 
   return (
     <div ref={wrapperRef} className="scroll-container">

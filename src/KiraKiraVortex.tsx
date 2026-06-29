@@ -36,7 +36,7 @@ function generateInstanceData(count: number, maxRadius: number) {
   return { pos, rand };
 }
 
-export default function KiraKiraVortex() {
+export default function KiraKiraVortex({ scrollProgress = 0 }: { scrollProgress?: number }) {
   // --- Audio reactivity ---
   const { getData } = useAudioEngine();
 
@@ -209,6 +209,24 @@ export default function KiraKiraVortex() {
     paintMat.uniforms.uMid.value = s.particlesMid;
     flareMat.uniforms.uTreble.value = s.flaresTreble;
     backdropMat.uniforms.uBass.value = s.backdropBass;
+
+    // ══════════════════════════════════════════════
+    // Scroll-driven effects — all CENTER-SAFE
+    // (no X/Y camera movement, no layer rotation)
+    // ══════════════════════════════════════════════
+
+    // 1. Camera Z dolly: 5.0 → 4.3 → 5.0 (gentle zoom in/out, core stays centered)
+    const targetZ = 5.0 - Math.sin(scrollProgress * Math.PI) * 0.7;
+    state.camera.position.z += (targetZ - state.camera.position.z) * 0.04;
+
+    // 2. Glow breath: slightly brighter at mid-scroll (additive to coreBass)
+    const scrollBreath = Math.sin(scrollProgress * Math.PI) * 0.05;
+    glowMat.uniforms.uCoreBass.value = s.coreBass + scrollBreath;
+
+    // 3. Particle speed: gentle 1.0× → 1.2× → 1.0×
+    const speedCurve = 1.0 + Math.sin(scrollProgress * Math.PI) * 0.2;
+    paintMat.uniforms.uSpeed.value = 0.15 * speedCurve;
+    flareMat.uniforms.uSpeed.value = 0.2 * speedCurve;
   });
 
   return (
