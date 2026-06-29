@@ -20,11 +20,27 @@ import {
 
 const TOTAL_SECTIONS = 5;
 
+type Theme = "gquuuuuux" | "gfreed";
+
 function App() {
   const [started, setStarted] = useState(false);
   const [activeSection, setActiveSection] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [theme, setTheme] = useState<Theme>(
+    () => (localStorage.getItem("kira-theme") as Theme) || "gquuuuuux",
+  );
   const scrollRef = useRef<ScrollContainerHandle>(null);
+
+  // ── Apply theme to root element ──
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "gfreed") {
+      root.setAttribute("data-theme", "gfreed");
+    } else {
+      root.removeAttribute("data-theme");
+    }
+    localStorage.setItem("kira-theme", theme);
+  }, [theme]);
   const {
     isLoading,
     error,
@@ -155,6 +171,16 @@ function App() {
               {track.name}
             </button>
           ))}
+
+          <div className="audio-bar__divider" />
+
+          <button
+            className="audio-bar__theme"
+            onClick={() => setTheme((t) => (t === "gquuuuuux" ? "gfreed" : "gquuuuuux"))}
+            aria-label={`Switch to ${theme === "gquuuuuux" ? "GFreD" : "GQuuuuuuX"} theme`}
+          >
+            {theme === "gquuuuuux" ? "gMS-Ω" : "gMS-κ"}
+          </button>
         </RefractiveDiv>
       )}
     </>

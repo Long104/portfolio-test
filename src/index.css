@@ -10,6 +10,33 @@
   --glass-border: rgba(255, 255, 255, 0.12);
   --glass-border-hover: rgba(255, 255, 255, 0.4);
   --mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
+
+  /* GQuuuuuuX theme (default) */
+  --theme-bg: #01314a;
+  --theme-bg-r: 1;
+  --theme-bg-g: 49;
+  --theme-bg-b: 74;
+  --theme-accent: #FF4FD8;
+  --theme-accent2: #1BBCB2;
+  --theme-accent3: #8B5CF6;
+  --bracket-color: rgba(255, 255, 255, 0.2);
+  --bracket-color-hover: rgba(255, 255, 255, 0.5);
+}
+
+/* ── GFreD theme (purple/green — Nyaan's suit) ── */
+:root[data-theme="gfreed"] {
+  --theme-bg: #1a0d2e;
+  --theme-bg-r: 26;
+  --theme-bg-g: 13;
+  --theme-bg-b: 46;
+  --theme-accent: #9B59B6;
+  --theme-accent2: #2ECC71;
+  --theme-accent3: #8E44AD;
+  --glass-bg: rgba(10, 0, 20, 0.55);
+  --glass-border: rgba(155, 89, 182, 0.2);
+  --glass-border-hover: rgba(46, 204, 113, 0.35);
+  --bracket-color: rgba(155, 89, 182, 0.25);
+  --bracket-color-hover: rgba(46, 204, 113, 0.5);
 }
 
 html {
@@ -20,7 +47,8 @@ html,
 body,
 #root {
   width: 100%;
-  background: #01314a;
+  background: var(--theme-bg);
+  transition: background 0.5s ease;
 }
 
 body {
@@ -84,11 +112,12 @@ html.cursor-hidden * {
   inset: 0;
   background: radial-gradient(
     ellipse at center,
-    rgba(1, 49, 74, 0.55) 0%,
+    rgba(var(--theme-bg-r), var(--theme-bg-g), var(--theme-bg-b), 0.55) 0%,
     transparent 70%
   );
   pointer-events: none;
   z-index: -1;
+  transition: background 0.5s ease;
 }
 
 /* Hero section: no vignette — full 3D view unobstructed */
@@ -249,26 +278,23 @@ html.cursor-hidden * {
   pointer-events: none;
   z-index: 1;
   opacity: 0.55;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease, background 0.4s ease;
   --al: 16px; /* arm length */
   --ag: 5px;  /* corner gap */
   background:
-    /* TL */
-    linear-gradient(to right, rgba(255,255,255,0.2) var(--al), transparent 0) var(--ag) 0 / var(--al) 1px no-repeat,
-    linear-gradient(to bottom, rgba(255,255,255,0.2) var(--al), transparent 0) 0 var(--ag) / 1px var(--al) no-repeat,
-    /* TR */
-    linear-gradient(to left, rgba(255,255,255,0.2) var(--al), transparent 0) calc(100% - var(--ag)) 0 / var(--al) 1px no-repeat,
-    linear-gradient(to bottom, rgba(255,255,255,0.2) var(--al), transparent 0) calc(100% - 0px) var(--ag) / 1px var(--al) no-repeat,
-    /* BL */
-    linear-gradient(to right, rgba(255,255,255,0.2) var(--al), transparent 0) var(--ag) calc(100% - 0px) / var(--al) 1px no-repeat,
-    linear-gradient(to top, rgba(255,255,255,0.2) var(--al), transparent 0) 0 calc(100% - var(--ag)) / 1px var(--al) no-repeat,
-    /* BR */
-    linear-gradient(to left, rgba(255,255,255,0.2) var(--al), transparent 0) calc(100% - var(--ag)) calc(100% - 0px) / var(--al) 1px no-repeat,
-    linear-gradient(to top, rgba(255,255,255,0.2) var(--al), transparent 0) calc(100% - 0px) calc(100% - var(--ag)) / 1px var(--al) no-repeat;
+    linear-gradient(to right, var(--bracket-color) var(--al), transparent 0) var(--ag) 0 / var(--al) 1px no-repeat,
+    linear-gradient(to bottom, var(--bracket-color) var(--al), transparent 0) 0 var(--ag) / 1px var(--al) no-repeat,
+    linear-gradient(to left, var(--bracket-color) var(--al), transparent 0) calc(100% - var(--ag)) 0 / var(--al) 1px no-repeat,
+    linear-gradient(to bottom, var(--bracket-color) var(--al), transparent 0) calc(100% - 0px) var(--ag) / 1px var(--al) no-repeat,
+    linear-gradient(to right, var(--bracket-color) var(--al), transparent 0) var(--ag) calc(100% - 0px) / var(--al) 1px no-repeat,
+    linear-gradient(to top, var(--bracket-color) var(--al), transparent 0) 0 calc(100% - var(--ag)) / 1px var(--al) no-repeat,
+    linear-gradient(to left, var(--bracket-color) var(--al), transparent 0) calc(100% - var(--ag)) calc(100% - 0px) / var(--al) 1px no-repeat,
+    linear-gradient(to top, var(--bracket-color) var(--al), transparent 0) calc(100% - 0px) calc(100% - var(--ag)) / 1px var(--al) no-repeat;
 }
 
 .glass-panel:hover::before {
   opacity: 1;
+  --bracket-color: var(--bracket-color-hover);
 }
 
 /* ── Experience timeline ── */
@@ -365,22 +391,23 @@ html.cursor-hidden * {
   pointer-events: none;
   z-index: 1;
   opacity: 0.55;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease, background 0.4s ease;
   --al: 14px;
   --ag: 4px;
   background:
-    linear-gradient(to right, rgba(255,255,255,0.15) var(--al), transparent 0) var(--ag) 0 / var(--al) 1px no-repeat,
-    linear-gradient(to bottom, rgba(255,255,255,0.15) var(--al), transparent 0) 0 var(--ag) / 1px var(--al) no-repeat,
-    linear-gradient(to left, rgba(255,255,255,0.15) var(--al), transparent 0) calc(100% - var(--ag)) 0 / var(--al) 1px no-repeat,
-    linear-gradient(to bottom, rgba(255,255,255,0.15) var(--al), transparent 0) calc(100% - 0px) var(--ag) / 1px var(--al) no-repeat,
-    linear-gradient(to right, rgba(255,255,255,0.15) var(--al), transparent 0) var(--ag) calc(100% - 0px) / var(--al) 1px no-repeat,
-    linear-gradient(to top, rgba(255,255,255,0.15) var(--al), transparent 0) 0 calc(100% - var(--ag)) / 1px var(--al) no-repeat,
-    linear-gradient(to left, rgba(255,255,255,0.15) var(--al), transparent 0) calc(100% - var(--ag)) calc(100% - 0px) / var(--al) 1px no-repeat,
-    linear-gradient(to top, rgba(255,255,255,0.15) var(--al), transparent 0) calc(100% - 0px) calc(100% - var(--ag)) / 1px var(--al) no-repeat;
+    linear-gradient(to right, var(--bracket-color) var(--al), transparent 0) var(--ag) 0 / var(--al) 1px no-repeat,
+    linear-gradient(to bottom, var(--bracket-color) var(--al), transparent 0) 0 var(--ag) / 1px var(--al) no-repeat,
+    linear-gradient(to left, var(--bracket-color) var(--al), transparent 0) calc(100% - var(--ag)) 0 / var(--al) 1px no-repeat,
+    linear-gradient(to bottom, var(--bracket-color) var(--al), transparent 0) calc(100% - 0px) var(--ag) / 1px var(--al) no-repeat,
+    linear-gradient(to right, var(--bracket-color) var(--al), transparent 0) var(--ag) calc(100% - 0px) / var(--al) 1px no-repeat,
+    linear-gradient(to top, var(--bracket-color) var(--al), transparent 0) 0 calc(100% - var(--ag)) / 1px var(--al) no-repeat,
+    linear-gradient(to left, var(--bracket-color) var(--al), transparent 0) calc(100% - var(--ag)) calc(100% - 0px) / var(--al) 1px no-repeat,
+    linear-gradient(to top, var(--bracket-color) var(--al), transparent 0) calc(100% - 0px) calc(100% - var(--ag)) / 1px var(--al) no-repeat;
 }
 
 .project-card:hover::before {
   opacity: 1;
+  --bracket-color: var(--bracket-color-hover);
 }
 
 .project-card__num {
@@ -798,6 +825,25 @@ html.cursor-hidden * {
 .audio-bar__track--active {
   background: rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 1);
+}
+
+.audio-bar__theme {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 3px 8px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 9px;
+  font-family: var(--mono);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+}
+
+.audio-bar__theme:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 /* ── Nav pill (liquid glass — refractive takes over backdrop-filter & borderRadius) ── */
