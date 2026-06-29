@@ -1,6 +1,7 @@
 // ── NavPill — Clan Battle Terminal ──
 
-import { RefractiveDiv } from "./Glass";
+import { RefractiveDiv, buildGlassConfig } from "./Glass";
+import { useDeviceOrientation } from "../useDeviceOrientation";
 
 const SECTIONS = ["pilot", "about", "experience", "work", "contact"] as const;
 
@@ -10,18 +11,11 @@ interface NavPillProps {
 }
 
 export function NavPill({ activeIndex, onNavigate }: NavPillProps) {
+  const specularAngle = useDeviceOrientation();
   return (
     <RefractiveDiv
       className="nav-pill"
-      refraction={{
-        radius: 28,
-        blur: 4,
-        glassThickness: 80,
-        bezelWidth: 24,
-        refractiveIndex: 1.45,
-        specularOpacity: 0.72,
-        specularAngle: 2.007,
-      }}
+      refraction={buildGlassConfig(specularAngle)}
     >
       {SECTIONS.map((name, i) => (
         <button

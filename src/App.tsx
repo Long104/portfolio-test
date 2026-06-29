@@ -163,7 +163,7 @@ function App() {
             blur: 4,
             glassThickness: 80,
             bezelWidth: 24,
-            refractiveIndex: 1.45,
+            refractiveIndex: 1.8,
             specularOpacity: 0.72,
             specularAngle: 2.007,
           }}

@@ -1,6 +1,7 @@
 import { refractive } from "refractive";
 import type { ReactNode } from "react";
 import { PROJECTS } from "./projects";
+import { useDeviceOrientation } from "../useDeviceOrientation";
 
 // ── Refractive wrappers ──
 // Chrome: native SVG displacement refraction (true light-bending glass)
@@ -9,21 +10,27 @@ import { PROJECTS } from "./projects";
 
 export const RefractiveDiv = refractive.div;
 
-// Shared refraction config — experiment
-export const refractionConfig = {
-  radius: 28,
-  blur: 4,
-  glassThickness: 80,
-  bezelWidth: 24,
-  refractiveIndex: 1.45,
-  specularOpacity: 0.72,
-  specularAngle: 2.007,
-} as const;
+// Shared refraction config base (dynamic specularAngle from gyro)
+export function buildGlassConfig(specularAngle: number) {
+  return {
+    radius: 28,
+    blur: 4,
+    glassThickness: 80,
+    bezelWidth: 24,
+    refractiveIndex: 1.8,
+    specularOpacity: 0.72,
+    specularAngle,
+  };
+}
+
+// Static fallback for components that don't need gyro
+export const refractionConfig = buildGlassConfig(2.007);
 
 // ── Glass Panel (for About section) ──
 export function GlassPanel({ children }: { children: ReactNode }) {
+  const specularAngle = useDeviceOrientation();
   return (
-    <RefractiveDiv refraction={refractionConfig} className="glass-panel">
+    <RefractiveDiv refraction={buildGlassConfig(specularAngle)} className="glass-panel">
       {children}
     </RefractiveDiv>
   );
@@ -35,17 +42,10 @@ export function ProjectCard({
 }: {
   project: (typeof PROJECTS)[number];
 }) {
+  const specularAngle = useDeviceOrientation();
   return (
     <RefractiveDiv
-      refraction={{
-        radius: 28,
-        blur: 4,
-        glassThickness: 80,
-        bezelWidth: 24,
-        refractiveIndex: 1.45,
-        specularOpacity: 0.72,
-        specularAngle: 2.007,
-      }}
+      refraction={buildGlassConfig(specularAngle)}
       className="project-card"
     >
       <div className="project-card__num">{project.num}</div>
