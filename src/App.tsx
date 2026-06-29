@@ -88,13 +88,13 @@ function App() {
   }, [isPreloaded, engage, loadTrack, currentTrack]);
 
   const handleSelectTrack = useCallback(async (url: string) => {
-    setStarted(true); // show HUD/content immediately
+    setStarted(true);
     if (isPreloaded && url === currentTrack) {
-      await engage();
+      if (!isPlaying) await engage(); // resume if paused; no-op if already playing
     } else {
       await loadTrack(url);
     }
-  }, [isPreloaded, engage, loadTrack, currentTrack]);
+  }, [isPreloaded, engage, loadTrack, currentTrack, isPlaying]);
 
   const handleSectionChange = useCallback((index: number) => {
     setActiveSection(index);

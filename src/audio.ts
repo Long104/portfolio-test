@@ -21,6 +21,7 @@ export class AudioEngine {
 
   private _isPlaying = false;
   private _audioBuffer: AudioBuffer | null = null;
+  private _currentTrackUrl: string | null = null;
   private _startTime = 0;
   private _offset = 0;
 
@@ -65,19 +66,30 @@ export class AudioEngine {
 
   /** Fetch + decode audio into memory without starting playback.
    *  Safe to call early — on mount, before user interaction.
-   *  Call start() later for instant playback. */
+   *  Call start() later for instant playback.
+   *  If a different track URL is passed, the old buffer is cleared. */
   async preloadTrack(url: string) {
     if (!this.ctx) await this.init();
     if (!this.ctx) throw new Error("AudioContext not available");
 
-    // Skip if already loaded (same track)
-    if (this._audioBuffer) return;
+    // Same track already loaded — skip
+    if (this._audioBuffer && this._currentTrackUrl === url) return;
+
+    // Different track — stop current source, clear old buffer
+    if (this.source) {
+      try { this.source.stop(); } catch { /* already stopped */ }
+      this.source.disconnect();
+      this.source = null;
+    }
+    this._isPlaying = false;
+    this._audioBuffer = null;
+    this._currentTrackUrl = url;
+    this._offset = 0;
 
     const resp = await fetch(url);
     if (!resp.ok) throw new Error("Failed to load " + url);
     const arrayBuffer = await resp.arrayBuffer();
     this._audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
-    this._offset = 0;
   }
 
   async start() {
@@ -86,6 +98,13 @@ export class AudioEngine {
     // Resume context (autoplay policy)
     if (this.ctx.state === "suspended") {
       await this.ctx.resume();
+    }
+
+    // Stop existing source before creating a new one (prevents duplicate playback)
+    if (this.source) {
+      try { this.source.stop(); } catch { /* already stopped */ }
+      this.source.disconnect();
+      this.source = null;
     }
 
     // Create source and connect: source → analyser (→ gain → destination already wired)

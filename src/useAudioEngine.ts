@@ -88,9 +88,10 @@ export function useAudioEngine() {
   }, []);
 
   const toggle = useCallback(() => {
+    if (isLoading) return; // Don't toggle while loading
     if (isPlaying) pause();
     else engage();
-  }, [isPlaying, engage, pause]);
+  }, [isPlaying, isLoading, engage, pause]);
 
   const getData = useCallback((): AudioData => {
     return engineRef.current.getData();
