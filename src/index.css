@@ -6,7 +6,7 @@
 
 :root {
   --hud-opacity: 0.75;
-  --glass-bg: rgba(0, 0, 0, 0.25);
+  --glass-bg: rgba(0, 0, 0, 0.50);
   --glass-border: rgba(255, 255, 255, 0.12);
   --glass-border-hover: rgba(255, 255, 255, 0.4);
   --mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
