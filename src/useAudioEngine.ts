@@ -14,6 +14,12 @@ function getEngine() {
   return engineSingleton;
 }
 
+// Standalone accessor for non-React consumers (e.g. cursor overlay).
+// Avoids creating a second React state instance in components that only need data.
+export function getAudioData(): AudioData {
+  return getEngine().getData();
+}
+
 export function useAudioEngine() {
   const engineRef = useRef<AudioEngine>(getEngine());
   const [isPlaying, setIsPlaying] = useState(false);

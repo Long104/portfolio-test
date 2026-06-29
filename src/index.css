@@ -44,6 +44,13 @@ html.lenis body {
   overflow: hidden;
 }
 
+/* ── Custom cursor overlay (kira-kira) ── */
+/* Applied to <html> by CursorOverlay when active (desktop + motion allowed). */
+html.cursor-hidden,
+html.cursor-hidden * {
+  cursor: none !important;
+}
+
 /* ── Fixed 3D canvas layer ── */
 .canvas-layer {
   position: fixed;

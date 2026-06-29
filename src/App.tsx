@@ -5,6 +5,7 @@ import Scene from "./Scene";
 import { useAudioEngine, TRACKS } from "./useAudioEngine";
 import { HUD } from "./components/HUD";
 import { ScrollContainer } from "./components/ScrollContainer";
+import { CursorOverlay } from "./components/CursorOverlay";
 import {
   HeroSection,
   AboutSection,
@@ -123,6 +124,9 @@ function App() {
           )}
         </div>
       )}
+
+      {/* ── Layer 3: Cursor overlay (desktop only, self-gated) ── */}
+      <CursorOverlay />
 
       {/* ── Audio control bar ── */}
       {started && (
