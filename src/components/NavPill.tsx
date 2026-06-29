@@ -1,15 +1,14 @@
 // ── NavPill — Clan Battle Terminal ──
-// Top-center pill. Each section gets a Zeon-style model code
-// referencing metasyntactic variables (qux, fred, corge, grault, garply).
+// Top-center pill. Each section gets a Japanese Gundam OS-style label.
 
 import { RefractiveDiv } from "./Glass";
 
 const SECTIONS = [
-  { name: "hero", code: "gMS-Ω" },
-  { name: "about", code: "gMS-α" },
-  { name: "experience", code: "SODON" },
-  { name: "work", code: "GRAULT" },
-  { name: "contact", code: "GARPLY" },
+  { name: "hero", code: "覚醒" },
+  { name: "about", code: "概要" },
+  { name: "experience", code: "戦歴" },
+  { name: "work", code: "作品" },
+  { name: "contact", code: "通信" },
 ] as const;
 
 interface NavPillProps {

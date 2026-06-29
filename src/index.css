@@ -1000,10 +1000,9 @@ html.cursor-hidden * {
 }
 
 .nav-pill__code {
-  font-size: 8px;
-  letter-spacing: 0.08em;
+  font-size: 10px;
+  letter-spacing: 0.12em;
   color: rgba(255, 75, 216, 0.5);
-  text-transform: uppercase;
 }
 
 .nav-pill__item--active .nav-pill__code {
