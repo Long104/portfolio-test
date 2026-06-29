@@ -6,9 +6,9 @@
 
 :root {
   --hud-opacity: 0.75;
-  --glass-bg: rgba(0, 0, 0, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-border-hover: rgba(255, 255, 255, 0.3);
+  --glass-bg: transparent;
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-border-hover: rgba(255, 255, 255, 0.25);
   --mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
 
   /* GQuuuuuuX theme (default) */
@@ -34,9 +34,9 @@
   --theme-accent: #9B59B6;
   --theme-accent2: #2ECC71;
   --theme-accent3: #8E44AD;
-  --glass-bg: rgba(10, 0, 20, 0.04);
-  --glass-border: rgba(155, 89, 182, 0.12);
-  --glass-border-hover: rgba(46, 204, 113, 0.25);
+  --glass-bg: transparent;
+  --glass-border: rgba(155, 89, 182, 0.08);
+  --glass-border-hover: rgba(46, 204, 113, 0.2);
   --bracket-color: rgba(155, 89, 182, 0.25);
   --bracket-color-hover: rgba(46, 204, 113, 0.5);
 }
@@ -310,8 +310,8 @@ html.cursor-hidden * {
     to bottom,
     transparent 0px,
     transparent 3px,
-    rgba(0, 0, 0, 0.06) 3px,
-    rgba(0, 0, 0, 0.06) 4px
+    rgba(0, 0, 0, 0.02) 3px,
+    rgba(0, 0, 0, 0.02) 4px
   );
 }
 
