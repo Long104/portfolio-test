@@ -531,11 +531,32 @@ html.cursor-hidden * {
   background: rgba(0, 0, 0, 0.92);
   cursor: pointer;
   user-select: none;
-  transition: opacity 0.6s ease;
 }
 
-.psycommu-boot--fadeout {
-  opacity: 0;
+/* ── Exiting: GSAP handles scale + opacity; CSS adds glitch effect ── */
+.psycommu-boot--exiting {
+  pointer-events: none;
+}
+
+/* ── Text scramble during exit ── */
+.psycommu-boot__line--scramble .psycommu-boot__val {
+  animation: textScramble 0.08s steps(3) infinite;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+@keyframes textScramble {
+  0%   { clip-path: inset(0 0 0 0); }
+  25%  { clip-path: inset(0 30% 0 0); }
+  50%  { clip-path: inset(0 0 0 30%); }
+  75%  { clip-path: inset(30% 0 0 0); }
+}
+
+/* ── Flash overlay (created by GSAP) ── */
+.psycommu-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 101;
+  background: #fff;
   pointer-events: none;
 }
 

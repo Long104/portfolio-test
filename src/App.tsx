@@ -29,6 +29,7 @@ type Theme = "gquuuuuux" | "gfreed";
 
 function App() {
   const [started, setStarted] = useState(false);
+  const [bootPhase, setBootPhase] = useState<"enter" | "exit" | "gone">("enter");
   const [activeSection, setActiveSection] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [theme, setTheme] = useState<Theme>(
@@ -82,7 +83,8 @@ function App() {
   }, [started]);
 
   const handleStart = useCallback(async () => {
-    setStarted(true); // show HUD/content immediately — don't wait for audio
+    setBootPhase("exit"); // start boot exit animation
+    setStarted(true); // mount content behind the boot screen
     if (isPreloaded) {
       await engage();
     } else {
@@ -91,19 +93,25 @@ function App() {
   }, [isPreloaded, engage, loadTrack, currentTrack]);
 
   const handleSelectTrack = useCallback(async (url: string) => {
+    setBootPhase("exit");
     setStarted(true);
     if (isPreloaded && url === currentTrack) {
-      if (!isPlaying) await engage(); // resume if paused; no-op if already playing
+      if (!isPlaying) await engage();
     } else {
       await loadTrack(url);
     }
   }, [isPreloaded, engage, loadTrack, currentTrack, isPlaying]);
+
+  const handleExitComplete = useCallback(() => {
+    setBootPhase("gone");
+  }, []);
 
   const handleSectionChange = useCallback((index: number) => {
     setActiveSection(index);
   }, []);
 
   const activeTrackName = TRACKS.find((t) => t.url === currentTrack)?.name ?? "";
+  const bootPhaseNarrowed: "enter" | "exit" = bootPhase === "gone" ? "exit" : bootPhase;
 
   return (
     <>
@@ -149,14 +157,16 @@ function App() {
       )}
 
       {/* ── Psycommu Boot Sequence ── */}
-      {!started && (
+      {bootPhase !== "gone" && (
         <PsycommuBoot
+          phase={bootPhaseNarrowed}
           isLoading={isLoading}
           error={error}
           currentTrack={currentTrack}
           onStart={handleStart}
           onSelectTrack={handleSelectTrack}
           onWarmUp={warmUp}
+          onExitComplete={handleExitComplete}
           tracks={TRACKS}
         />
       )}

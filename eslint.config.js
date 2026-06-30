@@ -29,6 +29,7 @@ export default defineConfig([
       'src/components/HUD.tsx',
       'src/components/NavPill.tsx',
       'src/components/AudioBar.tsx',
+      'src/components/PsycommuBoot.tsx',
     ],
     rules: {
       'react-hooks/immutability': 'off',
