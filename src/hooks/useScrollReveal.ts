@@ -41,10 +41,6 @@ export interface ScrollRevealOptions {
   duration?: number;
   /** Delay before animation starts (seconds) */
   delay?: number;
-  /** Gate the animation. When false, text is hidden but not animated.
-   *  When it flips to true, the hook re-runs and plays the animation.
-   *  Default: true. Used by HeroSection to wait for LAUNCH click. */
-  enabled?: boolean;
 }
 
 const DEFAULTS: Required<Pick<
@@ -69,7 +65,6 @@ export function useScrollReveal<T extends HTMLElement>(
   options: ScrollRevealOptions = {}
 ): RefObject<T | null> {
   const ref = useRef<T | null>(null);
-  const enabled = options.enabled ?? true;
 
   useGSAP(
     () => {
@@ -95,9 +90,6 @@ export function useScrollReveal<T extends HTMLElement>(
               : split.words;
         if (targets.length === 0) return;
         gsap.set(targets, { opacity: 0 });
-        if (!enabled) {
-          return () => { split.revert(); };
-        }
         gsap.to(targets, { opacity: 1, duration: 0.4, ease: "power2.out" });
         return () => { split.revert(); };
       }
@@ -147,17 +139,7 @@ export function useScrollReveal<T extends HTMLElement>(
 
       // ── Build timeline (scroll or auto-play) ──
       // scrollTrigger on the TIMELINE (NOT on individual tweens — anti-pattern).
-      // When scroll=false, the timeline auto-plays immediately (with delay) — used
-      // for the hero section which should animate after boot clears, not on scroll.
-      //
-      // ── enabled gate ──
-      // When enabled=false (e.g. hero before LAUNCH), text stays in hidden state
-      // but no timeline is created. When enabled flips to true, useGSAP reverts
-      // and re-runs (via dependencies), creating + playing the timeline.
-      if (!enabled) {
-        return () => { split.revert(); };
-      }
-
+      // When scroll=false, the timeline auto-plays immediately (with delay).
       const tlCfg: gsap.TimelineVars = {
         defaults: { ease: opts.ease },
       };
@@ -207,7 +189,7 @@ export function useScrollReveal<T extends HTMLElement>(
         tl.kill();
       };
     },
-    { scope: ref, revertOnUpdate: true, dependencies: [enabled] }
+    { scope: ref, revertOnUpdate: true }
   );
 
   return ref;

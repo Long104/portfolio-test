@@ -8,25 +8,78 @@ import { GlassPanel, ProjectCard } from "./Glass";
 import { PROJECTS } from "./projects";
 import { EXPERIENCE, CURRENT_STATUS } from "./experience";
 import { useScrollReveal } from "../hooks/useScrollReveal";
+import { useRef } from "react";
+import { useGSAP } from "@gsap/react";
+import { gsap, SplitText, PREFERS_REDUCED_MOTION } from "../lib/gsap";
 
 // ── Hero (section 0) ──
-// Line reveal with 0.8s delay — starts when user clicks LAUNCH.
-// The 0.8s delay lets the boot exit flash settle before the hero rises.
-// Uses scroll:false (auto-play) instead of scrollTrigger because the hero is
-// always at top — scrollTrigger fires immediately and bypasses the tween delay.
-// Uses enabled: started to gate the animation until LAUNCH is clicked.
+// Line reveal triggered by LAUNCH click. Uses dedicated useGSAP instead of
+// useScrollReveal because the hero needs precise timing coordination with
+// the PsycommuBoot exit animation (not a scroll trigger).
+//
+// Timing:
+//   t=0.00  LAUNCH clicked → boot exit flash starts
+//   t=0.35  hero line reveal begins (as flash is fading)
+//   t=1.25  hero animation done
+//
+// The hero text stays hidden (opacity:0, y:140%) until `started` flips true.
+// useGSAP with dependencies:[started] reverts the hidden state and replays
+// fresh — clean split + animate in one pass.
 export function HeroSection({ started }: { started: boolean }) {
-  const taglineRef = useScrollReveal<HTMLHeadingElement>({
-    split: "lines",
-    stagger: 0.2,
-    y: "140%",
-    clipWipe: true,
-    delay: 0.8,
-    duration: 1.2,
-    ease: "power3.out",
-    scroll: false,
-    enabled: started,
-  });
+  const taglineRef = useRef<HTMLHeadingElement>(null);
+
+  useGSAP(
+    () => {
+      const el = taglineRef.current;
+      if (!el) return;
+
+      // Reduced motion: simple fade only
+      if (PREFERS_REDUCED_MOTION) {
+        gsap.set(el, { opacity: 0 });
+        if (!started) return;
+        gsap.to(el, { opacity: 1, duration: 0.5, delay: 0.3, ease: "power2.out" });
+        return;
+      }
+
+      // Split into lines with overflow:hidden mask wrappers
+      const split = new SplitText(el, {
+        type: "lines",
+        mask: "lines",
+        linesClass: "split-line",
+        wordsClass: "split-word",
+        charsClass: "split-char",
+      });
+
+      if (split.lines.length === 0) return;
+
+      // Hide immediately — prevents flash of visible text
+      gsap.set(split.lines, { yPercent: 140, opacity: 0 });
+
+      // Not started yet — stay hidden, wait for LAUNCH
+      if (!started) {
+        return () => split.revert();
+      }
+
+      // Animate lines rising from behind their masks
+      const tl = gsap.timeline({
+        delay: 0.35, // wait for boot flash to start fading
+      });
+
+      tl.to(split.lines, {
+        yPercent: 0,
+        opacity: 1,
+        stagger: 0.12,
+        duration: 0.9,
+        ease: "power4.out",
+      });
+
+      return () => {
+        split.revert();
+        tl.kill();
+      };
+    },
+    { scope: taglineRef, revertOnUpdate: true, dependencies: [started] },
+  );
 
   return (
     <section className="section hero" data-section-index={0}>
