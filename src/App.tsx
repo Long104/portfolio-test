@@ -15,7 +15,8 @@ import { PsycommuWaveform } from "./components/PsycommuWaveform";
 import { NavPill } from "./components/NavPill";
 import { CursorOverlay } from "./components/CursorOverlay";
 import { RefractiveDiv, buildSmallConfig } from "./components/Glass";
-import { useDeviceOrientation } from "./useDeviceOrientation";
+import { useCursorSpecular } from "./hooks/useCursorSpecular";
+import { useGlassInteraction } from "./hooks/useGlassInteraction";
 import {
   HeroSection,
   AboutSection,
@@ -36,7 +37,12 @@ function App() {
     () => (localStorage.getItem("kira-theme") as Theme) || "gquuuuuux",
   );
   const scrollRef = useRef<ScrollContainerHandle>(null);
-  const specularAngle = useDeviceOrientation();
+  const specularAngle = useCursorSpecular();
+  const audioGlow = useGlassInteraction({
+    maxTilt: 0,
+    glowRadius: "25%",
+    glowColor: "rgba(255, 79, 216, 0.06)",
+  });
 
   // ── Apply theme to root element ──
   useEffect(() => {
@@ -167,10 +173,11 @@ function App() {
 
       {/* ── Audio control bar ── */}
       {started && (
-        <RefractiveDiv
-          className="audio-bar"
-          refraction={buildSmallConfig(specularAngle)}
-        >
+        <div ref={audioGlow.ref}>
+          <RefractiveDiv
+            className="audio-bar glass-interactive"
+            refraction={buildSmallConfig(specularAngle)}
+          >
           <button
             className="audio-bar__btn"
             onClick={toggle}
@@ -207,7 +214,8 @@ function App() {
           >
             {theme === "gquuuuuux" ? "gMS-Ω" : "gMS-κ"}
           </button>
-        </RefractiveDiv>
+          </RefractiveDiv>
+        </div>
       )}
     </>
   );

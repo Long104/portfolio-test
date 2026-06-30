@@ -259,6 +259,33 @@ html.cursor-hidden * {
     0 16px 48px rgba(0, 0, 0, 0.4);
 }
 
+/* ── Cursor-reactive glass interaction ──
+   Apple Liquid Glass: internal illumination on interaction.
+   Architecture: wrapper div sets --glow-bg and --tilt-x/y.
+   Wrapper applies transform (safe — no backdrop-filter).
+   Child RefractiveDiv inherits --glow-bg via CSS cascade and
+   applies background-image (safe — no composited pseudo-elements).
+   NO CSS transitions — Chrome compositor bug breaks backdrop-filter. */
+
+/* Tilt wrapper: applies 3D perspective tilt. NOT a backdrop-filter element. */
+.glass-tilt-wrapper {
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  transform: perspective(800px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
+}
+
+/* In work-grid, the wrapper replaces the card as the flex child */
+.work-grid .glass-tilt-wrapper {
+  flex: 0 0 calc(50% - 8px);
+  cursor: pointer;
+}
+
+/* Interactive glass: inherits --glow-bg from parent. */
+.glass-interactive {
+  --glow-bg: transparent;
+  background-image: var(--glow-bg);
+}
+
 /* ── Text contrast inside glass panels — dark halo for readability over 3D vortex ── */
 .about__text,
 .about__text span,
@@ -389,11 +416,9 @@ html.cursor-hidden * {
 }
 
 .project-card {
-  flex: 0 0 calc(50% - 8px);
   position: relative;
   background: var(--glass-bg);
   padding: 28px 24px;
-  cursor: pointer;
   box-shadow:
     inset 0 0.5px 0 rgba(255, 255, 255, 0.08),
     0 8px 32px rgba(0, 0, 0, 0.3);
