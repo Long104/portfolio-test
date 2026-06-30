@@ -528,9 +528,11 @@ html.cursor-hidden * {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.92);
+  background: rgba(0, 0, 0, 0.88); /* slightly lighter — tunnel glows through */
   cursor: pointer;
   user-select: none;
+  transition: opacity 0.6s ease;
+  overflow: hidden; /* tunnel canvas stays clipped */
 }
 
 /* ── Exiting: GSAP handles scale + opacity; CSS adds glitch effect ── */
@@ -565,6 +567,13 @@ html.cursor-hidden * {
   width: 100%;
   padding: 0 24px;
   position: relative;
+  z-index: 1; /* above tunnel canvas */
+  transition: opacity 0.3s ease;
+}
+
+.psycommu-boot__inner--hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .psycommu-boot__header {

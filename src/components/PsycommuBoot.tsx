@@ -1,10 +1,15 @@
 // ── Psycommu Boot Sequence ──
 // Omega Psycommu activation screen.
 // Terminal boot sequence → cassette key insert → SYSTEM ONLINE.
+// ── Psycommu Boot Sequence ──
+// Omega Psycommu activation screen.
+// Terminal boot sequence → cassette key insert → SYSTEM ONLINE.
 // Cinematic exit: white flash + scale-up + text scramble → content revealed.
+// Tunnel background runs in an infinite loop underneath.
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { gsap } from "../lib/gsap";
+import { TunnelCanvas, type TunnelPhase } from "./TunnelCanvas";
 
 interface Props {
   phase: "enter" | "exit";
@@ -23,7 +28,6 @@ const BOOT_LINES = [
   { addr: "DEV", val: "boot device / limiter — DETECTED" },
   { addr: "PSW", val: "psychowave scan — NEWTYPE SIGNATURE FOUND" },
   { addr: "NLT", val: "neural link — synced 100%" },
-  { addr: "SYN", val: "frame coherence — 99.2%" },
   { addr: "RST", val: "restraints: ██ released" },
   { addr: "SYS", val: "SYSTEM ONLINE — omega psycommu active" },
 ];
@@ -73,7 +77,9 @@ export function PsycommuBoot({
       return () => clearTimeout(t);
     }
 
-    if (bootLine === 5) {
+    // Line fully typed — flash if restraint release, then advance
+    if (bootLine === 4) {
+      // "restraints released" flash
       setBootPhase("flash");
       const t = setTimeout(() => {
         if (skipRef.current) return;
@@ -172,12 +178,18 @@ export function PsycommuBoot({
   const isComplete = bootPhase === "complete" || bootPhase === "skip";
   const isExiting = phase === "exit";
 
+  // Tunnel keeps running until exit animation, then fades away
+  const tunnelPhase: TunnelPhase = isExiting ? "done" : "running";
+
   return (
     <div
       ref={bootRef}
       className={`psycommu-boot ${isExiting ? "psycommu-boot--exiting" : ""}`}
       onClick={isComplete && !isExiting ? handleEngage : handleOverlayClick}
     >
+      {/* ── Tunnel background (loops forever) ── */}
+      <TunnelCanvas phase={tunnelPhase} />
+
       <div className="psycommu-boot__inner" onClick={(e) => e.stopPropagation()}>
         {/* ── Header ── */}
         <div className="psycommu-boot__header">
