@@ -4,10 +4,15 @@
 // Two phases: running (always) → done (fade out on LAUNCH click).
 // Procedural pulse keeps it alive; real audio drives it when playing.
 //
-// Performance: glow sprites (radial gradients) instead of shadowBlur.
-// No save/restore per particle. Batch by color to minimize state changes.
+// Performance:
+//  • Glow sprites (radial gradients) — no shadowBlur (software fallback)
+//  • Batch by color — 3 composite-op sets instead of 80 per-frame save/restore
+//  • Grid drawn in single path — 1 stroke call instead of 16
+//  • maxRadius cached — no Math.hypot every frame
+//  • globalAlpha instead of rgba string alloc — no GC pressure
+//  • React.memo — skip re-renders during boot sequence
 
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { getAudioData } from "../useAudioEngine";
 
 export type TunnelPhase = "running" | "done";
@@ -46,7 +51,7 @@ function makeGlowSprite(color: string): HTMLCanvasElement {
   return c;
 }
 
-export function TunnelCanvas({ phase }: Props) {
+const TunnelCanvas = memo(function TunnelCanvas({ phase }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const phaseRef = useRef<TunnelPhase>(phase);
   phaseRef.current = phase;
@@ -60,15 +65,17 @@ export function TunnelCanvas({ phase }: Props) {
     // ── Glow sprites (created once) ──
     const glowSprites = COLORS.map(makeGlowSprite);
 
-    // ── Sizing ──
+    // ── Sizing + cached maxRadius ──
     let dpr = Math.min(window.devicePixelRatio || 1, 2);
     let w = window.innerWidth;
     let h = window.innerHeight;
+    let maxRadius = Math.hypot(w, h) / 2;
 
     const resize = () => {
       dpr = Math.min(window.devicePixelRatio || 1, 2);
       w = window.innerWidth;
       h = window.innerHeight;
+      maxRadius = Math.hypot(w, h) / 2;
       canvas.width = Math.floor(w * dpr);
       canvas.height = Math.floor(h * dpr);
       canvas.style.width = w + "px";
@@ -123,31 +130,30 @@ export function TunnelCanvas({ phase }: Props) {
 
       const cx = w / 2;
       const cy = h / 2;
-      const maxRadius = Math.hypot(w, h) / 2;
 
       // ── Clear ──
       ctx.clearRect(0, 0, w, h);
-      ctx.globalAlpha = tunnelAlpha;
 
-      // ── Perspective grid ──
-      const gridAlpha = 0.06 + pulse * 0.04;
-      ctx.strokeStyle = `rgba(255, 255, 255, ${gridAlpha})`;
+      // ── Perspective grid (single path — 1 stroke instead of 16) ──
+      ctx.strokeStyle = "#fff";
       ctx.lineWidth = 1;
+      ctx.globalAlpha = tunnelAlpha * (0.06 + pulse * 0.04);
+      ctx.beginPath();
       for (let i = 0; i < 16; i++) {
         const angle = (i / 16) * Math.PI * 2;
-        ctx.beginPath();
         ctx.moveTo(cx, cy);
         ctx.lineTo(cx + Math.cos(angle) * maxRadius, cy + Math.sin(angle) * maxRadius);
-        ctx.stroke();
       }
+      ctx.stroke();
 
       // ── Depth rings ──
+      ctx.strokeStyle = "#fff";
       const ringOffset = (elapsed * TUNNEL_SPEED * 0.5) % 1;
       for (let i = 0; i < 8; i++) {
         const ringZ = ((i / 8) + ringOffset) % 1;
         const radius = ringZ * maxRadius;
         if (radius < 5) continue;
-        ctx.strokeStyle = `rgba(255, 255, 255, ${ringZ * (0.15 + pulse * 0.08)})`;
+        ctx.globalAlpha = tunnelAlpha * ringZ * (0.15 + pulse * 0.08);
         ctx.lineWidth = 0.5 + ringZ * 0.5;
         ctx.beginPath();
         ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -160,8 +166,10 @@ export function TunnelCanvas({ phase }: Props) {
       buckets[1].length = 0;
       buckets[2].length = 0;
 
+      const speedDt = TUNNEL_SPEED * dt;
+
       for (const p of pool) {
-        p.z += TUNNEL_SPEED * dt;
+        p.z += speedDt;
         if (p.z > 1.2) {
           p.x = (Math.random() - 0.5) * 2;
           p.y = (Math.random() - 0.5) * 2;
@@ -222,4 +230,6 @@ export function TunnelCanvas({ phase }: Props) {
       }}
     />
   );
-}
+});
+
+export { TunnelCanvas };
