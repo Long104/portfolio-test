@@ -2,6 +2,7 @@
 // Hero, About, Experience, Work, Contact
 // Each is a <section> with data-section-index for scroll tracking.
 // All text uses useScrollReveal for SplitText-driven scroll animations.
+// Pattern: play-once-on-enter (the SOTD portfolio standard).
 
 import { GlassPanel, ProjectCard } from "./Glass";
 import { PROJECTS } from "./projects";
@@ -9,15 +10,15 @@ import { EXPERIENCE, CURRENT_STATUS } from "./experience";
 import { useScrollReveal } from "../hooks/useScrollReveal";
 
 // ── Hero (section 0) ──
-// Line reveal: two visual lines rise into frame on mount (no scrub — it's first view).
+// Line reveal with 0.7s delay — waits for boot screen fadeout (0.6s) to finish.
 export function HeroSection() {
   const taglineRef = useScrollReveal<HTMLHeadingElement>({
     split: "lines",
     stagger: 0.15,
     y: "140%",
     clipWipe: true,
-    scrub: false,
-    once: true,
+    delay: 0.7,
+    duration: 1.0,
     start: "top 90%",
   });
 
@@ -43,8 +44,6 @@ export function AboutSection() {
     split: "chars",
     stagger: 0.03,
     y: "100%",
-    clipWipe: false,
-    once: true,
     start: "top 85%",
   });
 
@@ -53,7 +52,6 @@ export function AboutSection() {
     stagger: 0.06,
     y: "120%",
     blur: true,
-    once: true,
     start: "top 75%",
   });
 
@@ -61,8 +59,6 @@ export function AboutSection() {
     split: "words",
     stagger: 0.04,
     y: "100%",
-    clipWipe: false,
-    once: true,
     start: "top 70%",
   });
 
@@ -70,8 +66,6 @@ export function AboutSection() {
     split: "words",
     stagger: 0.04,
     y: "100%",
-    clipWipe: false,
-    once: true,
     start: "top 65%",
   });
 
@@ -79,8 +73,6 @@ export function AboutSection() {
     split: "words",
     stagger: 0.04,
     y: "100%",
-    clipWipe: false,
-    once: true,
     start: "top 60%",
   });
 
@@ -123,8 +115,6 @@ export function ExperienceSection() {
     split: "chars",
     stagger: 0.03,
     y: "100%",
-    clipWipe: false,
-    once: true,
     start: "top 85%",
   });
 
@@ -133,7 +123,6 @@ export function ExperienceSection() {
     stagger: 0.12,
     y: "100%",
     clipWipe: true,
-    once: true,
     start: "top 75%",
   });
 
@@ -173,8 +162,6 @@ export function WorkSection() {
     split: "chars",
     stagger: 0.03,
     y: "100%",
-    clipWipe: false,
-    once: true,
     start: "top 85%",
   });
 
@@ -196,8 +183,6 @@ export function ContactSection() {
     split: "chars",
     stagger: 0.03,
     y: "100%",
-    clipWipe: false,
-    once: true,
     start: "top 85%",
   });
 
@@ -206,7 +191,6 @@ export function ContactSection() {
     stagger: 0.15,
     y: "120%",
     clipWipe: true,
-    once: true,
     start: "top 70%",
   });
 
@@ -214,8 +198,6 @@ export function ContactSection() {
     split: "lines",
     stagger: 0.1,
     y: "80%",
-    clipWipe: false,
-    once: true,
     start: "top 60%",
   });
 

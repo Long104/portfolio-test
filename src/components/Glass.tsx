@@ -2,7 +2,6 @@ import { refractive, convex } from "refractive";
 import type { ReactNode } from "react";
 import { PROJECTS } from "./projects";
 import { useDeviceOrientation } from "../useDeviceOrientation";
-import { useScrollReveal } from "../hooks/useScrollReveal";
 
 // ── Refractive wrappers ──
 // Chrome: native SVG displacement refraction (true light-bending glass)
@@ -58,14 +57,6 @@ export function ProjectCard({
   project: (typeof PROJECTS)[number];
 }) {
   const specularAngle = useDeviceOrientation();
-  const titleRef = useScrollReveal<HTMLDivElement>({
-    split: "words",
-    stagger: 0.04,
-    y: "100%",
-    clipWipe: false,
-    once: true,
-    start: "top 85%",
-  });
 
   return (
     <RefractiveDiv
@@ -73,7 +64,7 @@ export function ProjectCard({
       className="project-card"
     >
       <div className="project-card__num">{project.num}</div>
-      <div ref={titleRef} className="project-card__title">{project.title}</div>
+      <div className="project-card__title">{project.title}</div>
       <div className="project-card__stack">{project.stack}</div>
       <div className="project-card__arrow">{"→"}</div>
     </RefractiveDiv>
