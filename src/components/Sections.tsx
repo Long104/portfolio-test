@@ -112,6 +112,72 @@ export function AboutSection() {
   );
 }
 
+// ── Experience Item ──
+// Each text element gets its own useScrollReveal ref.
+// NOT applied to a parent wrapper — SplitText with split:"lines" on nested
+// DOM structure (grid children) breaks the layout because it re-wraps text
+// fragments and creates orphaned/mangled elements.
+
+interface ExpItemData {
+  period: string;
+  role: string;
+  company?: string;
+  description?: string;
+  isCurrent?: boolean;
+}
+
+function ExpItem({ period, role, company, description, isCurrent }: ExpItemData) {
+  const periodRef = useScrollReveal<HTMLDivElement>({
+    split: "chars",
+    stagger: 0.03,
+    y: "100%",
+    start: "top 85%",
+  });
+  const roleRef = useScrollReveal<HTMLDivElement>({
+    split: "words",
+    stagger: 0.06,
+    y: "120%",
+    start: "top 80%",
+  });
+  const companyRef = useScrollReveal<HTMLDivElement>({
+    split: "words",
+    stagger: 0.04,
+    y: "100%",
+    start: "top 75%",
+  });
+  const descRef = useScrollReveal<HTMLDivElement>({
+    split: "words",
+    stagger: 0.04,
+    y: "100%",
+    start: "top 70%",
+  });
+
+  return (
+    <div className={`exp-item${isCurrent ? " exp-item--current" : ""}`}>
+      <div
+        ref={periodRef}
+        className={`exp-item__period${isCurrent ? " exp-item__period--current" : ""}`}
+      >
+        {period}
+      </div>
+      <div className="exp-item__body">
+        <div
+          ref={roleRef}
+          className={`exp-item__role${isCurrent ? " exp-item__role--current" : ""}`}
+        >
+          {role}
+        </div>
+        {company && (
+          <div ref={companyRef} className="exp-item__company">{company}</div>
+        )}
+        {description && (
+          <div ref={descRef} className="exp-item__desc">{description}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Experience (section 2) ──
 export function ExperienceSection() {
   const labelRef = useScrollReveal<HTMLDivElement>({
@@ -121,37 +187,24 @@ export function ExperienceSection() {
     start: "top 85%",
   });
 
-  const bodyRef = useScrollReveal<HTMLDivElement>({
-    split: "lines",
-    stagger: 0.12,
-    y: "100%",
-    clipWipe: true,
-    start: "top 75%",
-  });
-
   return (
     <section className="section" data-section-index={2}>
       <div ref={labelRef} className="section-label">// experience</div>
       <GlassPanel>
-        <div ref={bodyRef} className="experience">
-          {/* Current status — reverse chronological, newest first */}
-          <div className="exp-item exp-item--current">
-            <div className="exp-item__period exp-item__period--current">now</div>
-            <div className="exp-item__body">
-              <div className="exp-item__role exp-item__role--current">
-                {CURRENT_STATUS}
-              </div>
-            </div>
-          </div>
+        <div className="experience">
+          <ExpItem
+            period="now"
+            role={CURRENT_STATUS}
+            isCurrent
+          />
           {[...EXPERIENCE].reverse().map((job, i) => (
-            <div key={i} className="exp-item">
-              <div className="exp-item__period">{job.period}</div>
-              <div className="exp-item__body">
-                <div className="exp-item__role">{job.role}</div>
-                <div className="exp-item__company">{job.company}</div>
-                <div className="exp-item__desc">{job.description}</div>
-              </div>
-            </div>
+            <ExpItem
+              key={i}
+              period={job.period}
+              role={job.role}
+              company={job.company}
+              description={job.description}
+            />
           ))}
         </div>
       </GlassPanel>
