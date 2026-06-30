@@ -6,12 +6,16 @@
 //   • optional blur→clear
 //   • stagger between units
 //
+// Uses ScrollTrigger.create() wrapping a timeline — NOT scrollTrigger
+// on individual tweens (documented GSAP anti-pattern that breaks
+// immediateRender, causing text to "pop" instead of animate).
+//
 // Compiler-safe: uses useGSAP with scope + revertOnUpdate.
 // Same imperative-escape pattern as KiraKiraVortex.tsx.
 
 import { useRef, type RefObject } from "react";
 import { useGSAP } from "@gsap/react";
-import { gsap, SplitText, PREFERS_REDUCED_MOTION } from "../lib/gsap";
+import { gsap, ScrollTrigger, SplitText, PREFERS_REDUCED_MOTION } from "../lib/gsap";
 import { PERF_TIER } from "../perf";
 
 // ── Options ──
@@ -30,17 +34,17 @@ export interface ScrollRevealOptions {
   scrub?: boolean | number;
   /** ScrollTrigger start position — default 'top 80%' */
   start?: string;
-  /** Play only once (ignore scrub) — default true */
+  /** Play only once — default true */
   once?: boolean;
   /** Ease for individual unit animations */
   ease?: string;
-  /** Base opacity of units before reveal — default 1 */
-  fromOpacity?: number;
+  /** Duration per unit animation (seconds) */
+  duration?: number;
 }
 
 const DEFAULTS: Required<Pick<
   ScrollRevealOptions,
-  "split" | "stagger" | "y" | "clipWipe" | "blur" | "scrub" | "start" | "once" | "ease" | "fromOpacity"
+  "split" | "stagger" | "y" | "clipWipe" | "blur" | "scrub" | "start" | "once" | "ease" | "duration"
 >> = {
   split: "words",
   stagger: 0.08,
@@ -51,7 +55,7 @@ const DEFAULTS: Required<Pick<
   start: "top 80%",
   once: true,
   ease: "power4.out",
-  fromOpacity: 1,
+  duration: 0.8,
 } as const;
 
 // ── Hook ──
@@ -77,6 +81,7 @@ export function useScrollReveal<T extends HTMLElement>(
       const stagger = isMobile ? (opts.stagger as number) * 0.5 : (opts.stagger as number);
       const yVal = opts.y; // guaranteed string from DEFAULTS
       const blur = isMobile ? false : opts.blur;
+      const duration = isMobile ? (opts.duration as number) * 0.6 : (opts.duration as number);
 
       // ── SplitText: mask wraps lines in overflow:hidden ──
       const split = new SplitText(el, {
@@ -96,49 +101,57 @@ export function useScrollReveal<T extends HTMLElement>(
 
       if (targets.length === 0) return;
 
-      // ── Animation config per unit ──
-      const fromVars: gsap.TweenVars = {
+      // ── Set initial state immediately (prevents flash of visible text) ──
+      gsap.set(el, { clipPath: opts.clipWipe ? "inset(0 100% 0 0)" : "none" });
+      gsap.set(targets, {
         y: yVal,
-        opacity: opts.fromOpacity,
+        opacity: 0,
         ...(blur ? { filter: "blur(6px)" } : {}),
-      };
+      });
 
-      const toVars: gsap.TweenVars = {
+      // ── Build timeline (NO scrollTrigger on individual tweens) ──
+      const tl = gsap.timeline();
+
+      // Tween 1: units rise in + fade in
+      tl.to(targets, {
         y: "0%",
         opacity: 1,
         filter: "blur(0px)",
         stagger,
+        duration,
         ease: opts.ease,
-        scrollTrigger: {
-          trigger: el,
-          start: opts.start,
-          toggleActions: opts.scrub ? undefined : "play none none none",
-          scrub: opts.scrub === false ? undefined : opts.scrub === true ? 1 : opts.scrub,
-          once: opts.once,
-        },
-      };
+      });
 
-      // Build timeline: from state → to state
-      const tl = gsap.timeline();
-      tl.fromTo(targets, fromVars, toVars);
-
-      // ── Clip-path wipe on the element itself (parallel) ──
+      // Tween 2: clip-path wipe (parallel — runs at same time as tween 1)
       if (opts.clipWipe) {
-        tl.fromTo(
+        tl.to(
           el,
-          { clipPath: "inset(0 100% 0 0)" },
           {
             clipPath: "inset(0 0% 0 0)",
-            duration: 0.6,
+            duration: duration + stagger * targets.length * 0.5,
             ease: "power2.out",
           },
-          "<"
+          "<" // start at same position as tween 1
         );
       }
+
+      // ── ScrollTrigger drives the entire timeline ──
+      const scrubVal = opts.scrub === false ? false : opts.scrub === true ? 1 : opts.scrub;
+
+      ScrollTrigger.create({
+        trigger: el,
+        start: opts.start,
+        animation: tl,
+        once: opts.once,
+        ...(scrubVal !== false ? { scrub: scrubVal } : { toggleActions: "play none none none" }),
+      });
 
       // ── Cleanup: revert split on unmount / re-render ──
       return () => {
         split.revert();
+        ScrollTrigger.getAll().forEach((st) => {
+          if (st.trigger === el) st.kill();
+        });
       };
     },
     { scope: ref, revertOnUpdate: true }
