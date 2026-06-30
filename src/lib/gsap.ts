@@ -8,6 +8,13 @@ import { SplitText } from "gsap/SplitText";
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
+// ── Default scroller ──
+// All ScrollTriggers use document.body as scroller by default.
+// ScrollContainer sets up a scrollerProxy that feeds Lenis's virtual
+// scroll position to ScrollTrigger (required because Lenis freezes
+// native window.scrollY).
+ScrollTrigger.defaults({ scroller: document.body });
+
 // ── Reduced motion ──
 // Checked by hooks — if true, all SplitText reverts immediately.
 export const PREFERS_REDUCED_MOTION =
