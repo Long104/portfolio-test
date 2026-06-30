@@ -10,17 +10,17 @@ import { EXPERIENCE, CURRENT_STATUS } from "./experience";
 import { useScrollReveal } from "../hooks/useScrollReveal";
 
 // ── Hero (section 0) ──
-// Line reveal with 1.5s delay — waits for boot exit animation (0.75s) + pause
-// before the cinematic rise. Uses scroll:false (auto-play) instead of scrollTrigger
-// because the hero is always at the top — a scrollTrigger fires immediately and
-// bypasses the tween delay.
+// Line reveal with 0.8s delay — just after boot exit animation completes (0.75s).
+// The 0.05s gap is imperceptible; the user sees the full slow cinematic rise.
+// Uses scroll:false (auto-play) instead of scrollTrigger because the hero is
+// always at top — scrollTrigger fires immediately and bypasses the tween delay.
 export function HeroSection() {
   const taglineRef = useScrollReveal<HTMLHeadingElement>({
     split: "lines",
     stagger: 0.15,
     y: "140%",
     clipWipe: true,
-    delay: 1.5,
+    delay: 0.8,
     duration: 1.0,
     scroll: false,
   });
