@@ -399,26 +399,14 @@ html.cursor-hidden * {
     0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-/* Hover shadow on ::after — NOT on .project-card itself.
-   transition on the refractive element triggers a Chrome compositor bug
-   that breaks backdrop-filter (the glass effect). Moving it to a pseudo
-   element avoids the promotion while keeping the smooth animation. */
-.project-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: 0;
+/* Hover shadow applied directly — no transition.
+   CSS transition on the refractive element OR its pseudo-elements creates
+   a compositor layer in Chrome, which breaks backdrop-filter: url().
+   Instant shadow change preserves the liquid glass effect. */
+.project-card:hover {
   box-shadow:
     inset 0 0.5px 0 rgba(255, 255, 255, 0.12),
     0 12px 40px rgba(0, 0, 0, 0.4);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.project-card:hover::after {
-  opacity: 1;
 }
 
 /* ── Corner brackets on project cards ── */
