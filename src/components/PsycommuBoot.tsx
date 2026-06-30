@@ -4,6 +4,7 @@
 // Replaces the plain "click to enter" overlay.
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { TunnelCanvas, type TunnelPhase } from "./TunnelCanvas";
 
 interface Props {
   isLoading: boolean;
@@ -27,6 +28,8 @@ const BOOT_LINES = [
 
 const CHAR_MS = 4;        // ms per character (was 8)
 const LINE_PAUSE_MS = 30;  // pause between lines (was 60)
+const LAUNCH_RUSH_MS = 400; // tunnel rush duration after boot completes
+const SKIP_RUSH_MS = 150;   // faster rush when user clicks to skip
 
 export function PsycommuBoot({
   isLoading,
@@ -39,7 +42,7 @@ export function PsycommuBoot({
 }: Props) {
   const [bootLine, setBootLine] = useState(0);
   const [bootChar, setBootChar] = useState(0);
-  const [phase, setPhase] = useState<"booting" | "flash" | "complete" | "skip">("booting");
+  const [phase, setPhase] = useState<"booting" | "flash" | "launching" | "complete" | "skip">("booting");
   const [progress, setProgress] = useState(0);
   const [fadeOut, setFadeOut] = useState(false);
   const skipRef = useRef(false);
@@ -47,11 +50,12 @@ export function PsycommuBoot({
 
   // ── Boot sequence state machine ──
   useEffect(() => {
-    if (phase === "complete" || phase === "skip") return;
+    if (phase === "complete" || phase === "skip" || phase === "launching") return;
 
     const line = BOOT_LINES[bootLine];
     if (!line) {
-      setPhase("complete");
+      // Boot text done → trigger tunnel launch rush
+      setPhase("launching");
       return;
     }
 
@@ -89,15 +93,23 @@ export function PsycommuBoot({
     return () => clearTimeout(t);
   }, [bootLine, bootChar, phase]);
 
+  // ── Launch rush: wait for tunnel animation, then show LAUNCH ──
+  useEffect(() => {
+    if (phase !== "launching") return;
+    const rushMs = skipRef.current ? SKIP_RUSH_MS : LAUNCH_RUSH_MS;
+    const t = setTimeout(() => setPhase("complete"), rushMs);
+    return () => clearTimeout(t);
+  }, [phase]);
+
   // ── Click anywhere during boot → skip to end + warm up AudioContext ──
   const handleOverlayClick = useCallback(() => {
     onWarmUp?.(); // user gesture → AudioContext can resume
-    if (phase === "complete" || fadeOut) return;
+    if (phase === "complete" || phase === "launching" || fadeOut) return;
     skipRef.current = true;
     setBootLine(BOOT_LINES.length - 1);
     setBootChar(BOOT_LINES[BOOT_LINES.length - 1].val.length);
     setProgress(100);
-    setPhase("complete");
+    setPhase("launching"); // go through tunnel rush even on skip
   }, [phase, fadeOut, onWarmUp]);
 
   // ── Engage (after boot complete) ──
@@ -121,13 +133,30 @@ export function PsycommuBoot({
   );
 
   const isComplete = phase === "complete" || phase === "skip";
+  const isLaunching = phase === "launching";
+
+  // Map boot phase → tunnel phase
+  const tunnelPhase: TunnelPhase = isLaunching
+    ? "launching"
+    : isComplete
+      ? "done"
+      : "idle";
+
+  // Terminal text fades out during launch rush, reappears for LAUNCH button
+  const textHidden = isLaunching;
 
   return (
     <div
       className={`psycommu-boot ${fadeOut ? "psycommu-boot--fadeout" : ""}`}
       onClick={isComplete ? handleEngage : handleOverlayClick}
     >
-      <div className="psycommu-boot__inner" onClick={(e) => e.stopPropagation()}>
+      {/* ── Tunnel background ── */}
+      <TunnelCanvas phase={tunnelPhase} />
+
+      <div
+        className={`psycommu-boot__inner ${textHidden ? "psycommu-boot__inner--hidden" : ""}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* ── Header ── */}
         <div className="psycommu-boot__header">
           <span className="psycommu-boot__sysname">
