@@ -41,6 +41,30 @@ export const ScrollContainer = forwardRef<ScrollContainerHandle, ScrollContainer
         smoothWheel: true,
       });
 
+      // ── ScrollTrigger + Lenis integration ──
+      // Lenis prevents native scroll (window.scrollY = 0), so ScrollTrigger
+      // can't detect scroll progress. We proxy ScrollTrigger's scroller to
+      // read Lenis's virtual scroll position instead.
+      ScrollTrigger.scrollerProxy(document.body, {
+        scrollTop() {
+          return lenis.scroll;
+        },
+        getBoundingClientRect() {
+          return {
+            top: 0,
+            left: 0,
+            bottom: window.innerHeight,
+            right: window.innerWidth,
+            width: window.innerWidth,
+            height: window.innerHeight,
+          };
+        },
+        pinType: document.body.style.transform ? "transform" : "fixed",
+      });
+
+      // Make all future ScrollTriggers use the proxied body scroller
+      ScrollTrigger.defaults({ scroller: document.body });
+
       // ── Section tracking ──
       // Finds which section's midpoint is closest to the viewport center.
       // More reliable than IntersectionObserver threshold when section heights
