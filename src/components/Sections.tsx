@@ -17,11 +17,12 @@ import { useScrollReveal } from "../hooks/useScrollReveal";
 export function HeroSection() {
   const taglineRef = useScrollReveal<HTMLHeadingElement>({
     split: "lines",
-    stagger: 0.15,
+    stagger: 0.2,
     y: "140%",
     clipWipe: true,
     delay: 0.8,
-    duration: 1.0,
+    duration: 1.2,
+    ease: "power3.out",
     scroll: false,
   });
 
@@ -45,9 +46,12 @@ const STACK = {
 export function AboutSection() {
   const labelRef = useScrollReveal<HTMLDivElement>({
     split: "chars",
-    stagger: 0.03,
-    y: "100%",
-    start: "top 85%",
+    stagger: 0.02,
+    x: "-60%",
+    y: "0%",
+    start: "top 90%",
+    duration: 0.4,
+    ease: "power2.out",
   });
 
   const textRef = useScrollReveal<HTMLParagraphElement>({
@@ -55,28 +59,38 @@ export function AboutSection() {
     stagger: 0.06,
     y: "120%",
     blur: true,
-    start: "top 75%",
+    start: "top 70%",
+    duration: 0.9,
   });
 
   const langRef = useScrollReveal<HTMLDivElement>({
     split: "words",
-    stagger: 0.04,
-    y: "100%",
-    start: "top 70%",
+    stagger: 0.03,
+    x: "-40%",
+    y: "0%",
+    start: "top 55%",
+    duration: 0.5,
+    ease: "power2.out",
   });
 
   const frameRef = useScrollReveal<HTMLDivElement>({
     split: "words",
-    stagger: 0.04,
-    y: "100%",
-    start: "top 65%",
+    stagger: 0.03,
+    x: "-40%",
+    y: "0%",
+    start: "top 45%",
+    duration: 0.5,
+    ease: "power2.out",
   });
 
   const toolsRef = useScrollReveal<HTMLDivElement>({
     split: "words",
-    stagger: 0.04,
-    y: "100%",
-    start: "top 60%",
+    stagger: 0.03,
+    x: "-40%",
+    y: "0%",
+    start: "top 35%",
+    duration: 0.5,
+    ease: "power2.out",
   });
 
   return (
@@ -129,27 +143,33 @@ interface ExpItemData {
 function ExpItem({ period, role, company, description, isCurrent }: ExpItemData) {
   const periodRef = useScrollReveal<HTMLDivElement>({
     split: "chars",
-    stagger: 0.03,
-    y: "100%",
-    start: "top 85%",
+    stagger: 0.02,
+    x: "-50%",
+    y: "0%",
+    start: "top 88%",
+    duration: 0.35,
+    ease: "power2.out",
   });
   const roleRef = useScrollReveal<HTMLDivElement>({
     split: "words",
-    stagger: 0.06,
+    stagger: 0.05,
     y: "120%",
-    start: "top 80%",
+    start: "top 78%",
+    duration: 0.7,
   });
   const companyRef = useScrollReveal<HTMLDivElement>({
     split: "words",
-    stagger: 0.04,
+    stagger: 0.03,
     y: "100%",
-    start: "top 75%",
+    start: "top 65%",
+    duration: 0.5,
   });
   const descRef = useScrollReveal<HTMLDivElement>({
     split: "words",
-    stagger: 0.04,
+    stagger: 0.03,
     y: "100%",
-    start: "top 70%",
+    start: "top 55%",
+    duration: 0.5,
   });
 
   return (
@@ -182,9 +202,12 @@ function ExpItem({ period, role, company, description, isCurrent }: ExpItemData)
 export function ExperienceSection() {
   const labelRef = useScrollReveal<HTMLDivElement>({
     split: "chars",
-    stagger: 0.03,
-    y: "100%",
-    start: "top 85%",
+    stagger: 0.02,
+    x: "-60%",
+    y: "0%",
+    start: "top 90%",
+    duration: 0.4,
+    ease: "power2.out",
   });
 
   return (
@@ -216,9 +239,12 @@ export function ExperienceSection() {
 export function WorkSection() {
   const labelRef = useScrollReveal<HTMLDivElement>({
     split: "chars",
-    stagger: 0.03,
-    y: "100%",
-    start: "top 85%",
+    stagger: 0.02,
+    x: "-60%",
+    y: "0%",
+    start: "top 90%",
+    duration: 0.4,
+    ease: "power2.out",
   });
 
   return (
@@ -237,9 +263,12 @@ export function WorkSection() {
 export function ContactSection() {
   const labelRef = useScrollReveal<HTMLDivElement>({
     split: "chars",
-    stagger: 0.03,
-    y: "100%",
-    start: "top 85%",
+    stagger: 0.02,
+    x: "-60%",
+    y: "0%",
+    start: "top 90%",
+    duration: 0.4,
+    ease: "power2.out",
   });
 
   const linksRef = useScrollReveal<HTMLDivElement>({
@@ -247,14 +276,16 @@ export function ContactSection() {
     stagger: 0.15,
     y: "120%",
     clipWipe: true,
-    start: "top 70%",
+    start: "top 65%",
+    duration: 1.0,
   });
 
   const footerRef = useScrollReveal<HTMLDivElement>({
     split: "lines",
-    stagger: 0.1,
+    stagger: 0.08,
     y: "80%",
-    start: "top 60%",
+    start: "top 40%",
+    duration: 0.6,
   });
 
   return (

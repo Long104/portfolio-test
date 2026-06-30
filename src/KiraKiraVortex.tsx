@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import {
   AdditiveBlending,
   InstancedBufferAttribute,
   PlaneGeometry,
   ShaderMaterial,
+  Vector3,
 } from "three";
 
 import { createStarTexture, createPetalTexture, createBlobTexture, createGradientLUT } from "./textures";
@@ -14,6 +15,7 @@ import { flareVertex, flareFragment } from "./shaders/flare";
 import { glowVertex, glowFragment } from "./shaders/glow";
 import { PAINT_COUNT, FLARE_COUNT } from "./perf";
 import { useAudioEngine } from "./useAudioEngine";
+import { getScrollState } from "./scrollStore";
 
 // ==========================================
 // 3. SCENE COMPONENT
@@ -185,11 +187,29 @@ export default function KiraKiraVortex() {
     };
   }, []);
 
+  // ── Scroll-linked camera + particle speed ──
+  // Camera orbits + pulls back based on scroll progress (0–1).
+  // Particle speed scales with scroll — vortex intensifies as user descends.
+  const { camera } = useThree();
+  const camTarget = useRef(new Vector3(0, 0, 5));
+  const camLookAt = useRef(new Vector3(0, 0, 0));
+  const currentLookAt = useRef(new Vector3(0, 0, 0));
+
+  // Per-section camera positions — cinematic tour through the vortex
+  const SECTION_CAMERAS: { pos: [number, number, number]; look: [number, number, number] }[] = useMemo(() => [
+    { pos: [0, 0, 5],     look: [0, 0, 0],   },   // 0: hero — straight on, wide
+    { pos: [1.5, 0.5, 4], look: [0, 0, 0],   },   // 1: about — slight right tilt
+    { pos: [-1.2, 0.8, 3.5], look: [0, 0, -2], }, // 2: experience — left, closer
+    { pos: [0.5, -0.5, 4.5], look: [0, 0, 0], },  // 3: work — slight down-right
+    { pos: [0, 1.5, 6],   look: [0, 0, -3],   },   // 4: contact — high, pulled back, wide
+  ], []);
+
   // --- Animation loop ---
   useFrame((state) => {
     const t = state.clock.getElapsedTime();
     const raw = getData(); // raw frequency data from AudioEngine
     const s = smooth.current;
+    const scroll = getScrollState();
 
     // Asymmetric envelope per layer — smooth build on attack, gentle fade on decay.
     // Different timing per layer creates natural depth: some elements react fast,
@@ -236,6 +256,41 @@ export default function KiraKiraVortex() {
 
     // Backdrop: barely-there bass breathing
     backdropMat.uniforms.uBass.value = s.backdropBass;
+
+    // ── Scroll-linked camera ──
+    // Lerp between section camera positions based on scroll progress.
+    // Adds organic orbit drift on top of scroll position for constant life.
+    const p = scroll.progress;
+    const segCount = SECTION_CAMERAS.length - 1;
+    const segP = Math.min(p * segCount, segCount - 0.001);
+    const segIdx = Math.floor(segP);
+    const segT = segP - segIdx;
+    const cur = SECTION_CAMERAS[segIdx];
+    const nxt = SECTION_CAMERAS[segIdx + 1] ?? cur;
+
+    // Interpolate camera position with organic drift
+    const drift = Math.sin(t * 0.15) * 0.15;
+    camTarget.current.set(
+      cur.pos[0] + (nxt.pos[0] - cur.pos[0]) * segT + drift,
+      cur.pos[1] + (nxt.pos[1] - cur.pos[1]) * segT + Math.cos(t * 0.1) * 0.1,
+      cur.pos[2] + (nxt.pos[2] - cur.pos[2]) * segT,
+    );
+    camera.position.lerp(camTarget.current, 0.04);
+
+    // Interpolate look-at target
+    camLookAt.current.set(
+      cur.look[0] + (nxt.look[0] - cur.look[0]) * segT,
+      cur.look[1] + (nxt.look[1] - cur.look[1]) * segT,
+      cur.look[2] + (nxt.look[2] - cur.look[2]) * segT,
+    );
+    currentLookAt.current.lerp(camLookAt.current, 0.04);
+    camera.lookAt(currentLookAt.current);
+
+    // ── Scroll-reactive particle speed ──
+    // Particle speed increases with scroll — vortex feels more intense deeper
+    const speedBoost = 0.15 + p * 0.25; // 0.15 at top → 0.40 at bottom
+    paintMat.uniforms.uSpeed.value = speedBoost;
+    flareMat.uniforms.uSpeed.value = speedBoost * 1.2;
   });
 
   return (

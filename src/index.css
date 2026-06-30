@@ -422,8 +422,8 @@ html.cursor-hidden * {
     0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
-/* ── Corner brackets on project cards ── */
-.project-card::before {
+/* ── Corner brackets on project cards (GSAP-animated div, not ::before) ── */
+.project-card__brackets {
   content: "";
   position: absolute;
   inset: 0;
@@ -444,10 +444,10 @@ html.cursor-hidden * {
     linear-gradient(to top, var(--bracket-color) var(--al), transparent 0) calc(100% - 0px) calc(100% - var(--ag)) / 1px var(--al) no-repeat;
 }
 
-.project-card:hover::before {
-  opacity: 1;
-  --bracket-color: var(--bracket-color-hover);
-}
+/* ── OLD ::before brackets removed — replaced by .project-card__brackets div ── */
+/* project-card::before is no longer used — GSAP controls bracket visibility */
+
+/* Brackets now controlled by GSAP via .project-card__brackets div */
 
 .project-card__num {
   font-size: 10px;
@@ -1373,4 +1373,67 @@ html.cursor-hidden * {
 ::selection {
   background: rgba(255, 255, 255, 0.15);
   color: rgba(255, 255, 255, 1);
+}
+
+/* ── Section Transition — Targeting Scan ── */
+.section-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.section-transition__scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--theme-accent) 20%,
+    var(--theme-accent2) 50%,
+    var(--theme-accent) 80%,
+    transparent 100%);
+  box-shadow: 0 0 12px var(--theme-accent),
+              0 0 24px color-mix(in srgb, var(--theme-accent) 50%, transparent);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.section-transition__flash {
+  position: absolute;
+  inset: 0;
+  background: var(--theme-accent);
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section-transition {
+    display: none;
+  }
+}
+
+/* ── Motion hierarchy: section label slide-from-left variant ── */
+.section-label {
+  will-change: transform, opacity;
+}
+
+/* ── Project card micro-interaction baseline ── */
+.project-card {
+  will-change: transform;
+}
+
+/* ── Nav pill button micro-interaction ── */
+.nav-pill__item {
+  will-change: transform;
+}
+
+/* ── Audio bar button micro-interaction ── */
+.audio-bar__btn,
+.audio-bar__track,
+.audio-bar__theme {
+  will-change: transform;
 }

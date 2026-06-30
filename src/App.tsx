@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useRef, lazy, Suspense } from "react";
 import "./fonts.css";
 import type { ScrollContainerHandle } from "./components/ScrollContainer";
+import { setScrollState } from "./scrollStore";
+import { SectionTransition } from "./components/SectionTransition";
 
 const Scene = lazy(() => import("./Scene"));
 const ScrollContainer = lazy(() =>
@@ -67,6 +69,7 @@ function App() {
   }, []); // mount only
 
   // ── Scroll progress tracking (rAF-throttled — prevents 120 re-renders/sec) ──
+  // Also writes to global scrollStore for R3F to read in useFrame (no React re-render).
   useEffect(() => {
     if (!started) return;
     let ticking = false;
@@ -75,7 +78,9 @@ function App() {
       ticking = true;
       requestAnimationFrame(() => {
         const max = document.body.scrollHeight - window.innerHeight;
-        setScrollProgress(max > 0 ? (window.scrollY / max) * 100 : 0);
+        const pct = max > 0 ? window.scrollY / max : 0;
+        setScrollProgress(pct * 100);
+        setScrollState({ progress: pct });
         ticking = false;
       });
     }
@@ -109,6 +114,7 @@ function App() {
 
   const handleSectionChange = useCallback((index: number) => {
     setActiveSection(index);
+    setScrollState({ sectionIndex: index });
   }, []);
 
   const activeTrackName = TRACKS.find((t) => t.url === currentTrack)?.name ?? "";
@@ -122,6 +128,9 @@ function App() {
           <Scene />
         </Suspense>
       </div>
+
+      {/* ── Section transition scan effect ── */}
+      {started && <SectionTransition activeSection={activeSection} />}
 
       {/* ── Layer 1: Scrollable content ── */}
       {started && (

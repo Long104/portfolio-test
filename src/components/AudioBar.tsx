@@ -29,6 +29,23 @@ export function AudioBar({
   const indicatorRef = useRef<HTMLDivElement>(null);
   const itemsRef = useRef<HTMLButtonElement[]>([]);
   const initialised = useRef(false);
+  const playBtnRef = useRef<HTMLButtonElement>(null);
+
+  // ── Play button press micro-interaction ──
+  useEffect(() => {
+    const btn = playBtnRef.current;
+    if (!btn) return;
+    function onDown() { gsap.to(btn, { scale: 0.85, duration: 0.1, ease: "power2.out" }); }
+    function onUp() { gsap.to(btn, { scale: 1, duration: 0.3, ease: "back.out(3)" }); }
+    btn.addEventListener("mousedown", onDown);
+    btn.addEventListener("mouseup", onUp);
+    btn.addEventListener("mouseleave", onUp);
+    return () => {
+      btn.removeEventListener("mousedown", onDown);
+      btn.removeEventListener("mouseup", onUp);
+      btn.removeEventListener("mouseleave", onUp);
+    };
+  }, []);
 
   // ── Slide indicator to active track ──
   useEffect(() => {
@@ -69,6 +86,7 @@ export function AudioBar({
       refraction={buildSmallConfig(specularAngle)}
     >
       <button
+        ref={playBtnRef}
         className="audio-bar__btn"
         onClick={toggle}
         aria-label={isPlaying ? "Pause" : "Play"}

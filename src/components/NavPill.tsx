@@ -18,6 +18,29 @@ export function NavPill({ activeIndex, onNavigate }: NavPillProps) {
   const indicatorRef = useRef<HTMLDivElement>(null);
   const itemsRef = useRef<HTMLButtonElement[]>([]);
   const initialised = useRef(false);
+  const hoverTweens = useRef<Map<number, gsap.core.Tween>>(new Map());
+
+  // ── Hover spring on nav buttons ──
+  useEffect(() => {
+    itemsRef.current.forEach((btn, i) => {
+      if (!btn) return;
+      function onEnter() {
+        const tw = gsap.to(btn, { scale: 1.08, duration: 0.25, ease: "back.out(2)" });
+        hoverTweens.current.set(i, tw);
+      }
+      function onLeave() {
+        hoverTweens.current.get(i)?.kill();
+        const tw = gsap.to(btn, { scale: 1, duration: 0.3, ease: "power3.out" });
+        hoverTweens.current.set(i, tw);
+      }
+      btn.addEventListener("mouseenter", onEnter);
+      btn.addEventListener("mouseleave", onLeave);
+    });
+    return () => {
+      hoverTweens.current.forEach((tw) => tw.kill());
+      hoverTweens.current.clear();
+    };
+  }, []);
 
   // ── Slide indicator to active item ──
   useEffect(() => {

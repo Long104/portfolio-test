@@ -25,6 +25,8 @@ export interface ScrollRevealOptions {
   stagger?: number;
   /** translateY start value */
   y?: string;
+  /** translateX start value — when set, animates from left instead of bottom */
+  x?: string;
   /** Enable clip-path wipe (inset left→right) */
   clipWipe?: boolean;
   /** Enable blur→clear */
@@ -43,11 +45,12 @@ export interface ScrollRevealOptions {
 
 const DEFAULTS: Required<Pick<
   ScrollRevealOptions,
-  "split" | "stagger" | "y" | "clipWipe" | "blur" | "start" | "scroll" | "ease" | "duration" | "delay"
+  "split" | "stagger" | "y" | "x" | "clipWipe" | "blur" | "start" | "scroll" | "ease" | "duration" | "delay"
 >> = {
   split: "words",
   stagger: 0.08,
   y: "120%",
+  x: "0%",
   clipWipe: false,
   blur: false,
   start: "top 85%",
@@ -96,6 +99,7 @@ export function useScrollReveal<T extends HTMLElement>(
       const opts = { ...DEFAULTS, ...options };
       const stagger = isMobile ? (opts.stagger as number) * 0.5 : (opts.stagger as number);
       const yVal = opts.y;
+      const xVal = opts.x;
       const blur = isMobile ? false : opts.blur;
       const duration = isMobile ? (opts.duration as number) * 0.7 : (opts.duration as number);
       const delay = opts.delay;
@@ -119,8 +123,11 @@ export function useScrollReveal<T extends HTMLElement>(
       if (targets.length === 0) return;
 
       // ── Set initial state immediately (prevents flash of visible text) ──
+      // When x is set (slide-from-left), y stays at 0 — horizontal-only motion.
+      // When x is "0%" (default), y provides the vertical rise.
       gsap.set(targets, {
-        y: yVal,
+        y: xVal !== "0%" ? "0%" : yVal,
+        x: xVal !== "0%" ? xVal : "0%",
         opacity: 0,
         willChange: "transform, opacity",
         ...(blur ? { filter: "blur(6px)" } : {}),
@@ -149,11 +156,13 @@ export function useScrollReveal<T extends HTMLElement>(
 
       const tl = gsap.timeline(tlCfg);
 
-      // Tween 1: units rise + fade in
+      // Tween 1: units slide/fade in
+      // When x is set, animates x→0 (slide from left). Otherwise y→0 (rise).
       // NOTE: delay goes on the TWEEN, NOT timeline — ScrollTrigger's "play"
       // action bypasses timeline-level delay.
       tl.to(targets, {
-        y: "0%",
+        y: xVal !== "0%" ? "0%" : "0%",
+        x: xVal !== "0%" ? "0%" : "0%",
         opacity: 1,
         filter: "blur(0px)",
         stagger,
