@@ -32,6 +32,7 @@ type Theme = "gquuuuuux" | "gfreed";
 
 function App() {
   const [started, setStarted] = useState(false);
+  const [contentMounted, setContentMounted] = useState(false);
   const [bootPhase, setBootPhase] = useState<"enter" | "exit" | "gone">("enter");
   const [activeSection, setActiveSection] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -68,6 +69,15 @@ function App() {
     if (!isPreloaded) preload(currentTrack);
   }, []); // mount only
 
+  // ── Pre-mount heavy content during boot (behind overlay) ──
+  // Mounts ScrollContainer + Sections 800ms after page load so SplitText,
+  // Lenis, and ScrollTrigger are warm before the user clicks LAUNCH.
+  // Prevents the 100-300ms frame freeze that was eating the GSAP exit animation.
+  useEffect(() => {
+    const t = setTimeout(() => setContentMounted(true), 800);
+    return () => clearTimeout(t);
+  }, []); // mount only
+
   // ── Scroll progress tracking (rAF-throttled — prevents 120 re-renders/sec) ──
   // Also writes to global scrollStore for R3F to read in useFrame (no React re-render).
   useEffect(() => {
@@ -89,8 +99,8 @@ function App() {
   }, [started]);
 
   const handleStart = useCallback(async () => {
-    setBootPhase("exit"); // start boot exit animation
-    setStarted(true); // mount content behind the boot screen
+    setBootPhase("exit"); // start GSAP cinematic exit (flash + scale + scramble)
+    setStarted(true); // show post-launch UI + enable scroll tracking
     if (isPreloaded) {
       await engage();
     } else {
@@ -132,8 +142,8 @@ function App() {
       {/* ── Section transition scan effect ── */}
       {started && <SectionTransition activeSection={activeSection} />}
 
-      {/* ── Layer 1: Scrollable content ── */}
-      {started && (
+      {/* ── Layer 1: Scrollable content (pre-mounted during boot) ── */}
+      {contentMounted && (
         <Suspense fallback={<div className="content-layer" />}>
           <ScrollContainer ref={scrollRef} onSectionChange={handleSectionChange}>
             <HeroSection />
