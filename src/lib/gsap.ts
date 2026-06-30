@@ -17,8 +17,9 @@ ScrollTrigger.defaults({ scroller: document.body });
 
 // ── Reduced motion ──
 // Checked by hooks — if true, all SplitText reverts immediately.
-export const PREFERS_REDUCED_MOTION =
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+export const PREFERS_REDUCED_MOTION = false;
+// Production: swap back to:
+//   typeof window !== "undefined" &&
+//   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 export { gsap, ScrollTrigger, SplitText };
