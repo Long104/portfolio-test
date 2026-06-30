@@ -87,13 +87,9 @@ export function HUD({
 
       {/* Top-right: audio status — slides in from right */}
       <div className="hud hud--tr">
-        <div
-          className={
-            "hud__status" +
-            (isPlaying ? " hud__status--pulse" : "")
-          }
-        >
-          {audioStatus}
+        <div className="hud__status">
+          <span className={"hud__dot" + (isPlaying ? " hud__dot--live" : "")} />
+          <span>{audioStatus}</span>
         </div>
         <div className="hud__hint">{trackName}</div>
       </div>

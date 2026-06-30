@@ -1152,18 +1152,32 @@ html.cursor-hidden * {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Audio status pulse ── */
+/* ── Audio status dot indicator ── */
 .hud__status {
-  transition: opacity 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.hud__status--pulse {
-  animation: audioPulse 2s ease-in-out infinite;
+.hud__dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
-@keyframes audioPulse {
-  0%, 100% { opacity: var(--hud-opacity); }
-  50%      { opacity: calc(var(--hud-opacity) * 0.5); }
+.hud__dot--live {
+  background: #4ade80;
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
+  animation: dotPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(74, 222, 128, 0.5); }
+  50%      { opacity: 0.35; box-shadow: 0 0 12px rgba(74, 222, 128, 0.9); }
 }
 
 /* ── Tagline / counter crossfade ── */
