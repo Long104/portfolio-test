@@ -1,6 +1,12 @@
 // ── HUD Layer ──
-// Always-visible corner labels. Fixed position. Non-interactive.
-// Monospace, dim, terminal-style system readout.
+// Corner labels with GSAP-driven micro-interactions:
+// - Entrance stagger (per-corner slide-in on boot)
+// - Audio status pulse (gently pulses when playing)
+// - Section tag crossfade (smooth text transition on scroll)
+// - Section counter flip (opacity crossfade on change)
+
+import { useRef, useEffect } from "react";
+import { gsap } from "../lib/gsap";
 
 const SECTION_TAGS = [
   "building things that feel alive",
@@ -15,6 +21,7 @@ interface HUDProps {
   totalSections: number;
   audioStatus: string;
   trackName: string;
+  isPlaying: boolean;
 }
 
 export function HUD({
@@ -22,34 +29,90 @@ export function HUD({
   totalSections,
   audioStatus,
   trackName,
+  isPlaying,
 }: HUDProps) {
   const counter = `${String(sectionIndex + 1).padStart(2, "0")}/${String(totalSections).padStart(2, "0")}`;
 
+  const tagRef = useRef<HTMLDivElement>(null);
+  const counterRef = useRef<HTMLDivElement>(null);
+  const prevSectionRef = useRef(sectionIndex);
+
+  // ── Section tag crossfade ──
+  useEffect(() => {
+    const el = tagRef.current;
+    if (!el || prevSectionRef.current === sectionIndex) return;
+    prevSectionRef.current = sectionIndex;
+
+    gsap.to(el, {
+      opacity: 0,
+      duration: 0.15,
+      ease: "power2.out",
+      onComplete() {
+        // Text already updated by React render — fade back in
+        // (the opacity:0 is set via gsap, React won't override it)
+        gsap.to(el, {
+          opacity: 1,
+          duration: 0.15,
+          ease: "power2.in",
+        });
+      },
+    });
+  }, [sectionIndex]);
+
+  // ── Section counter crossfade ──
+  useEffect(() => {
+    const el = counterRef.current;
+    if (!el) return;
+
+    gsap.fromTo(
+      el,
+      { opacity: 0, y: -4 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.3,
+        ease: "power2.out",
+        overwrite: "auto",
+      },
+    );
+  }, [counter]);
+
   return (
     <>
-      {/* Top-left: identity */}
+      {/* Top-left: identity — drops down */}
       <div className="hud hud--tl">
         <div className="hud__name">pantorn chavalvalee</div>
         <div className="hud__role">software engineer</div>
       </div>
 
-      {/* Top-right: audio status */}
+      {/* Top-right: audio status — slides in from right */}
       <div className="hud hud--tr">
-        <div>{audioStatus}</div>
+        <div
+          className={
+            "hud__status" +
+            (isPlaying ? " hud__status--pulse" : "")
+          }
+        >
+          {audioStatus}
+        </div>
         <div className="hud__hint">{trackName}</div>
       </div>
 
-      {/* Bottom-left: contextual tagline — hidden on hero to show 3D full-screen */}
+      {/* Bottom-left: contextual tagline — slides up */}
       {sectionIndex > 0 && (
         <div className="hud hud--bl">
-          <div className="hud__counter">{SECTION_TAGS[sectionIndex]}</div>
+          <div ref={tagRef} className="hud__counter hud__crossfade">
+            {SECTION_TAGS[sectionIndex]}
+          </div>
         </div>
       )}
 
-      {/* Bottom-right: section counter — hidden on hero to show 3D full-screen */}
+      {/* Bottom-right: section counter — slides in from right */}
       {sectionIndex > 0 && (
         <div className="hud hud--br">
-          <div className="hud__counter">{counter}</div>
+          <div ref={counterRef} className="hud__counter">
+            {counter}
+          </div>
         </div>
       )}
     </>

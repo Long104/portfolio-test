@@ -143,6 +143,7 @@ function App() {
             totalSections={TOTAL_SECTIONS}
             audioStatus={isPlaying ? "audio: on" : "audio: off"}
             trackName={activeTrackName}
+            isPlaying={isPlaying}
           />
         </>
       )}

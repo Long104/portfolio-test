@@ -135,10 +135,23 @@ html.cursor-hidden * {
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
-.hud--tl { top: 24px; left: 32px; }
-.hud--tr { top: 24px; right: 32px; text-align: right; }
-.hud--bl { bottom: 24px; left: 32px; }
-.hud--br { bottom: 24px; right: 32px; text-align: right; }
+/* ── Entrance stagger per corner ── */
+.hud--tl {
+  top: 24px; left: 32px;
+  animation: hudDropDown 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+.hud--tr {
+  top: 24px; right: 32px; text-align: right;
+  animation: hudFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.18s both;
+}
+.hud--bl {
+  bottom: 24px; left: 32px;
+  animation: hudSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.26s both;
+}
+.hud--br {
+  bottom: 24px; right: 32px; text-align: right;
+  animation: hudFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.34s both;
+}
 
 .hud__name {
   font-size: 16px;
@@ -1128,6 +1141,36 @@ html.cursor-hidden * {
   to   { opacity: 1; }
 }
 
+/* ── HUD entrance (per-corner stagger) ── */
+@keyframes hudDropDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hudSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Audio status pulse ── */
+.hud__status {
+  transition: opacity 0.3s ease;
+}
+
+.hud__status--pulse {
+  animation: audioPulse 2s ease-in-out infinite;
+}
+
+@keyframes audioPulse {
+  0%, 100% { opacity: var(--hud-opacity); }
+  50%      { opacity: calc(var(--hud-opacity) * 0.5); }
+}
+
+/* ── Tagline / counter crossfade ── */
+.hud__crossfade {
+  transition: opacity 0.25s ease;
+}
+
 .nav-pill {
   animation: dropDown 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
 }
@@ -1138,10 +1181,6 @@ html.cursor-hidden * {
 
 .content-layer .section.hero {
   /* Hero entrance handled by useScrollReveal (SplitText line reveal). */
-}
-
-.hud {
-  animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
 }
 
 /* ── Reduced motion ── */
