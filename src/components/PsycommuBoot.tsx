@@ -22,7 +22,6 @@ const BOOT_LINES = [
   { addr: "DEV", val: "boot device / limiter — DETECTED" },
   { addr: "PSW", val: "psychowave scan — NEWTYPE SIGNATURE FOUND" },
   { addr: "NLT", val: "neural link — synced 100%" },
-  { addr: "SYN", val: "frame coherence — 99.2%" },
   { addr: "RST", val: "restraints: ██ released" },
   { addr: "SYS", val: "SYSTEM ONLINE — omega psycommu active" },
 ];
@@ -72,7 +71,7 @@ export function PsycommuBoot({
     }
 
     // Line fully typed — flash if restraint release, then advance
-    if (bootLine === 5) {
+    if (bootLine === 4) {
       // "restraints released" flash
       setPhase("flash");
       const t = setTimeout(() => {
