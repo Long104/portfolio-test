@@ -11,11 +11,10 @@ const ScrollContainer = lazy(() =>
 import { useAudioEngine, TRACKS } from "./useAudioEngine";
 import { HUD } from "./components/HUD";
 import { PsycommuBoot } from "./components/PsycommuBoot";
-import { PsycommuWaveform } from "./components/PsycommuWaveform";
 import { NavPill } from "./components/NavPill";
+import { AudioBar } from "./components/AudioBar";
 import { CursorOverlay } from "./components/CursorOverlay";
-import { RefractiveDiv, buildSmallConfig } from "./components/Glass";
-import { useDeviceOrientation } from "./useDeviceOrientation";
+
 import {
   HeroSection,
   AboutSection,
@@ -36,7 +35,6 @@ function App() {
     () => (localStorage.getItem("kira-theme") as Theme) || "gquuuuuux",
   );
   const scrollRef = useRef<ScrollContainerHandle>(null);
-  const specularAngle = useDeviceOrientation();
 
   // ── Apply theme to root element ──
   useEffect(() => {
@@ -167,47 +165,14 @@ function App() {
 
       {/* ── Audio control bar ── */}
       {started && (
-        <RefractiveDiv
-          className="audio-bar"
-          refraction={buildSmallConfig(specularAngle)}
-        >
-          <button
-            className="audio-bar__btn"
-            onClick={toggle}
-            aria-label={isPlaying ? "Pause" : "Play"}
-          >
-            {isPlaying ? "\u23F8" : "\u25B6"}
-          </button>
-
-          <PsycommuWaveform />
-
-          <div className="audio-bar__divider" />
-
-          <div className="audio-bar__segmented">
-          {TRACKS.map((track) => (
-            <button
-              key={track.url}
-              className={
-                "audio-bar__track" +
-                (currentTrack === track.url ? " audio-bar__track--active" : "")
-              }
-              onClick={() => handleSelectTrack(track.url)}
-            >
-              {track.name}
-            </button>
-          ))}
-          </div>
-
-          <div className="audio-bar__divider" />
-
-          <button
-            className="audio-bar__theme"
-            onClick={() => setTheme((t) => (t === "gquuuuuux" ? "gfreed" : "gquuuuuux"))}
-            aria-label={`Switch to ${theme === "gquuuuuux" ? "GFreD" : "GQuuuuuuX"} theme`}
-          >
-            {theme === "gquuuuuux" ? "gMS-Ω" : "gMS-κ"}
-          </button>
-        </RefractiveDiv>
+        <AudioBar
+          isPlaying={isPlaying}
+          currentTrack={currentTrack}
+          theme={theme}
+          toggle={toggle}
+          handleSelectTrack={handleSelectTrack}
+          onToggleTheme={() => setTheme((t) => (t === "gquuuuuux" ? "gfreed" : "gquuuuuux"))}
+        />
       )}
     </>
   );
