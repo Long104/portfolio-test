@@ -68,8 +68,28 @@ export function useScrollReveal<T extends HTMLElement>(
       const el = ref.current;
       if (!el) return;
 
-      // ── Reduced motion: show text static, no animation ──
-      if (PREFERS_REDUCED_MOTION) return;
+      // ── Reduced motion: gentle fade-only reveal ──
+      // No y-movement, no blur, no clipWipe, no stagger — opacity crossfade only.
+      // Still runs SplitText so text layout is correct (same split classes as full path).
+      if (PREFERS_REDUCED_MOTION) {
+        const opts = { ...DEFAULTS, ...options };
+        const split = new SplitText(el, {
+          type: opts.split,
+          linesClass: "split-line",
+          wordsClass: "split-word",
+          charsClass: "split-char",
+        });
+        const targets =
+          opts.split === "lines"
+            ? split.lines
+            : opts.split === "chars"
+              ? split.chars
+              : split.words;
+        if (targets.length === 0) return;
+        gsap.set(targets, { opacity: 0 });
+        gsap.to(targets, { opacity: 1, duration: 0.4, ease: "power2.out" });
+        return () => { split.revert(); };
+      }
 
       // ── Mobile tuning ──
       const isMobile = PERF_TIER === "mobile";

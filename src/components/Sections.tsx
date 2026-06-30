@@ -271,7 +271,7 @@ export function ContactSection() {
           email →
         </a>
       </div>
-      <div ref={footerRef} className="contact__footer">© 2026 pantorn — built with webgl & liquid glass</div>
+      <div ref={footerRef} className="contact__footer">© 2026 Pantorn Chuavallee — built with webgl & liquid glass</div>
     </section>
   );
 }

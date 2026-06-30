@@ -81,7 +81,7 @@ export function HUD({
     <>
       {/* Top-left: identity — drops down */}
       <div className="hud hud--tl">
-        <div className="hud__name">pantorn chavalvalee</div>
+        <div className="hud__name">Pantorn Chuavallee</div>
         <div className="hud__role">software engineer</div>
       </div>
 
