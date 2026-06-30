@@ -195,13 +195,13 @@ export default function KiraKiraVortex() {
   const camLookAt = useRef(new Vector3(0, 0, 0));
   const currentLookAt = useRef(new Vector3(0, 0, 0));
 
-  // Per-section camera positions — cinematic tour through the vortex
+  // Per-section camera positions — sun stays centered, subtle z-depth shift only
   const SECTION_CAMERAS: { pos: [number, number, number]; look: [number, number, number] }[] = useMemo(() => [
-    { pos: [0, 0, 5],     look: [0, 0, 0],   },   // 0: hero — straight on, wide
-    { pos: [1.5, 0.5, 4], look: [0, 0, 0],   },   // 1: about — slight right tilt
-    { pos: [-1.2, 0.8, 3.5], look: [0, 0, -2], }, // 2: experience — left, closer
-    { pos: [0.5, -0.5, 4.5], look: [0, 0, 0], },  // 3: work — slight down-right
-    { pos: [0, 1.5, 6],   look: [0, 0, -3],   },   // 4: contact — high, pulled back, wide
+    { pos: [0, 0, 5],   look: [0, 0, 0] },  // 0: hero
+    { pos: [0, 0, 4.8], look: [0, 0, 0] },  // 1: about — barely closer
+    { pos: [0, 0, 5],   look: [0, 0, 0] },  // 2: experience
+    { pos: [0, 0, 5.2], look: [0, 0, 0] },  // 3: work — barely farther
+    { pos: [0, 0, 5],   look: [0, 0, 0] },  // 4: contact
   ], []);
 
   // --- Animation loop ---
@@ -264,7 +264,7 @@ export default function KiraKiraVortex() {
 
     // ── Scroll-linked camera ──
     // Lerp between section camera positions based on scroll progress.
-    // Adds organic orbit drift on top of scroll position for constant life.
+    // No orbit drift — sun stays dead centered as a calm backdrop.
     const p = scroll.progress;
     const segCount = SECTION_CAMERAS.length - 1;
     const segP = Math.min(p * segCount, segCount - 0.001);
@@ -273,22 +273,16 @@ export default function KiraKiraVortex() {
     const cur = SECTION_CAMERAS[segIdx];
     const nxt = SECTION_CAMERAS[segIdx + 1] ?? cur;
 
-    // Interpolate camera position with organic drift
-    const drift = Math.sin(t * 0.15) * 0.15;
+    // Interpolate camera position — subtle z-depth shift only
     camTarget.current.set(
-      cur.pos[0] + (nxt.pos[0] - cur.pos[0]) * segT + drift,
-      cur.pos[1] + (nxt.pos[1] - cur.pos[1]) * segT + Math.cos(t * 0.1) * 0.1,
+      cur.pos[0] + (nxt.pos[0] - cur.pos[0]) * segT,
+      cur.pos[1] + (nxt.pos[1] - cur.pos[1]) * segT,
       cur.pos[2] + (nxt.pos[2] - cur.pos[2]) * segT,
     );
     camera.position.lerp(camTarget.current, 0.04);
 
-    // Interpolate look-at target
-    camLookAt.current.set(
-      cur.look[0] + (nxt.look[0] - cur.look[0]) * segT,
-      cur.look[1] + (nxt.look[1] - cur.look[1]) * segT,
-      cur.look[2] + (nxt.look[2] - cur.look[2]) * segT,
-    );
-    currentLookAt.current.lerp(camLookAt.current, 0.04);
+    // Camera always looks at center — sun stays put
+    currentLookAt.current.lerp(camLookAt.current.set(0, 0, 0), 0.04);
     camera.lookAt(currentLookAt.current);
 
     // ── Scroll-reactive particle speed ──
