@@ -12,6 +12,7 @@ import { useAudioEngine, TRACKS } from "./useAudioEngine";
 import { HUD } from "./components/HUD";
 import { PsycommuBoot } from "./components/PsycommuBoot";
 import { NavPill } from "./components/NavPill";
+import { ScrollProgress } from "./components/ScrollProgress";
 import { AudioBar } from "./components/AudioBar";
 import { CursorOverlay } from "./components/CursorOverlay";
 
@@ -142,10 +143,7 @@ function App() {
             activeIndex={activeSection}
             onNavigate={(i) => scrollRef.current?.scrollToSection(i)}
           />
-          <div
-            className="scroll-progress"
-            style={{ width: `${scrollProgress}%` }}
-          />
+          <ScrollProgress progress={scrollProgress} />
           <HUD
             sectionIndex={activeSection}
             totalSections={TOTAL_SECTIONS}
