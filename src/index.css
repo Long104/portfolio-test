@@ -1153,7 +1153,7 @@ html.cursor-hidden * {
   }
   .work-track {
     gap: 40px;
-    padding: 0 32px;
+    padding: 0 32px 80px;
   }
   .project-card {
     flex: 0 0 min(50vw, 360px);
@@ -1258,7 +1258,7 @@ html.cursor-hidden * {
     flex-wrap: wrap;
     gap: 24px;
     height: auto;
-    padding: 0;
+    padding: 0 0 80px;
   }
   .work-label {
     padding: 0 0 16px;
