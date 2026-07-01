@@ -116,10 +116,9 @@ export function AboutSection() {
   });
 
   const textRef = useScrollReveal<HTMLParagraphElement>({
-    split: "words",
-    stagger: 0.06,
+    split: "lines",
+    stagger: 0.12,
     y: "120%",
-    blur: true,
     start: "top 70%",
     duration: 0.9,
   });
@@ -212,22 +211,22 @@ function ExpItem({ period, role, company, description, isCurrent }: ExpItemData)
     ease: "power2.out",
   });
   const roleRef = useScrollReveal<HTMLDivElement>({
-    split: "words",
-    stagger: 0.05,
+    split: "lines",
+    stagger: 0.1,
     y: "120%",
     start: "top 78%",
     duration: 0.7,
   });
   const companyRef = useScrollReveal<HTMLDivElement>({
-    split: "words",
-    stagger: 0.03,
+    split: "lines",
+    stagger: 0.08,
     y: "100%",
     start: "top 65%",
     duration: 0.5,
   });
   const descRef = useScrollReveal<HTMLDivElement>({
-    split: "words",
-    stagger: 0.03,
+    split: "lines",
+    stagger: 0.06,
     y: "100%",
     start: "top 55%",
     duration: 0.5,

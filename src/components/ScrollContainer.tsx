@@ -20,12 +20,13 @@ export const ScrollContainer = forwardRef<ScrollContainerHandle, ScrollContainer
   function ScrollContainer({ onSectionChange, children }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
     const sectionsRef = useRef<HTMLElement[]>([]);
+    const lenisRef = useRef<Lenis | null>(null);
 
     useImperativeHandle(ref, () => ({
       scrollToSection(index: number) {
         const section = sectionsRef.current[index];
-        if (section) {
-          section.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (section && lenisRef.current) {
+          lenisRef.current.scrollTo(section, { offset: 0 });
         }
       },
     }));
@@ -34,41 +35,8 @@ export const ScrollContainer = forwardRef<ScrollContainerHandle, ScrollContainer
       const container = containerRef.current;
       if (!container) return;
 
-      // ── Lenis smooth scroll ──
-      const lenis = new Lenis({
-        duration: 0.6,
-        easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-        smoothWheel: true,
-      });
-
-      // ── ScrollTrigger + Lenis integration ──
-      // Lenis prevents native scroll (window.scrollY = 0), so ScrollTrigger
-      // can't detect scroll progress. We proxy ScrollTrigger's scroller to
-      // read Lenis's virtual scroll position instead.
-      ScrollTrigger.scrollerProxy(document.body, {
-        scrollTop() {
-          return lenis.scroll;
-        },
-        getBoundingClientRect() {
-          return {
-            top: 0,
-            left: 0,
-            bottom: window.innerHeight,
-            right: window.innerWidth,
-            width: window.innerWidth,
-            height: window.innerHeight,
-          };
-        },
-        pinType: document.body.style.transform ? "transform" : "fixed",
-      });
-
-      // Make all future ScrollTriggers use the proxied body scroller
-      ScrollTrigger.defaults({ scroller: document.body });
-
-      // ── Section tracking ──
+      // ── Section tracking setup ──
       // Finds which section's midpoint is closest to the viewport center.
-      // More reliable than IntersectionObserver threshold when section heights
-      // are close to viewport height.
       const sections = Array.from(
         container.querySelectorAll<HTMLElement>("[data-section-index]"),
       );
@@ -99,8 +67,7 @@ export const ScrollContainer = forwardRef<ScrollContainerHandle, ScrollContainer
 
       // Throttle section tracking to ~30fps — getBoundingClientRect() forces
       // synchronous layout, so halving its rate reduces layout thrashing
-      // during scroll. Section changes happen over seconds; 33ms latency is
-      // invisible.
+      // during scroll. Section changes happen over seconds; 33ms is invisible.
       const THROTTLE_MS = 33;
       let lastSectionUpdate = 0;
       function throttledSectionUpdate() {
@@ -110,22 +77,29 @@ export const ScrollContainer = forwardRef<ScrollContainerHandle, ScrollContainer
         updateActiveSection();
       }
 
-      // Listen to Lenis scroll (throttled) + sync ScrollTrigger
+      // ── Lenis smooth scroll ──
+      const lenis = new Lenis({
+        duration: 0.6,
+        easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smoothWheel: true,
+      });
+      lenisRef.current = lenis;
+
+      // ── Lenis + ScrollTrigger integration ──
+      // Lenis 1.x in window mode: native window.scrollY still changes.
+      // No scrollerProxy needed — just sync ScrollTrigger on Lenis scroll
+      // and drive Lenis from GSAP's ticker (single rAF source).
       lenis.on("scroll", () => {
         throttledSectionUpdate();
         ScrollTrigger.update();
       });
 
       // GSAP ticker drives Lenis — single rAF source of truth.
-      // Replaces manual requestAnimationFrame loop.
       const tickerCb = (time: number) => lenis.raf(time * 1000);
       gsap.ticker.add(tickerCb);
       gsap.ticker.lagSmoothing(0);
 
-      // Recalculate all ScrollTriggers now that Lenis proxy is active.
-      // useScrollReveal hooks in child Sections run before this effect
-      // (children-first ordering), so their triggers were created with
-      // stale scroller positions. refresh() forces recalculation.
+      // Recalculate trigger positions now that Lenis is active.
       ScrollTrigger.refresh();
 
       // Initial call
@@ -145,7 +119,7 @@ export const ScrollContainer = forwardRef<ScrollContainerHandle, ScrollContainer
         const dir = e.key === "ArrowDown" ? 1 : -1;
         const nextIndex = Math.max(0, Math.min(sections.length - 1, lastIndex + dir));
         if (nextIndex !== lastIndex && sections[nextIndex]) {
-          sections[nextIndex].scrollIntoView({ behavior: "smooth", block: "start" });
+          lenis.scrollTo(sections[nextIndex]);
         }
       }
       window.addEventListener("keydown", onKeyDown);
@@ -155,6 +129,7 @@ export const ScrollContainer = forwardRef<ScrollContainerHandle, ScrollContainer
         window.removeEventListener("resize", onResize);
         window.removeEventListener("keydown", onKeyDown);
         lenis.destroy();
+        lenisRef.current = null;
       };
     }, [onSectionChange]);
 

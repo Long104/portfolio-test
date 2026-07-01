@@ -3,6 +3,7 @@ import "./fonts.css";
 import type { ScrollContainerHandle } from "./components/ScrollContainer";
 import { setScrollState } from "./scrollStore";
 import { SectionTransition } from "./components/SectionTransition";
+import { ScrollTrigger } from "./lib/gsap";
 
 const Scene = lazy(() => import("./Scene"));
 const ScrollContainer = lazy(() =>
@@ -78,6 +79,19 @@ function App() {
     return () => clearTimeout(t);
   }, []); // mount only
 
+  // ── Refresh ScrollTrigger after webfonts load ──
+  // Font loading causes text reflow → trigger positions shift.
+  // This fires once when all fonts are ready (before or after boot exit).
+  useEffect(() => {
+    if (!document.fonts) return;
+    let cancelled = false;
+    document.fonts.ready.then(() => {
+      if (cancelled) return;
+      ScrollTrigger.refresh();
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   // ── Scroll progress tracking (rAF-throttled — prevents 120 re-renders/sec) ──
   // Also writes to global scrollStore for R3F to read in useFrame (no React re-render).
   useEffect(() => {
@@ -120,6 +134,10 @@ function App() {
 
   const handleExitComplete = useCallback(() => {
     setBootPhase("gone");
+    // Recalculate all ScrollTriggers after boot overlay animates away.
+    // Content was mounted 800ms after page load — fonts/layout may have
+    // shifted since triggers were created. This ensures correct positions.
+    ScrollTrigger.refresh();
   }, []);
 
   const handleSectionChange = useCallback((index: number) => {

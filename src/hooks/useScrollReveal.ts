@@ -149,7 +149,6 @@ export function useScrollReveal<T extends HTMLElement>(
           trigger: el,
           start: opts.start,
           toggleActions: "play none none none",
-          scroller: document.body,
         };
       }
 
