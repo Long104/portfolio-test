@@ -79,7 +79,7 @@ export function HeroSection({ started }: { started: boolean }) {
       opacity: 1,
       stagger: 0.12,
       duration: 0.9,
-      ease: "power4.out",
+      ease: "expo.out",
     });
 
     return () => {
@@ -111,6 +111,7 @@ export function AboutSection() {
     x: "-60%",
     y: "0%",
     start: "top 90%",
+    end: "top 65%",
     duration: 0.4,
     ease: "power2.out",
   });
@@ -119,8 +120,10 @@ export function AboutSection() {
     split: "lines",
     stagger: 0.12,
     y: "120%",
-    start: "top 70%",
+    start: "top 75%",
+    end: "top 35%",
     duration: 0.9,
+    ease: "expo.out",
   });
 
   const langRef = useScrollReveal<HTMLDivElement>({
@@ -128,7 +131,8 @@ export function AboutSection() {
     stagger: 0.03,
     x: "-40%",
     y: "0%",
-    start: "top 55%",
+    start: "top 60%",
+    end: "top 25%",
     duration: 0.5,
     ease: "power2.out",
   });
@@ -138,7 +142,8 @@ export function AboutSection() {
     stagger: 0.03,
     x: "-40%",
     y: "0%",
-    start: "top 45%",
+    start: "top 50%",
+    end: "top 20%",
     duration: 0.5,
     ease: "power2.out",
   });
@@ -148,7 +153,8 @@ export function AboutSection() {
     stagger: 0.03,
     x: "-40%",
     y: "0%",
-    start: "top 35%",
+    start: "top 40%",
+    end: "top 15%",
     duration: 0.5,
     ease: "power2.out",
   });
@@ -207,6 +213,7 @@ function ExpItem({ period, role, company, description, isCurrent }: ExpItemData)
     x: "-50%",
     y: "0%",
     start: "top 88%",
+    end: "top 60%",
     duration: 0.35,
     ease: "power2.out",
   });
@@ -215,21 +222,27 @@ function ExpItem({ period, role, company, description, isCurrent }: ExpItemData)
     stagger: 0.1,
     y: "120%",
     start: "top 78%",
+    end: "top 45%",
     duration: 0.7,
+    ease: "expo.out",
   });
   const companyRef = useScrollReveal<HTMLDivElement>({
     split: "lines",
     stagger: 0.08,
     y: "100%",
     start: "top 65%",
+    end: "top 35%",
     duration: 0.5,
+    ease: "power2.out",
   });
   const descRef = useScrollReveal<HTMLDivElement>({
     split: "lines",
     stagger: 0.06,
     y: "100%",
     start: "top 55%",
+    end: "top 25%",
     duration: 0.5,
+    ease: "power2.out",
   });
 
   return (
@@ -266,6 +279,7 @@ export function ExperienceSection() {
     x: "-60%",
     y: "0%",
     start: "top 90%",
+    end: "top 65%",
     duration: 0.4,
     ease: "power2.out",
   });
@@ -303,6 +317,7 @@ export function WorkSection() {
     x: "-60%",
     y: "0%",
     start: "top 90%",
+    end: "top 65%",
     duration: 0.4,
     ease: "power2.out",
   });
@@ -327,6 +342,7 @@ export function ContactSection() {
     x: "-60%",
     y: "0%",
     start: "top 90%",
+    end: "top 65%",
     duration: 0.4,
     ease: "power2.out",
   });
@@ -336,16 +352,20 @@ export function ContactSection() {
     stagger: 0.15,
     y: "120%",
     clipWipe: true,
-    start: "top 65%",
+    start: "top 70%",
+    end: "top 25%",
     duration: 1.0,
+    ease: "expo.out",
   });
 
   const footerRef = useScrollReveal<HTMLDivElement>({
     split: "lines",
     stagger: 0.08,
     y: "80%",
-    start: "top 40%",
+    start: "top 50%",
+    end: "top 20%",
     duration: 0.6,
+    ease: "power2.out",
   });
 
   return (

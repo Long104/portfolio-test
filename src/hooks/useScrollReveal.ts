@@ -1,14 +1,14 @@
 // ── useScrollReveal ──
-// Scroll-triggered SplitText reveal hook.
+// Scroll-triggered SplitText reveal hook with scrub.
 // Wraps text into words/lines/chars, then animates in with:
 //   • overflow:hidden mask (text rises into a window)
 //   • optional clip-path wipe (left→right)
 //   • optional blur→clear
 //   • stagger between units
+//   • scrub: animation progress tied to scroll position (bi-directional)
 //
-// Pattern: scrollTrigger on the TIMELINE (not on individual tweens).
-// toggleActions: "play none none none" = play once on enter.
-// This is the SOTD portfolio standard.
+// SCRUB = the SOTD standard. Scroll down → text reveals.
+// Scroll up → text hides. You control the motion.
 //
 // Compiler-safe: uses useGSAP with scope + revertOnUpdate.
 
@@ -31,8 +31,12 @@ export interface ScrollRevealOptions {
   clipWipe?: boolean;
   /** Enable blur→clear */
   blur?: boolean;
-  /** ScrollTrigger start position — default 'top 85%'. Set `scroll: false` to skip scrollTrigger. */
+  /** ScrollTrigger start position — default 'top 85%'. */
   start?: string;
+  /** ScrollTrigger end position — default 'top 35%'. Animation scrubs between start and end. */
+  end?: string;
+  /** Scrub: tie animation progress to scroll position. true = 1:1, number = seconds smoothing. Default: true */
+  scrub?: boolean | number;
   /** When false, plays animation immediately (with delay) instead of on scroll. */
   scroll?: boolean;
   /** Ease for individual unit animations */
@@ -45,7 +49,7 @@ export interface ScrollRevealOptions {
 
 const DEFAULTS: Required<Pick<
   ScrollRevealOptions,
-  "split" | "stagger" | "y" | "x" | "clipWipe" | "blur" | "start" | "scroll" | "ease" | "duration" | "delay"
+  "split" | "stagger" | "y" | "x" | "clipWipe" | "blur" | "start" | "end" | "scrub" | "scroll" | "ease" | "duration" | "delay"
 >> = {
   split: "words",
   stagger: 0.08,
@@ -54,6 +58,8 @@ const DEFAULTS: Required<Pick<
   clipWipe: false,
   blur: false,
   start: "top 85%",
+  end: "top 35%",
+  scrub: true,
   scroll: true,
   ease: "power4.out",
   duration: 0.8,
@@ -73,10 +79,9 @@ export function useScrollReveal<T extends HTMLElement>(
 
       // ── Reduced motion: opacity-only scroll reveal ──
       // Same ScrollTrigger, same stagger rhythm — just no physical motion.
-      // No y/x transforms, no blur, no clip-path. Content gently fades in
-      // as the user scrolls, preserving the choreography without movement.
-      // This is the SOTD accessibility standard: respect the preference,
-      // don't strip the design.
+      // Uses toggleActions reverse (bi-directional) instead of scrub,
+      // because scrubbed opacity can feel disorienting for sensitive users.
+      // Content still reveals/hides on scroll — just plays at its own speed.
       if (PREFERS_REDUCED_MOTION) {
         const opts = { ...DEFAULTS, ...options };
         const split = new SplitText(el, {
@@ -103,7 +108,7 @@ export function useScrollReveal<T extends HTMLElement>(
           tlCfg.scrollTrigger = {
             trigger: el,
             start: opts.start,
-            toggleActions: "play none none none",
+            toggleActions: "play none none reverse",
           };
         }
         const tl = gsap.timeline(tlCfg);
@@ -150,8 +155,6 @@ export function useScrollReveal<T extends HTMLElement>(
       if (targets.length === 0) return;
 
       // ── Set initial state immediately (prevents flash of visible text) ──
-      // When x is set (slide-from-left), y stays at 0 — horizontal-only motion.
-      // When x is "0%" (default), y provides the vertical rise.
       gsap.set(targets, {
         y: xVal !== "0%" ? "0%" : yVal,
         x: xVal !== "0%" ? xVal : "0%",
@@ -164,30 +167,37 @@ export function useScrollReveal<T extends HTMLElement>(
         gsap.set(el, { clipPath: "inset(0 100% 0 0)" });
       }
 
-      // ── Build timeline (scroll or auto-play) ──
-      // scrollTrigger on the TIMELINE (NOT on individual tweens — anti-pattern).
-      // When scroll=false, the timeline auto-plays immediately (with delay).
+      // ── Build timeline ──
+      // SCRUB: animation progress is tied to scroll position between
+      // start and end. Scroll down = progress forward. Scroll up = reverse.
+      // The scrub value (default: true = 1s smoothing) adds inertia.
       const tlCfg: gsap.TimelineVars = {
         defaults: { ease: opts.ease },
       };
 
       if (opts.scroll) {
-        tlCfg.scrollTrigger = {
-          trigger: el,
-          start: opts.start,
-          toggleActions: "play none none none",
-        };
+        if (opts.scrub) {
+          tlCfg.scrollTrigger = {
+            trigger: el,
+            start: opts.start,
+            end: opts.end,
+            scrub: opts.scrub === true ? 1 : opts.scrub,
+          };
+        } else {
+          tlCfg.scrollTrigger = {
+            trigger: el,
+            start: opts.start,
+            toggleActions: "play none none reverse",
+          };
+        }
       }
 
       const tl = gsap.timeline(tlCfg);
 
       // Tween 1: units slide/fade in
-      // When x is set, animates x→0 (slide from left). Otherwise y→0 (rise).
-      // NOTE: delay goes on the TWEEN, NOT timeline — ScrollTrigger's "play"
-      // action bypasses timeline-level delay.
       tl.to(targets, {
-        y: xVal !== "0%" ? "0%" : "0%",
-        x: xVal !== "0%" ? "0%" : "0%",
+        y: "0%",
+        x: "0%",
         opacity: 1,
         filter: "blur(0px)",
         stagger,
