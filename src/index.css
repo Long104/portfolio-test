@@ -399,7 +399,7 @@ html.cursor-hidden * {
 .section--work-horizontal {
   position: relative;
   overflow: hidden;
-  height: 70vh;
+  height: max(70vh, 600px);
   width: 100%;
   padding: 0;
   display: flex;
