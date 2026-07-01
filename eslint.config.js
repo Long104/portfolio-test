@@ -25,6 +25,7 @@ export default defineConfig([
   {
     files: [
       'src/KiraKiraVortex.tsx',
+      'src/SparkleSystem.tsx',
       'src/hooks/useScrollReveal.ts',
       'src/components/HUD.tsx',
       'src/components/NavPill.tsx',

@@ -77,12 +77,15 @@ export function PsycommuBoot({
 
     // Line fully typed — flash if restraint release, then advance
     if (boot.line === 4) {
-      setBoot((prev) => ({ ...prev, phase: "flash" }));
-      const t = setTimeout(() => {
+      const flashTimer = setTimeout(() => {
+        if (skipRef.current) return;
+        setBoot((prev) => ({ ...prev, phase: "flash" }));
+      }, 0);
+      const advanceTimer = setTimeout(() => {
         if (skipRef.current) return;
         setBoot((prev) => ({ ...prev, phase: "booting", line: prev.line + 1, char: 0 }));
       }, 100);
-      return () => clearTimeout(t);
+      return () => { clearTimeout(flashTimer); clearTimeout(advanceTimer); };
     }
 
     // Advance to next line, or complete if last line finished
