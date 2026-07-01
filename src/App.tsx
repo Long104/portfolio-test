@@ -151,6 +151,29 @@ function App() {
 
   // ── Parallax: glass panels float as you scroll ──
   // Activates after LAUNCH when content is visible.
+  // ── Sidebar offset (Dia/Arc browsers) ──
+  // Sets --sidebar-left CSS variable on <html> so the fixed 3D canvas
+  // stays within the visible viewport, not under the sidebar.
+  useEffect(() => {
+    const update = () => {
+      const vv = window.visualViewport;
+      if (vv && vv.offsetLeft > 0) {
+        document.documentElement.style.setProperty("--sidebar-left", vv.offsetLeft + "px");
+      } else {
+        document.documentElement.style.removeProperty("--sidebar-left");
+      }
+    };
+    update();
+    window.visualViewport?.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("scroll", update);
+    window.addEventListener("resize", update);
+    return () => {
+      window.visualViewport?.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
   useParallax(
     ".glass-panel",
     65,

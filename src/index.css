@@ -85,6 +85,7 @@ html.cursor-hidden * {
 .canvas-layer {
   position: fixed;
   inset: 0;
+  left: var(--sidebar-left, 0);
   z-index: 0;
   pointer-events: none;
 }
