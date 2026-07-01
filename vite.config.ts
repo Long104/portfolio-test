@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [
     react(),
     babel({ presets: [reactCompilerPreset()] }),
-    visualizer({ open: true, gzipSize: true, brotliSize: true }),
+    ...(process.env.ANALYZE ? [visualizer({ open: true, gzipSize: true, brotliSize: true })] : []),
   ],
 
   resolve: {

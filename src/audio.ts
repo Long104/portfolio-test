@@ -25,6 +25,8 @@ export class AudioEngine {
   private _startTime = 0;
   private _offset = 0;
 
+  private _cache: AudioData = { bass: 0, mid: 0, treble: 0, level: 0 };
+
   get isPlaying() {
     return this._isPlaying;
   }
@@ -163,8 +165,13 @@ export class AudioEngine {
   // ── Per-frame data extraction ──────────────────────────────
 
   getData(): AudioData {
-    const zero: AudioData = { bass: 0, mid: 0, treble: 0, level: 0 };
-    if (!this.analyser || !this._isPlaying) return zero;
+    if (!this.analyser || !this._isPlaying) {
+      this._cache.bass = 0;
+      this._cache.mid = 0;
+      this._cache.treble = 0;
+      this._cache.level = 0;
+      return this._cache;
+    }
 
     this.analyser.getByteFrequencyData(this.freqData);
 
@@ -186,12 +193,11 @@ export class AudioEngine {
       else trebleSum += v;
     }
 
-    return {
-      bass: bassSum / (bassEnd * 255),
-      mid: midSum / ((midEnd - bassEnd) * 255),
-      treble: trebleSum / ((NUM_BINS - midEnd) * 255),
-      level: allSum / (NUM_BINS * 255),
-    };
+    this._cache.bass = bassSum / (bassEnd * 255);
+    this._cache.mid = midSum / ((midEnd - bassEnd) * 255);
+    this._cache.treble = trebleSum / ((NUM_BINS - midEnd) * 255);
+    this._cache.level = allSum / (NUM_BINS * 255);
+    return this._cache;
   }
 
   // ── Cleanup ────────────────────────────────────────────────

@@ -29,6 +29,20 @@ const BOOT_LINES = [
 const CHAR_MS = 4;
 const LINE_PAUSE_MS = 30;
 
+interface BootState {
+  line: number;
+  char: number;
+  phase: "booting" | "flash" | "complete" | "skip";
+  progress: number;
+}
+
+const INITIAL_BOOT: BootState = {
+  line: 0,
+  char: 0,
+  phase: "booting",
+  progress: 0,
+};
+
 export function PsycommuBoot({
   phase,
   isLoading,
@@ -37,57 +51,52 @@ export function PsycommuBoot({
   onWarmUp,
   onExitComplete,
 }: Props) {
-  const [bootLine, setBootLine] = useState(0);
-  const [bootChar, setBootChar] = useState(0);
-  const [bootPhase, setBootPhase] = useState<"booting" | "flash" | "complete" | "skip">("booting");
-  const [progress, setProgress] = useState(0);
+  const [boot, setBoot] = useState<BootState>(INITIAL_BOOT);
   const skipRef = useRef(false);
   const startedRef = useRef(false);
   const bootRef = useRef<HTMLDivElement>(null);
   const exitRan = useRef(false);
 
-  // ── Boot sequence state machine ──
+  // ── Boot sequence state machine (single state object = 1 render per tick) ──
   useEffect(() => {
-    if (bootPhase === "complete" || bootPhase === "skip") return;
+    if (boot.phase === "complete" || boot.phase === "skip") return;
 
-    const line = BOOT_LINES[bootLine];
-    if (!line) {
-      setBootPhase("complete");
-      return;
-    }
+    const lineData = BOOT_LINES[boot.line];
+    const text = lineData.val;
 
-    const text = line.val;
-
-    if (bootChar < text.length) {
+    if (boot.char < text.length) {
       const t = setTimeout(() => {
-        setBootChar((c) => c + 1);
-        setProgress(
-          ((bootLine + (bootChar + 1) / text.length) / BOOT_LINES.length) * 100,
-        );
+        setBoot((prev) => ({
+          ...prev,
+          char: prev.char + 1,
+          progress: ((prev.line + (prev.char + 1) / text.length) / BOOT_LINES.length) * 100,
+        }));
       }, CHAR_MS);
       return () => clearTimeout(t);
     }
 
     // Line fully typed — flash if restraint release, then advance
-    if (bootLine === 4) {
-      // "restraints released" flash
-      setBootPhase("flash");
+    if (boot.line === 4) {
+      setBoot((prev) => ({ ...prev, phase: "flash" }));
       const t = setTimeout(() => {
         if (skipRef.current) return;
-        setBootPhase("booting");
-        setBootLine((l) => l + 1);
-        setBootChar(0);
+        setBoot((prev) => ({ ...prev, phase: "booting", line: prev.line + 1, char: 0 }));
       }, 100);
       return () => clearTimeout(t);
     }
 
+    // Advance to next line, or complete if last line finished
     const t = setTimeout(() => {
       if (skipRef.current) return;
-      setBootLine((l) => l + 1);
-      setBootChar(0);
+      setBoot((prev) => {
+        if (prev.line >= BOOT_LINES.length - 1) {
+          return { ...prev, phase: "complete" };
+        }
+        return { ...prev, line: prev.line + 1, char: 0 };
+      });
     }, LINE_PAUSE_MS);
     return () => clearTimeout(t);
-  }, [bootLine, bootChar, bootPhase]);
+  }, [boot.line, boot.char, boot.phase]);
 
   // ── Cinematic exit animation (runs once when phase → "exit") ──
   useEffect(() => {
@@ -101,8 +110,11 @@ export function PsycommuBoot({
       onComplete: onExitComplete,
     });
 
-    // 1. Progress bar fills to 100%
-    setProgress(100);
+    // 1. Progress bar fills to 100% via GSAP (avoids setState in effect)
+    const progressEl = el.querySelector(".psycommu-boot__progress-fill");
+    if (progressEl) {
+      gsap.to(progressEl, { width: "100%", duration: 0.3, ease: "power2.out" });
+    }
 
     // 2. Brief white flash overlay (opacity 0 → 0.35 → 0)
     const flash = document.createElement("div");
@@ -140,23 +152,25 @@ export function PsycommuBoot({
   // ── Click anywhere during boot → skip to end + warm up AudioContext ──
   const handleOverlayClick = useCallback(() => {
     onWarmUp?.();
-    if (bootPhase === "complete" || phase === "exit") return;
+    if (boot.phase === "complete" || phase === "exit") return;
     skipRef.current = true;
-    setBootLine(BOOT_LINES.length - 1);
-    setBootChar(BOOT_LINES[BOOT_LINES.length - 1].val.length);
-    setProgress(100);
-    setBootPhase("complete");
-  }, [bootPhase, phase, onWarmUp]);
+    setBoot({
+      line: BOOT_LINES.length - 1,
+      char: BOOT_LINES[BOOT_LINES.length - 1].val.length,
+      progress: 100,
+      phase: "complete",
+    });
+  }, [boot.phase, phase, onWarmUp]);
 
   // ── Engage (after boot complete) ──
   const handleEngage = useCallback(() => {
     if (isLoading || startedRef.current) return;
     onWarmUp?.();
     startedRef.current = true;
-    onStart(); // parent sets phase → "exit" which triggers the cinematic animation
+    onStart();
   }, [isLoading, onStart, onWarmUp]);
 
-  const isComplete = bootPhase === "complete" || bootPhase === "skip";
+  const isComplete = boot.phase === "complete" || boot.phase === "skip";
   const isExiting = phase === "exit";
 
   // Tunnel keeps running until exit animation, then fades away
@@ -183,13 +197,13 @@ export function PsycommuBoot({
         {/* ── Register output ── */}
         <div className="psycommu-boot__registers">
           {BOOT_LINES.map((line, i) => {
-            const isActive = i === bootLine;
-            const isDone = i < bootLine;
+            const isActive = i === boot.line;
+            const isDone = i < boot.line;
             if (!isActive && !isDone) return null;
 
             const shown = isDone
               ? line.val
-              : line.val.slice(0, bootChar);
+              : line.val.slice(0, boot.char);
 
             return (
               <div
@@ -208,7 +222,7 @@ export function PsycommuBoot({
                   {isExiting && isDone
                     ? scrambleText(shown)
                     : shown}
-                  {isActive && bootChar < line.val.length && !isExiting && (
+                  {isActive && boot.char < line.val.length && !isExiting && (
                     <span className="psycommu-boot__cursor">█</span>
                   )}
                 </span>
@@ -219,7 +233,7 @@ export function PsycommuBoot({
             );
           })}
 
-          {bootPhase === "flash" && (
+          {boot.phase === "flash" && (
             <div className="psycommu-boot__flash">
               <span className="psycommu-boot__flash-text">
                 RESTRAINTS: ██ RELEASED
@@ -232,7 +246,7 @@ export function PsycommuBoot({
         <div className="psycommu-boot__progress-track">
           <div
             className="psycommu-boot__progress-fill"
-            style={{ width: `${progress}%` }}
+            style={{ width: `${boot.progress}%` }}
           />
         </div>
 

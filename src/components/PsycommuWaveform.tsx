@@ -25,10 +25,22 @@ export function PsycommuWaveform() {
     c.scale(DPR, DPR);
 
     let raf = 0;
+    let lastNonZero = false;
 
     function draw() {
       raf = requestAnimationFrame(draw);
       const data = getAudioData();
+
+      // Skip paint when audio is silent (bass, mid, treble all zero)
+      const hasAudio = data.bass > 0 || data.mid > 0 || data.treble > 0;
+      if (!hasAudio) {
+        if (lastNonZero) {
+          c.clearRect(0, 0, W, H);
+          lastNonZero = false;
+        }
+        return;
+      }
+      lastNonZero = true;
 
       c.clearRect(0, 0, W, H);
 

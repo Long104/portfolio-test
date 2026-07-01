@@ -8,7 +8,7 @@ import {
   Vector3,
 } from "three";
 
-import { createStarTexture, createPetalTexture, createBlobTexture, createGradientLUT } from "./textures";
+import { createStarTexture, createPetalTexture, createBlobTexture, createGradientLUT, createFlareColorLUT } from "./textures";
 import { backdropVertex, backdropFragment } from "./shaders/backdrop";
 import { particleVertex, particleFragment } from "./shaders/particles";
 import { flareVertex, flareFragment } from "./shaders/flare";
@@ -66,6 +66,7 @@ export default function KiraKiraVortex() {
   const petalTex = useMemo(() => createPetalTexture(), []);
   const blobTex = useMemo(() => createBlobTexture(), []);
   const gradLUT = useMemo(() => createGradientLUT(), []);
+  const flareColorLUT = useMemo(() => createFlareColorLUT(), []);
 
   // --- Materials (useMemo — immutable identity, used in JSX render) ---
   // Note: uniforms are mutated per-frame in useFrame below.
@@ -114,6 +115,7 @@ export default function KiraKiraVortex() {
           uTime: { value: 0 },
           uSpeed: { value: 0.2 },
           uTexStar: { value: starTex },
+          uColorLUT: { value: flareColorLUT },
           uTreble: { value: 0 }, // flares sparkle on treble only
         },
         vertexShader: flareVertex,
@@ -122,7 +124,7 @@ export default function KiraKiraVortex() {
         depthWrite: false,
         blending: AdditiveBlending,
       }),
-    [starTex],
+    [starTex, flareColorLUT],
   );
 
   // MERGED GLOW: Sun + Rays + Bridge + Core in 1 pass
@@ -178,7 +180,7 @@ export default function KiraKiraVortex() {
       mountedRef.current = false;
       setTimeout(() => {
         if (mountedRef.current) return; // StrictMode re-mounted
-        [starTex, petalTex, blobTex, gradLUT].forEach((t) => t.dispose());
+        [starTex, petalTex, blobTex, gradLUT, flareColorLUT].forEach((t) => t.dispose());
         [backdropGeo, paintGeo, flareGeo].forEach((g) => g.dispose());
         [backdropMat, paintMat, flareMat, glowMat].forEach((m) =>
           m.dispose(),
@@ -279,11 +281,12 @@ export default function KiraKiraVortex() {
       cur.pos[1] + (nxt.pos[1] - cur.pos[1]) * segT,
       cur.pos[2] + (nxt.pos[2] - cur.pos[2]) * segT,
     );
-    camera.position.lerp(camTarget.current, 0.04);
-
-    // Camera always looks at center — sun stays put
-    currentLookAt.current.lerp(camLookAt.current.set(0, 0, 0), 0.04);
-    camera.lookAt(currentLookAt.current);
+    // Skip lerp when camera has converged (sub-pixel — saves CPU)
+    if (camera.position.distanceTo(camTarget.current) > 0.0001) {
+      camera.position.lerp(camTarget.current, 0.04);
+      currentLookAt.current.lerp(camLookAt.current.set(0, 0, 0), 0.04);
+      camera.lookAt(currentLookAt.current);
+    }
 
     // ── Scroll-reactive particle speed ──
     // Particle speed increases with scroll — vortex feels more intense deeper

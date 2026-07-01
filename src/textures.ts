@@ -247,3 +247,38 @@ export function createGradientLUT(): Texture {
   tex.needsUpdate = true;
   return tex;
 }
+
+// 10×1 LUT of flare colors — sampled in the flare fragment shader
+// instead of initializing a vec3[10] array per pixel.
+export function createFlareColorLUT(): Texture {
+  const w = 10;
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = 1;
+  const ctx = canvas.getContext("2d")!;
+
+  const colors: [number, string][] = [
+    [0.0, "#F890A8"],
+    [0.1, "#F9B9CA"],
+    [0.2, "#8CFF96"],
+    [0.3, "#EDFFB6"],
+    [0.4, "#D0FFAF"],
+    [0.5, "#FEDBE4"],
+    [0.6, "#FFFFB6"],
+    [0.7, "#FDD0DA"],
+    [0.8, "#FB889E"],
+    [0.9, "#FFFDDA"],
+  ];
+
+  for (let i = 0; i < w; i++) {
+    ctx.fillStyle = colors[i][1];
+    ctx.fillRect(i, 0, 1, 1);
+  }
+
+  const tex = new CanvasTexture(canvas);
+  tex.minFilter = LinearFilter;
+  tex.magFilter = LinearFilter;
+  tex.colorSpace = SRGBColorSpace;
+  tex.needsUpdate = true;
+  return tex;
+}

@@ -26,7 +26,8 @@ export const particleVertex = /* glsl */ `
 
     // Center clearance — keep the glowing core visible
     float r = length(pos.xy);
-    if (r < 5.0) pos.xy = normalize(pos.xy + 0.001) * (5.0 + aRandoms.x * 3.0);
+    float minR = 5.0 + aRandoms.x * 3.0;
+    pos.xy = normalize(pos.xy + 0.001) * max(r, minR);
 
     // Liquid water-flow math — constant amplitude, no audio
     float wave = sin(pos.z * 0.8 + uTime + aRandoms.y * 6.28) * 0.5;
@@ -64,31 +65,29 @@ export const particleFragment = /* glsl */ `
   varying float vRand;
 
   void main() {
-    vec4 texColor;
-    vec3 finalColor;
+    // Sample both textures — avoids divergent branching on mobile GPUs
+    vec4 petalTex = texture2D(uTexPetal, vUv);
+    vec4 blobTex = texture2D(uTexBlob, vUv);
+    float isBlob = step(0.5, vType);
+    vec4 texColor = mix(petalTex, blobTex, isBlob);
 
     // ~60% of particles react to mid (smoothstep 0.3, 0.6)
     float reactive = smoothstep(0.3, 0.6, vRand);
     float twinkle = reactive * vMidPulse;
 
-    if (vType < 0.5) {
-      // Ghost-teal petals — nearly invisible at rest, explode on mid
-      texColor = texture2D(uTexPetal, vUv);
-      finalColor = vec3(0.106, 0.737, 0.698); // #1BBCB2
-      texColor.a *= 0.04;
-      // Reactive petals: ghostly → bright flash (up to 5x)
-      texColor.a *= 1.0 + twinkle * 4.0;
-      finalColor *= 1.0 + twinkle * 0.6;
-    } else {
-      // Dark framing blobs — dim at rest, brighten on mid
-      texColor = texture2D(uTexBlob, vUv);
-      finalColor = texture2D(uGradLUT, vec2(vDepth, 0.5)).rgb;
-      finalColor *= 0.2 + twinkle * 0.8;
-    }
+    // Petal color: teal, nearly invisible at rest, explode on mid
+    vec3 petalColor = vec3(0.106, 0.737, 0.698) * (1.0 + twinkle * 0.6);
+    float petalAlpha = petalTex.a * 0.04 * (1.0 + twinkle * 4.0);
+
+    // Blob color: gradient LUT, dim at rest, brighten on mid
+    vec3 blobColor = texture2D(uGradLUT, vec2(vDepth, 0.5)).rgb * (0.2 + twinkle * 0.8);
+
+    vec3 finalColor = mix(petalColor, blobColor, isBlob);
+    float combinedAlpha = mix(petalAlpha, blobTex.a, isBlob);
 
     // Proximity fade
     float alphaFade = smoothstep(1.0, 0.85, vDepth);
-    gl_FragColor = vec4(finalColor, texColor.a * alphaFade);
+    gl_FragColor = vec4(finalColor, combinedAlpha * alphaFade);
 
     #include <colorspace_fragment>
   }

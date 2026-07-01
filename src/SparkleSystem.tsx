@@ -122,6 +122,7 @@ interface Sparkle {
   birthTime: number; lifetime: number;
   active: boolean;
   big: boolean;
+  parked: boolean;
 }
 
 export default function SparkleSystem() {
@@ -195,7 +196,8 @@ export default function SparkleSystem() {
     [sparkleTex],
   );
 
-  const pool = useMemo<Sparkle[]>(() => {
+  const poolRef = useRef<Sparkle[] | null>(null);
+  if (poolRef.current === null) {
     const arr: Sparkle[] = [];
     for (let i = 0; i < POOL_SIZE; i++) {
       arr.push({
@@ -203,10 +205,12 @@ export default function SparkleSystem() {
         rot: 0, size: 0,
         cr: 1, cg: 1, cb: 1,
         birthTime: -1, lifetime: 0, active: false, big: false,
+        parked: true,
       });
     }
-    return arr;
-  }, []);
+    poolRef.current = arr;
+  }
+  const pool = poolRef.current;
 
   const dummy = useMemo(() => new Object3D(), []);
   const tmpColor = useMemo(() => new Color(), []);
@@ -238,6 +242,7 @@ export default function SparkleSystem() {
       s.lifetime = 0.3 + Math.random() * 0.5;
       s.big = big;
       s.active = true;
+      s.parked = false;
       spawned++;
     }
   }
@@ -304,17 +309,15 @@ export default function SparkleSystem() {
         const brightness = Math.max(0, scale);
 
         // Anamorphic horizontal streak — stretch X during flash phase
-        // Birth: streak grows (1x→3x), Flash: hold at 3x, Death: shrink back to 1x
-        let stretchX = 1.0;
+        let stretchX: number;
         if (t < 0.15) {
-          stretchX = 1.0 + (t / 0.15) * 2.0; // 1x → 3x
+          stretchX = 1.0 + (t / 0.15) * 2.0;
         } else if (t < 0.40) {
-          // Streak extends with audio — capped at 3.5x for elegance
           const audioStreak = s.big ? smoothBass.current : smoothTreble.current;
-          stretchX = 3.0 + audioStreak * 0.5; // 3x → up to 3.5x
+          stretchX = 3.0 + audioStreak * 0.5;
         } else {
           const deathT = (t - 0.40) / 0.60;
-          stretchX = Math.max(1.0, 3.0 - deathT * 4.0); // 3x → 1x quickly
+          stretchX = Math.max(1.0, 3.0 - deathT * 4.0);
         }
 
         dummy.position.set(s.x, s.y, s.z);
@@ -324,7 +327,6 @@ export default function SparkleSystem() {
         mesh.setMatrixAt(i, dummy.matrix);
 
         const flashBoost = t < 0.40 ? 1.0 + (1.0 - t / 0.40) * 0.5 : 1.0;
-        // Living sparkles pulse with audio — big follows bass, small follows treble
         const audioLevel = s.big ? smoothBass.current : smoothTreble.current;
         const audioBoost = 1.0 + audioLevel * 0.8;
         const totalBrightness = brightness * flashBoost * audioBoost;
@@ -334,14 +336,16 @@ export default function SparkleSystem() {
           s.cb * totalBrightness,
         );
         mesh.setColorAt(i, tmpColor);
-      } else {
-        if (s.active) s.active = false;
+      } else if (!s.parked) {
+        // Park dead sparkle once, then skip on subsequent frames
+        s.active = false;
         dummy.position.set(0, 0, -100);
         dummy.scale.setScalar(0.0001);
         dummy.updateMatrix();
         mesh.setMatrixAt(i, dummy.matrix);
         tmpColor.setRGB(0, 0, 0);
         mesh.setColorAt(i, tmpColor);
+        s.parked = true;
       }
     }
 

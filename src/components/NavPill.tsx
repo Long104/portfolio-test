@@ -1,8 +1,8 @@
 // ── NavPill — Clan Battle Terminal ──
 // Sliding active indicator animates between sections on nav change.
 
-import { useRef, useEffect } from "react";
-import { RefractiveDiv, buildNavConfig } from "./Glass";
+import { useRef, useEffect, useMemo } from "react";
+import { RefractiveDiv, buildNavConfig } from "./glass-configs";
 import { useDeviceOrientation } from "../useDeviceOrientation";
 import { gsap } from "../lib/gsap";
 
@@ -15,6 +15,7 @@ interface NavPillProps {
 
 export function NavPill({ activeIndex, onNavigate }: NavPillProps) {
   const specularAngle = useDeviceOrientation();
+  const refraction = useMemo(() => buildNavConfig(specularAngle), [specularAngle]);
   const indicatorRef = useRef<HTMLDivElement>(null);
   const itemsRef = useRef<HTMLButtonElement[]>([]);
   const initialised = useRef(false);
@@ -81,7 +82,7 @@ export function NavPill({ activeIndex, onNavigate }: NavPillProps) {
   return (
     <RefractiveDiv
       className="nav-pill"
-      refraction={buildNavConfig(specularAngle)}
+      refraction={refraction}
     >
       {/* Sliding active indicator */}
       <div ref={indicatorRef} className="nav-pill__indicator" />

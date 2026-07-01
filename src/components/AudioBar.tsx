@@ -1,8 +1,8 @@
 // ── AudioBar — Psycommu Control Panel ──
 // Sliding active indicator + play/pause/track switch micro-interactions.
 
-import { useRef, useEffect } from "react";
-import { RefractiveDiv, buildSmallConfig } from "./Glass";
+import { useRef, useEffect, useMemo } from "react";
+import { RefractiveDiv, buildSmallConfig } from "./glass-configs";
 import { useDeviceOrientation } from "../useDeviceOrientation";
 import { PsycommuWaveform } from "./PsycommuWaveform";
 import { TRACKS } from "../useAudioEngine";
@@ -26,6 +26,7 @@ export function AudioBar({
   onToggleTheme,
 }: AudioBarProps) {
   const specularAngle = useDeviceOrientation();
+  const refraction = useMemo(() => buildSmallConfig(specularAngle), [specularAngle]);
   const indicatorRef = useRef<HTMLDivElement>(null);
   const itemsRef = useRef<HTMLButtonElement[]>([]);
   const initialised = useRef(false);
@@ -83,7 +84,7 @@ export function AudioBar({
   return (
     <RefractiveDiv
       className="audio-bar"
-      refraction={buildSmallConfig(specularAngle)}
+      refraction={refraction}
     >
       <button
         ref={playBtnRef}

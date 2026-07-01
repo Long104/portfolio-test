@@ -9,7 +9,7 @@ import { PROJECTS } from "./projects";
 import { EXPERIENCE, CURRENT_STATUS } from "./experience";
 import { useScrollReveal } from "../hooks/useScrollReveal";
 import { useHorizontalScroll } from "../hooks/useHorizontalScroll";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, memo } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap, SplitText, ScrollTrigger, PREFERS_REDUCED_MOTION } from "../lib/gsap";
 
@@ -105,7 +105,7 @@ const STACK = {
   tools: ["git", "docker", "cloudflare", "aws", "postgres"],
 };
 
-export function AboutSection() {
+export const AboutSection = memo(function AboutSection() {
   const labelRef = useScrollReveal<HTMLDivElement>({
     split: "chars",
     stagger: 0.02,
@@ -191,7 +191,7 @@ export function AboutSection() {
       </GlassPanel>
     </section>
   );
-}
+});
 
 // ── Experience Item ──
 // Each text element gets its own useScrollReveal ref.
@@ -273,7 +273,7 @@ function ExpItem({ period, role, company, description, isCurrent }: ExpItemData)
 }
 
 // ── Experience (section 2) ──
-export function ExperienceSection() {
+export const ExperienceSection = memo(function ExperienceSection() {
   const labelRef = useScrollReveal<HTMLDivElement>({
     split: "chars",
     stagger: 0.02,
@@ -308,7 +308,7 @@ export function ExperienceSection() {
       </GlassPanel>
     </section>
   );
-}
+});
 
 // ── Work (section 3) ──
 // ── Work (section 3) — Pinned horizontal scroll ──
@@ -400,7 +400,7 @@ export function WorkSection({ started }: { started: boolean }) {
 }
 
 // ── Contact (section 4) ──
-export function ContactSection() {
+export const ContactSection = memo(function ContactSection() {
   const labelRef = useScrollReveal<HTMLDivElement>({
     split: "chars",
     stagger: 0.02,
@@ -450,4 +450,4 @@ export function ContactSection() {
       <div ref={footerRef} className="contact__footer">© 2026 Pantorn Chuavallee — built with webgl & liquid glass</div>
     </section>
   );
-}
+});

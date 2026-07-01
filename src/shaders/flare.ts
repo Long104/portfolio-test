@@ -22,7 +22,8 @@ export const flareVertex = /* glsl */ `
     pos.z = mod(pos.z + 60.0, 70.0) - 60.0;
 
     float r = length(pos.xy);
-    if (r < 4.0) pos.xy = normalize(pos.xy + 0.001) * (4.0 + aRandoms.x * 2.0);
+    float minR = 4.0 + aRandoms.x * 2.0;
+    pos.xy = normalize(pos.xy + 0.001) * max(r, minR);
 
     vDepth = clamp((pos.z + 60.0) / 65.0, 0.0, 1.0);
     // ~65% reactive flares scale up on treble
@@ -45,6 +46,7 @@ export const flareVertex = /* glsl */ `
 
 export const flareFragment = /* glsl */ `
   uniform sampler2D uTexStar;
+  uniform sampler2D uColorLUT;
   varying vec2 vUv;
   varying float vDepth;
   varying float vColorMix;
@@ -53,26 +55,11 @@ export const flareFragment = /* glsl */ `
   void main() {
      vec4 texColor = texture2D(uTexStar, vUv);
 
-    vec3 colors[10] = vec3[10](
-      vec3(0.938, 0.278, 0.386),    // #F890A8 Vibrant Soft Pink
-      vec3(0.947, 0.481, 0.584),    // #F9B9CA Pastel Rose
-      vec3(0.262, 1.000, 0.320),    // #8CFF96 Bright Mint Green
-      vec3(0.850, 1.000, 0.448),    // #EDFFB6 Soft Lime Yellow
-      vec3(0.612, 1.000, 0.402),    // #D0FFAF Mint Yellow
-      vec3(0.984, 0.694, 0.761),    // #FEDBE4 Blush Pink
-      vec3(1.000, 1.000, 0.448),    // #FFFFB6 Pastel Yellow
-      vec3(0.973, 0.612, 0.694),    // #FDD0DA Light Sakura
-      vec3(0.947, 0.247, 0.347),    // #FB889E Neon Deep Pink
-      vec3(1.000, 0.973, 0.612)     // #FFFDDA Warm Cream
-    );
+    vec3 glow = texture2D(uColorLUT, vec2((vColorMix * 0.9 + 0.05), 0.5)).rgb;
 
-    int index = int(floor(vColorMix * 10.0));
-    index = clamp(index, 0, 9);
-
-    vec3 glow = colors[index];
     // Near-dark at rest (×0.12). Reactive flares explode on treble.
     float reactive = smoothstep(0.3, 0.6, vColorMix);
-    glow *= 0.12 + vTreblePulse * reactive * 2.0;
+    glow *= 0.12 + uTreblePulse * reactive * 2.0;
 
     float alphaFade = smoothstep(1.0, 0.80, vDepth);
     gl_FragColor = vec4(glow, texColor.a * alphaFade);
