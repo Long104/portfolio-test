@@ -5,9 +5,17 @@ import { gsap } from "../lib/gsap";
 import { PROJECTS } from "./projects";
 import { useDeviceOrientation } from "../useDeviceOrientation";
 
-// ── Refractive wrappers ──
-// Chrome: native SVG displacement refraction (true light-bending glass)
-// Firefox/Safari: snapshot fallback (captures backdrop, applies same filter)
+// ── Browser detection ──
+// html2canvas (refractive's snapshot fallback) CANNOT read WebGL canvas
+// pixels, so Firefox/Safari show solid #01314A instead of the vortex.
+// Fix: use "simple" mode which applies CSS backdrop-filter:blur() directly —
+// the browser's own GPU compositor CAN composite with the live WebGL canvas.
+const IS_CHROME =
+  typeof navigator !== "undefined" &&
+  /Chrome|Chromium|Edg|OPR\//i.test(navigator.userAgent);
+
+// Spread into config only on non-Chrome to skip html2canvas entirely.
+const SIMPLE_FALLBACK = IS_CHROME ? {} : { fallbackMode: "simple" as const };
 
 export const RefractiveDiv = refractive.div;
 
@@ -21,6 +29,7 @@ export function buildPanelConfig(specularAngle: number) {
     radius: 28, blur: 3, glassThickness: 110, bezelWidth: 26,
     refractiveIndex: 1.5, specularOpacity: 0.8, specularAngle,
     bezelHeightFn: convex,
+    ...SIMPLE_FALLBACK,
   };
 }
 
@@ -30,6 +39,7 @@ export function buildNavConfig(specularAngle: number) {
     radius: 22, blur: 2, glassThickness: 80, bezelWidth: 22,
     refractiveIndex: 1.5, specularOpacity: 0.7, specularAngle,
     bezelHeightFn: convex,
+    ...SIMPLE_FALLBACK,
   };
 }
 
@@ -39,6 +49,7 @@ export function buildSmallConfig(specularAngle: number) {
     radius: 18, blur: 1, glassThickness: 60, bezelWidth: 16,
     refractiveIndex: 1.5, specularOpacity: 0.6, specularAngle,
     bezelHeightFn: convex,
+    ...SIMPLE_FALLBACK,
   };
 }
 
