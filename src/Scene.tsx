@@ -26,7 +26,7 @@ export default function Scene() {
         }}
         performance={{ min: 0.5 }} // R3F adaptive: drops DPR if FPS dips
       >
-        <FrameLimiter fps={30} />
+        <FrameLimiter />
         <KiraKiraVortex />
         <SparkleSystem />
       </Canvas>
