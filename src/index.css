@@ -399,7 +399,7 @@ html.cursor-hidden * {
   align-items: center;
   position: relative;
   overflow: hidden;
-  height: 70vh;
+  height: 100vh;
   min-height: 400px;
   width: 100%;
   padding: 0;
