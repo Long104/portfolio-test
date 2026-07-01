@@ -153,7 +153,7 @@ function App() {
   // Activates after LAUNCH when content is visible.
   useParallax(
     ".glass-panel",
-    25,
+    100,
     1.5,
     started,
   );
