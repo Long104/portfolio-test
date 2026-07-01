@@ -402,6 +402,14 @@ html.cursor-hidden * {
   height: 100vh;
   width: 100%;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Label — header row at the top of the section */
+.work-label {
+  flex: 0 0 auto;
+  padding: 48px 48px 0;
 }
 
 /* Horizontal track — flex row, no wrap, spans wider than viewport */
@@ -410,17 +418,9 @@ html.cursor-hidden * {
   flex-wrap: nowrap;
   align-items: stretch;
   gap: 80px;
-  height: 100%;
+  flex: 1 1 auto;
   padding: 0 40px;
   will-change: transform;
-}
-
-/* Label — pinned at top of the section, above the scrolling cards */
-.work-label {
-  position: absolute;
-  top: 48px;
-  left: 48px;
-  z-index: 5;
 }
 
 /* Project card — wide horizontal card with image + text */
@@ -1245,8 +1245,7 @@ html.cursor-hidden * {
     padding: 0;
   }
   .work-label {
-    position: static;
-    padding-bottom: 16px;
+    padding: 0 0 16px;
   }
   .project-card {
     flex: 0 0 auto;
