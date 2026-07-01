@@ -58,7 +58,7 @@ export const flareFragment = /* glsl */ `
 
     // Near-dark at rest (×0.12). Reactive flares explode on treble.
     float reactive = smoothstep(0.3, 0.6, vColorMix);
-    glow *= 0.12 + uTreblePulse * reactive * 2.0;
+    glow *= 0.12 + vTreblePulse * reactive * 2.0;
 
     float alphaFade = smoothstep(1.0, 0.80, vDepth);
     gl_FragColor = vec4(glow, texColor.a * alphaFade);
