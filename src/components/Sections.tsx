@@ -214,7 +214,7 @@ function ExpItem({ period, role, company, description, isCurrent }: ExpItemData)
     x: "-50%",
     y: "0%",
     start: "top 92%",
-    end: "top 75%",
+    end: "top 78%",
     duration: 0.35,
     ease: "power2.out",
   });
@@ -222,8 +222,8 @@ function ExpItem({ period, role, company, description, isCurrent }: ExpItemData)
     split: "lines",
     stagger: 0.1,
     y: "120%",
-    start: "top 88%",
-    end: "top 70%",
+    start: "top 89%",
+    end: "top 74%",
     duration: 0.7,
     ease: "expo.out",
   });
@@ -231,8 +231,8 @@ function ExpItem({ period, role, company, description, isCurrent }: ExpItemData)
     split: "lines",
     stagger: 0.08,
     y: "100%",
-    start: "top 82%",
-    end: "top 65%",
+    start: "top 85%",
+    end: "top 70%",
     duration: 0.5,
     ease: "power2.out",
   });
@@ -240,8 +240,8 @@ function ExpItem({ period, role, company, description, isCurrent }: ExpItemData)
     split: "lines",
     stagger: 0.06,
     y: "100%",
-    start: "top 78%",
-    end: "top 60%",
+    start: "top 82%",
+    end: "top 66%",
     duration: 0.5,
     ease: "power2.out",
   });
