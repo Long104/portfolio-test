@@ -29,8 +29,11 @@ export function useHorizontalScroll(
     const t = track.current;
     if (!c || !t) return;
 
-    // Calculate how far the track must travel
-    const scrollDistance = t.scrollWidth - c.clientWidth;
+    // Calculate how far the track must travel.
+    // Subtract RIGHT_GAP so the last card doesn't hit the edge —
+    // it stops with visible breathing room on the right.
+    const RIGHT_GAP = 80;
+    const scrollDistance = Math.max(0, t.scrollWidth - c.clientWidth - RIGHT_GAP);
     if (scrollDistance <= 0) return;
 
     // Create the timeline: pin container + scrub track x
