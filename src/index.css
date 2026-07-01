@@ -1351,20 +1351,13 @@ html.cursor-hidden * {
   display: inline-block;
 }
 
-/* ── Reduced motion: show all text static ── */
-@media (prefers-reduced-motion: reduce) {
-  .split-line {
-    overflow: visible !important;
-  }
-  .split-word,
-  .split-char {
-    display: inline !important;
-    transform: none !important;
-    opacity: 1 !important;
-    filter: none !important;
-    clip-path: none !important;
-  }
-}
+/* ── Reduced motion: GSAP handles opacity-only reveals ── */
+/* Do NOT add !important overrides here. The JS reduced-motion path
+   in useScrollReveal uses ScrollTrigger with opacity-only tweens
+   (no transforms, no blur). GSAP's inline styles must work normally
+   for the scroll-triggered fade to function. The global reduced-motion
+   rule above (* { transition/animation-duration: 0.01ms }) still
+   kills CSS-based animations. */
 
 /* ── Custom scrollbar ── */
 ::-webkit-scrollbar {

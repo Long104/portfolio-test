@@ -71,13 +71,17 @@ export function useScrollReveal<T extends HTMLElement>(
       const el = ref.current;
       if (!el) return;
 
-      // ── Reduced motion: gentle fade-only reveal ──
-      // No y-movement, no blur, no clipWipe, no stagger — opacity crossfade only.
-      // Still runs SplitText so text layout is correct (same split classes as full path).
+      // ── Reduced motion: opacity-only scroll reveal ──
+      // Same ScrollTrigger, same stagger rhythm — just no physical motion.
+      // No y/x transforms, no blur, no clip-path. Content gently fades in
+      // as the user scrolls, preserving the choreography without movement.
+      // This is the SOTD accessibility standard: respect the preference,
+      // don't strip the design.
       if (PREFERS_REDUCED_MOTION) {
         const opts = { ...DEFAULTS, ...options };
         const split = new SplitText(el, {
           type: opts.split,
+          mask: "lines",
           linesClass: "split-line",
           wordsClass: "split-word",
           charsClass: "split-char",
@@ -89,9 +93,32 @@ export function useScrollReveal<T extends HTMLElement>(
               ? split.chars
               : split.words;
         if (targets.length === 0) return;
-        gsap.set(targets, { opacity: 0 });
-        gsap.to(targets, { opacity: 1, duration: 0.4, ease: "power2.out" });
-        return () => { split.revert(); };
+
+        gsap.set(targets, { opacity: 0, willChange: "opacity" });
+
+        const tlCfg: gsap.TimelineVars = {
+          defaults: { ease: "power2.out" },
+        };
+        if (opts.scroll) {
+          tlCfg.scrollTrigger = {
+            trigger: el,
+            start: opts.start,
+            toggleActions: "play none none none",
+          };
+        }
+        const tl = gsap.timeline(tlCfg);
+        tl.to(targets, {
+          opacity: 1,
+          duration: 0.4,
+          stagger: opts.stagger,
+          delay: opts.delay,
+        });
+
+        return () => {
+          split.revert();
+          tl.scrollTrigger?.kill();
+          tl.kill();
+        };
       }
 
       // ── Mobile tuning ──
