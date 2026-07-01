@@ -41,19 +41,25 @@ export function HUD({
   useEffect(() => {
     const el = tagRef.current;
     if (!el || prevSectionRef.current === sectionIndex) return;
-    prevSectionRef.current = sectionIndex;
+    const capturedSection = sectionIndex; // freeze the section this effect was triggered for
+    prevSectionRef.current = capturedSection;
 
     gsap.to(el, {
       opacity: 0,
       duration: 0.15,
       ease: "power2.out",
+      overwrite: "auto",
       onComplete() {
+        // Guard: if another section change already ran since this tween started,
+        // don't fade back in here — that newer effect will handle it.
+        if (prevSectionRef.current !== capturedSection) return;
         // Text already updated by React render — fade back in
         // (the opacity:0 is set via gsap, React won't override it)
         gsap.to(el, {
           opacity: 1,
           duration: 0.15,
           ease: "power2.in",
+          overwrite: "auto",
         });
       },
     });

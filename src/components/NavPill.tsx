@@ -21,8 +21,13 @@ export function NavPill({ activeIndex, onNavigate }: NavPillProps) {
   const initialised = useRef(false);
   const hoverTweens = useRef<Map<number, gsap.core.Tween>>(new Map());
 
-  // ── Hover spring on nav buttons ──
+  // ── Hover spring on nav buttons (pointer-capable devices only) ──
   useEffect(() => {
+    // mouseenter/mouseleave fire unreliably on iOS touch — buttons get stuck
+    // at scale 1.08. Only attach on devices that actually support hover.
+    const canHover = window.matchMedia("(hover: hover)").matches;
+    if (!canHover) return;
+
     itemsRef.current.forEach((btn, i) => {
       if (!btn) return;
       function onEnter() {

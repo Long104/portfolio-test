@@ -58,7 +58,7 @@ const DEFAULTS: Required<Pick<
   clipWipe: false,
   blur: false,
   start: "top 85%",
-  end: "top 35%",
+  end: "top 45%",    // 40vh scroll range instead of 50vh — tighter feel on tall monitors
   scrub: true,
   scroll: true,
   ease: "power4.out",
@@ -127,13 +127,17 @@ export function useScrollReveal<T extends HTMLElement>(
       }
 
       // ── Mobile tuning ──
+      // Mobile runs at 30fps (FrameLimiter) — fewer frames per second means
+      // animations need slightly MORE time to look smooth, not less.
+      // ×0.7 duration was too aggressive (0.4s → 0.28s = 8 frames at 30fps = pop-in).
+      // ×0.85 keeps the animation readable while still feeling snappy on mobile.
       const isMobile = PERF_TIER === "mobile";
       const opts = { ...DEFAULTS, ...options };
-      const stagger = isMobile ? (opts.stagger as number) * 0.5 : (opts.stagger as number);
+      const stagger = isMobile ? (opts.stagger as number) * 0.7 : (opts.stagger as number);
       const yVal = opts.y;
       const xVal = opts.x;
       const blur = isMobile ? false : opts.blur;
-      const duration = isMobile ? (opts.duration as number) * 0.7 : (opts.duration as number);
+      const duration = isMobile ? (opts.duration as number) * 0.85 : (opts.duration as number);
       const delay = opts.delay;
 
       // ── SplitText: mask wraps lines in overflow:hidden ──

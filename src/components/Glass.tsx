@@ -43,6 +43,10 @@ export function ProjectCard({
     const bracket = bracketRef.current;
     if (!card) return;
 
+    // mouseenter/mouseleave fire unreliably on touch — skip on coarse pointers
+    const canHover = window.matchMedia("(hover: hover)").matches;
+    if (!canHover) return;
+
     function onEnter() {
       if (tweenRef.current) tweenRef.current.kill();
       tweenRef.current = gsap.timeline()

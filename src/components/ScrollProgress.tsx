@@ -21,11 +21,16 @@ export function ScrollProgress({ progress }: ScrollProgressProps) {
     const glow = glowRef.current;
     if (!bar || !glow) return;
 
+    let lastTime = performance.now();
     const ticker = gsap.ticker.add(() => {
       const target = progressRef.current;
 
-      // Smooth width toward target (lerp)
-      currentWidth.current += (target - currentWidth.current) * 0.08;
+      // Frame-rate independent lerp — feels the same at 60Hz and 144Hz
+      const now = performance.now();
+      const dt = Math.min((now - lastTime) / 1000, 0.05); // cap at 50ms
+      lastTime = now;
+      const lerpFactor = 1 - Math.pow(1 - 0.08, dt * 60);
+      currentWidth.current += (target - currentWidth.current) * lerpFactor;
       bar.style.width = `${currentWidth.current}%`;
 
       // Audio-reactive glow

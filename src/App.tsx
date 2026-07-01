@@ -5,6 +5,7 @@ import { setScrollState } from "./scrollStore";
 import { SectionTransition } from "./components/SectionTransition";
 import { ScrollTrigger } from "./lib/gsap";
 import { useParallax } from "./hooks/useParallax";
+import { requestOrientationPermission } from "./useDeviceOrientation";
 
 const Scene = lazy(() => import("./Scene"));
 const ScrollContainer = lazy(() =>
@@ -114,6 +115,7 @@ function App() {
   }, [started]);
 
   const handleStart = useCallback(async () => {
+    requestOrientationPermission(); // iOS 13+: must be inside user gesture
     setBootPhase("exit"); // start GSAP cinematic exit (flash + scale + scramble)
     setStarted(true); // show post-launch UI + enable scroll tracking
     if (isPreloaded) {
@@ -124,6 +126,7 @@ function App() {
   }, [isPreloaded, engage, loadTrack, currentTrack]);
 
   const handleSelectTrack = useCallback(async (url: string) => {
+    requestOrientationPermission(); // iOS 13+: must be inside user gesture
     setBootPhase("exit");
     setStarted(true);
     if (isPreloaded && url === currentTrack) {
@@ -153,7 +156,7 @@ function App() {
   // Activates after LAUNCH when content is visible.
   useParallax(
     ".glass-panel",
-    65,
+    30,
     1.5,
     started,
   );

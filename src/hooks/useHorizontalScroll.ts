@@ -14,6 +14,7 @@
 import { useEffect } from "react";
 import type { MutableRefObject } from "react";
 import { gsap, ScrollTrigger, PREFERS_REDUCED_MOTION } from "../lib/gsap";
+import { PERF_TIER } from "../perf";
 
 /**
  * Pins `containerRef` and horizontally scrolls `trackRef` on vertical scroll.
@@ -27,7 +28,7 @@ export function useHorizontalScroll(
   tweenRef?: MutableRefObject<gsap.core.Tween | null>,
 ) {
   useEffect(() => {
-    if (!enabled || PREFERS_REDUCED_MOTION) return;
+    if (!enabled || PREFERS_REDUCED_MOTION || PERF_TIER === "mobile") return;
     const c = container.current;
     const t = track.current;
     if (!c || !t) return;

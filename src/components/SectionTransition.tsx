@@ -18,10 +18,15 @@ export function SectionTransition({ activeSection }: Props) {
   const scanRef = useRef<HTMLDivElement>(null);
   const flashRef = useRef<HTMLDivElement>(null);
   const lastSection = useRef(activeSection);
+  const timelineRef = useRef<gsap.core.Timeline | null>(null);
 
   useEffect(() => {
     // Skip first mount — no transition on initial load
     if (lastSection.current === activeSection) return;
+
+    // ── Throttle: if a transition is already playing, skip this one ──
+    // Prevents overlapping scan lines from rapid nav clicks.
+    if (timelineRef.current && timelineRef.current.isActive()) return;
 
     // Capture direction BEFORE overwriting lastSection.current
     const direction = activeSection > lastSection.current ? 1 : -1;
@@ -31,8 +36,12 @@ export function SectionTransition({ activeSection }: Props) {
     const flash = flashRef.current;
     if (!scan || !flash) return;
 
+    // Kill any previous timeline before creating a new one
+    timelineRef.current?.kill();
+
     // ── Scan line sweep ──
     const tl = gsap.timeline();
+    timelineRef.current = tl;
 
     // Start scan line from top (or bottom if scrolling up)
     gsap.set(scan, {
@@ -63,8 +72,14 @@ export function SectionTransition({ activeSection }: Props) {
       duration: 0.2,
     }, "-=0.2");
 
+    // Clean up the ref when done
+    tl.call(() => {
+      if (timelineRef.current === tl) timelineRef.current = null;
+    });
+
     return () => {
       tl.kill();
+      if (timelineRef.current === tl) timelineRef.current = null;
     };
   }, [activeSection]);
 

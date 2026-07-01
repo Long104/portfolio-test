@@ -14,6 +14,7 @@
 
 import { memo, useEffect, useRef } from "react";
 import { getAudioData } from "../useAudioEngine";
+import { MAX_DPR } from "../perf";
 
 export type TunnelPhase = "running" | "done";
 
@@ -66,13 +67,13 @@ const TunnelCanvas = memo(function TunnelCanvas({ phase }: Props) {
     const glowSprites = COLORS.map(makeGlowSprite);
 
     // ── Sizing + cached maxRadius ──
-    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
     let w = window.innerWidth;
     let h = window.innerHeight;
     let maxRadius = Math.hypot(w, h) / 2;
 
     const resize = () => {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
       w = window.innerWidth;
       h = window.innerHeight;
       maxRadius = Math.hypot(w, h) / 2;

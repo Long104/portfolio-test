@@ -36,15 +36,16 @@ export function AudioBar({
   useEffect(() => {
     const btn = playBtnRef.current;
     if (!btn) return;
+    // pointerdown/pointerup cover both mouse and touch reliably
     function onDown() { gsap.to(btn, { scale: 0.85, duration: 0.1, ease: "power2.out" }); }
     function onUp() { gsap.to(btn, { scale: 1, duration: 0.3, ease: "back.out(3)" }); }
-    btn.addEventListener("mousedown", onDown);
-    btn.addEventListener("mouseup", onUp);
-    btn.addEventListener("mouseleave", onUp);
+    btn.addEventListener("pointerdown", onDown);
+    btn.addEventListener("pointerup", onUp);
+    btn.addEventListener("pointerleave", onUp);
     return () => {
-      btn.removeEventListener("mousedown", onDown);
-      btn.removeEventListener("mouseup", onUp);
-      btn.removeEventListener("mouseleave", onUp);
+      btn.removeEventListener("pointerdown", onDown);
+      btn.removeEventListener("pointerup", onUp);
+      btn.removeEventListener("pointerleave", onUp);
     };
   }, []);
 

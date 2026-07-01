@@ -7,6 +7,11 @@
 // On mobile, the angle is quantized to 3° steps to avoid excessive
 // SVG filter recalculations (refractive library). Desktop passes through
 // the smooth value — but deviceorientation rarely fires on desktop anyway.
+//
+// iOS 13+ requires DeviceOrientationEvent.requestPermission() inside a
+// user gesture. The hook attaches the listener immediately on non-iOS;
+// on iOS it waits for requestOrientationPermission() to be called from
+// a click handler (App.tsx calls it during LAUNCH).
 
 import { useState, useEffect, useRef } from "react";
 import { PERF_TIER } from "./perf";
@@ -17,6 +22,57 @@ const SMOOTHING = 0.1;      // lerp factor — glide, don't snap
 const QUANTIZE_STEP = 0.0524; // 3° in radians — mobile only
 
 const SHOULD_QUANTIZE = PERF_TIER === "mobile";
+
+// ── Module-level permission state (shared across all hook instances) ──
+type PermState = "unknown" | "granted" | "denied" | "not-needed";
+let permState: PermState = "unknown";
+
+// Subscribers waiting for permission result (iOS path)
+type Listener = (e: DeviceOrientationEvent) => void;
+const pendingListeners = new Set<Listener>();
+
+function isIOSPermissionRequired(): boolean {
+  return (
+    typeof DeviceOrientationEvent !== "undefined" &&
+    typeof (DeviceOrientationEvent as unknown as { requestPermission?: unknown }).requestPermission === "function"
+  );
+}
+
+/**
+ * Call this from a user gesture (click/tap) to request orientation permission on iOS.
+ * On non-iOS browsers this is a no-op. Safe to call multiple times.
+ */
+export function requestOrientationPermission(): void {
+  if (permState !== "unknown") return;
+
+  if (!isIOSPermissionRequired()) {
+    permState = "not-needed";
+    return;
+  }
+
+  permState = "denied"; // pessimistic default until granted
+
+  try {
+    const result = (DeviceOrientationEvent as unknown as {
+      requestPermission: () => Promise<string>;
+    }).requestPermission();
+
+    result
+      .then((state: string) => {
+        permState = state === "granted" ? "granted" : "denied";
+        if (permState === "granted") {
+          // Attach all pending listeners now
+          pendingListeners.forEach((fn) => {
+            window.addEventListener("deviceorientation", fn);
+          });
+        }
+      })
+      .catch(() => { /* permission denied — stay at base angle */ });
+  } catch {
+    // requestPermission threw synchronously — not in a gesture context
+    permState = "unknown"; // allow retry on next gesture
+  }
+}
 
 export function useDeviceOrientation(): number {
   const [specularAngle, setSpecularAngle] = useState(BASE_ANGLE);
@@ -60,28 +116,25 @@ export function useDeviceOrientation(): number {
       }
     }
 
-    // iOS 13+ requires explicit permission
-    if (
-      typeof DeviceOrientationEvent !== "undefined" &&
-      "requestPermission" in DeviceOrientationEvent
-    ) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (DeviceOrientationEvent as any)
-        .requestPermission()
-        .then((state: string) => {
-          if (state === "granted" && mounted) {
-            window.addEventListener("deviceorientation", handleOrientation);
-          }
-        })
-        .catch(() => { /* permission denied — stay at base angle */ });
-    } else if (typeof window !== "undefined" && "DeviceOrientationEvent" in window) {
+    // ── Attach listener based on permission state ──
+    if (permState === "granted" || permState === "not-needed") {
       window.addEventListener("deviceorientation", handleOrientation);
+    } else if (permState === "unknown" && !isIOSPermissionRequired()) {
+      // Non-iOS browser with DeviceOrientationEvent — no permission needed
+      permState = "not-needed";
+      window.addEventListener("deviceorientation", handleOrientation);
+    } else {
+      // iOS: permission not yet requested. Register as pending —
+      // requestOrientationPermission() (called from LAUNCH tap) will
+      // attach the listener if granted.
+      pendingListeners.add(handleOrientation);
     }
 
     return () => {
       mounted = false;
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       window.removeEventListener("deviceorientation", handleOrientation);
+      pendingListeners.delete(handleOrientation);
     };
   }, []);
 

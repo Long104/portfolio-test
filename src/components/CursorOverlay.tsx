@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { getAudioData } from "../useAudioEngine";
+import { MAX_DPR } from "../perf";
 
 // ── Palette (discrete, matches shaders) ──────────────────
 const PALETTE = [
@@ -254,13 +255,13 @@ export function CursorOverlay() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // ── DPR-aware sizing ──
-    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // ── DPR-aware sizing (matches R3F's cap for consistent sharpness) ──
+    let dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
     let w = window.innerWidth;
     let h = window.innerHeight;
 
     const resize = (): void => {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
       w = window.innerWidth;
       h = window.innerHeight;
       canvas.width = Math.floor(w * dpr);
