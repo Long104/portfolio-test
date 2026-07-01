@@ -399,7 +399,7 @@ html.cursor-hidden * {
 .section--work-horizontal {
   position: relative;
   overflow: hidden;
-  height: 100vh;
+  height: min(100vh, 600px);
   width: 100%;
   padding: 0;
   display: flex;
@@ -409,7 +409,7 @@ html.cursor-hidden * {
 /* Label — header row at the top of the section */
 .work-label {
   flex: 0 0 auto;
-  padding: 48px 48px 0;
+  padding: 40px 48px 0;
 }
 
 /* Horizontal track — flex row, no wrap, spans wider than viewport */
@@ -417,7 +417,7 @@ html.cursor-hidden * {
   display: flex;
   flex-wrap: nowrap;
   align-items: stretch;
-  gap: 80px;
+  gap: 60px;
   flex: 1 1 auto;
   padding: 0 40px;
   will-change: transform;
@@ -425,7 +425,7 @@ html.cursor-hidden * {
 
 /* Project card — wide horizontal card with image + text */
 .project-card {
-  flex: 0 0 min(80vw, 640px);
+  flex: 0 0 min(40vw, 400px);
   position: relative;
   background: var(--glass-bg);
   cursor: pointer;
@@ -1145,6 +1145,25 @@ html.cursor-hidden * {
 }
 
 /* ── Responsive ── */
+
+/* ── Tablet / iPad (768–1023px) ── */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .section--work-horizontal {
+    height: min(100vh, 500px);
+  }
+  .work-label {
+    padding: 32px 32px 0;
+  }
+  .work-track {
+    gap: 40px;
+    padding: 0 32px;
+  }
+  .project-card {
+    flex: 0 0 min(50vw, 360px);
+  }
+}
+
+/* ── Mobile (<768px) ── */
 @media (max-width: 768px) {
   .section {
     padding: 80px 24px;
