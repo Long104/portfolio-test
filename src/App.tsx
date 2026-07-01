@@ -151,33 +151,6 @@ function App() {
 
   // ── Parallax: glass panels float as you scroll ──
   // Activates after LAUNCH when content is visible.
-  // ── Sidebar offset (Dia/Arc browsers) ──
-  // Dia's sidebar doesn't report via visualViewport.offsetLeft, but it DOES
-  // reduce visualViewport.width relative to window.innerWidth.
-  // Sidebar width = innerWidth - visualViewport.width.
-  // Sets --sidebar-left CSS variable on <html> so .canvas-layer shifts right.
-  useEffect(() => {
-    const update = () => {
-      const vv = window.visualViewport;
-      if (!vv) return;
-      const sidebarWidth = Math.round(window.innerWidth - vv.width);
-      if (sidebarWidth > 10) {
-        document.documentElement.style.setProperty("--sidebar-left", sidebarWidth + "px");
-      } else {
-        document.documentElement.style.removeProperty("--sidebar-left");
-      }
-    };
-    update();
-    window.visualViewport?.addEventListener("resize", update);
-    window.visualViewport?.addEventListener("scroll", update);
-    window.addEventListener("resize", update);
-    return () => {
-      window.visualViewport?.removeEventListener("resize", update);
-      window.visualViewport?.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, []);
-
   useParallax(
     ".glass-panel",
     65,
