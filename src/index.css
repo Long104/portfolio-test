@@ -427,7 +427,7 @@ html.cursor-hidden * {
 
 /* Project card — wide horizontal card with image + text */
 .project-card {
-  flex: 0 0 min(80vw, 640px);
+  flex: 0 0 min(50vw, 480px);
   position: relative;
   background: var(--glass-bg);
   cursor: pointer;
