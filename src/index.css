@@ -82,9 +82,12 @@ html.cursor-hidden * {
 }
 
 /* ── Fixed 3D canvas layer ── */
+/* left shifts for Dia/Arc sidebar via --sidebar-left CSS variable */
 .canvas-layer {
   position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
   left: var(--sidebar-left, 0);
   z-index: 0;
   pointer-events: none;
