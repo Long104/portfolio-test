@@ -399,11 +399,8 @@ html.cursor-hidden * {
   align-items: center;
   position: relative;
   overflow: hidden;
-  /* Height is auto — content-sized cards determine the height.
-     ScrollTrigger pin + scrub still works because the pin spacer
-     creates room based on scrollDistance, not visual height. */
-  height: auto;
-  min-height: 300px;
+  height: 70vh;
+  min-height: 400px;
   width: 100%;
   padding: 0;
 }
@@ -1244,6 +1241,7 @@ html.cursor-hidden * {
     height: auto;
     overflow: visible;
     padding: 80px 24px;
+    display: block;
   }
   .work-track {
     flex-direction: column;
