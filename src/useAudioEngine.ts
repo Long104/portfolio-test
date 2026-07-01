@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import { AudioEngine, type AudioData } from "./audio";
 
 export const TRACKS = [
-  { name: "Instrumental", url: "/far-beyond-the-starts-instrumental.opus" },
+  { name: "Instrumental", url: "/far-beyond-the-stars-instrumental.opus" },
   { name: "Original", url: "/far_beyond-the-stars.opus" },
 ];
 

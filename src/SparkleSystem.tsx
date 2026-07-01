@@ -286,6 +286,8 @@ export default function SparkleSystem() {
     const mesh = meshRef.current;
     if (!mesh) return;
 
+    let dirty = false;
+
     for (let i = 0; i < pool.length; i++) {
       const s = pool[i];
       const age = time - s.birthTime;
@@ -336,6 +338,7 @@ export default function SparkleSystem() {
           s.cb * totalBrightness,
         );
         mesh.setColorAt(i, tmpColor);
+        dirty = true;
       } else if (!s.parked) {
         // Park dead sparkle once, then skip on subsequent frames
         s.active = false;
@@ -346,11 +349,14 @@ export default function SparkleSystem() {
         tmpColor.setRGB(0, 0, 0);
         mesh.setColorAt(i, tmpColor);
         s.parked = true;
+        dirty = true;
       }
     }
 
-    mesh.instanceMatrix.needsUpdate = true;
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    if (dirty) {
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    }
   });
 
   useEffect(() => {
