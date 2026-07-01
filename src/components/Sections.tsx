@@ -363,7 +363,7 @@ export function WorkSection({ started }: { started: boolean }) {
         trigger: card,
         containerAnimation: containerAnim,
         start: "left right",
-        end: "left 30%",
+        end: "left 60%",
         scrub: 0.6,
         onUpdate: (self) => {
           imgEl.style.clipPath = `inset(0 ${100 - self.progress * 100}% 0 0)`;
