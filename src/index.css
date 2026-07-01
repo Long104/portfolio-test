@@ -402,7 +402,7 @@ html.cursor-hidden * {
   height: 100vh;
   min-height: 400px;
   width: 100%;
-  padding: 0;
+  padding: 0 48px;
 }
 
 /* Horizontal track — flex row, no wrap, spans wider than viewport */
