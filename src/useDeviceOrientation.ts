@@ -3,16 +3,25 @@
 // Light is world-fixed at 115° (upper-left). Device tilt shifts the
 // highlight ±20° with lerp smoothing — like tilting a real glass pane
 // under a desk lamp. Highlight glides, never orbits.
+//
+// On mobile, the angle is quantized to 3° steps to avoid excessive
+// SVG filter recalculations (refractive library). Desktop passes through
+// the smooth value — but deviceorientation rarely fires on desktop anyway.
 
 import { useState, useEffect, useRef } from "react";
+import { PERF_TIER } from "./perf";
 
 const BASE_ANGLE = 2.007;   // 115° in radians — Apple's system-wide upper-left light
 const TILT_RANGE = 0.349;   // ±20° in radians — subtle parallax shift
 const SMOOTHING = 0.1;      // lerp factor — glide, don't snap
+const QUANTIZE_STEP = 0.0524; // 3° in radians — mobile only
+
+const SHOULD_QUANTIZE = PERF_TIER === "mobile";
 
 export function useDeviceOrientation(): number {
   const [specularAngle, setSpecularAngle] = useState(BASE_ANGLE);
   const currentRef = useRef(BASE_ANGLE);
+  const quantizedRef = useRef(BASE_ANGLE);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -36,7 +45,17 @@ export function useDeviceOrientation(): number {
       if (rafRef.current === null) {
         rafRef.current = requestAnimationFrame(() => {
           rafRef.current = null;
-          setSpecularAngle(currentRef.current);
+
+          if (SHOULD_QUANTIZE) {
+            // Only update React state when quantized angle crosses a 3° threshold
+            const quantized = Math.round(currentRef.current / QUANTIZE_STEP) * QUANTIZE_STEP;
+            if (quantized !== quantizedRef.current) {
+              quantizedRef.current = quantized;
+              setSpecularAngle(quantized);
+            }
+          } else {
+            setSpecularAngle(currentRef.current);
+          }
         });
       }
     }
