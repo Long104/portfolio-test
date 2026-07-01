@@ -394,12 +394,14 @@ html.cursor-hidden * {
 }
 
 /* ── Work section — Pinned horizontal scroll ── */
-/* When you scroll into this section, it pins and the track scrolls
-   horizontally through project cards. */
 .section--work-horizontal {
   position: relative;
   overflow: hidden;
-  height: 70vh;
+  /* Height is auto — content-sized cards determine the height.
+     ScrollTrigger pin + scrub still works because the pin spacer
+     creates room based on scrollDistance, not visual height. */
+  height: auto;
+  min-height: 300px;
   width: 100%;
   padding: 0;
 }
@@ -408,10 +410,10 @@ html.cursor-hidden * {
 .work-track {
   display: flex;
   flex-wrap: nowrap;
-  align-items: stretch;
+  align-items: center;
   gap: 80px;
-  height: 100%;
-  padding: 0 40px;
+  height: auto;
+  padding: 40px;
   will-change: transform;
 }
 
@@ -425,23 +427,22 @@ html.cursor-hidden * {
   padding-right: 40px;
 }
 
-/* Project card — wide horizontal card with image + text */
+/* Project card — content-sized card with decorative gradient background */
 .project-card {
-  flex: 0 0 min(50vw, 480px);
+  flex: none;
+  width: min(50vw, 480px);
   position: relative;
   background: var(--glass-bg);
   cursor: pointer;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
+  padding: 36px 32px;
   box-shadow:
     inset 0 0.5px 0 rgba(255, 255, 255, 0.08),
     0 8px 32px rgba(0, 0, 0, 0.3);
   will-change: transform;
 }
 
-/* Image area — fills card, gradient placeholder, clip-path reveal */
+/* Image area — decorative gradient background behind text, fills card */
 .project-card__image {
   position: absolute;
   inset: 0;
@@ -478,17 +479,11 @@ html.cursor-hidden * {
     linear-gradient(to top, var(--bracket-color) var(--al), transparent 0) calc(100% - 0px) calc(100% - var(--ag)) / 1px var(--al) no-repeat;
 }
 
-/* Text overlay — sits at bottom of card over the image */
+/* Text overlay — sits over the gradient background */
 .project-card__info {
   position: relative;
   z-index: 1;
-  padding: 28px 24px;
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.7) 0%,
-    rgba(0, 0, 0, 0.3) 60%,
-    transparent 100%
-  );
+  /* Card handles padding — text just stacks naturally */
 }
 
 .project-card__num {
@@ -514,8 +509,8 @@ html.cursor-hidden * {
 
 .project-card__arrow {
   position: absolute;
-  bottom: 28px;
-  right: 24px;
+  bottom: 36px;
+  right: 32px;
   font-size: 14px;
   color: rgba(255, 255, 255, 0.5);
   transition: color 0.2s ease, transform 0.2s ease;
