@@ -153,7 +153,7 @@ function App() {
   // Activates after LAUNCH when content is visible.
   useParallax(
     ".glass-panel",
-    100,
+    65,
     1.5,
     started,
   );
@@ -177,7 +177,7 @@ function App() {
             <HeroSection started={started} />
             <AboutSection />
             <ExperienceSection />
-            <WorkSection />
+            <WorkSection started={started} />
             <ContactSection />
           </ScrollContainer>
         </Suspense>

@@ -393,29 +393,63 @@ html.cursor-hidden * {
   color: rgba(255, 255, 255, 0.7);
 }
 
-/* ── Work grid (flex — not grid, avoids Chrome backdrop-filter bug) ── */
-.work-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  max-width: 720px;
+/* ── Work section — Pinned horizontal scroll ── */
+/* When you scroll into this section, it pins and the track scrolls
+   horizontally through project cards. */
+.section--work-horizontal {
+  position: relative;
+  overflow: hidden;
+  height: 100vh;
+  width: 100%;
+  padding: 0;
 }
 
+/* Horizontal track — flex row, no wrap, spans wider than viewport */
+.work-track {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 80px;
+  height: 100%;
+  padding: 0 40px;
+  will-change: transform;
+}
+
+/* Label area — first "card" in the track shows the section label */
+.work-track__label {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 200px;
+  padding-right: 40px;
+}
+
+/* Project card — wide horizontal card with image + text */
 .project-card {
-  flex: 0 0 calc(50% - 8px);
+  flex: 0 0 min(80vw, 640px);
   position: relative;
   background: var(--glass-bg);
-  padding: 28px 24px;
   cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
   box-shadow:
     inset 0 0.5px 0 rgba(255, 255, 255, 0.08),
     0 8px 32px rgba(0, 0, 0, 0.3);
+  will-change: transform;
 }
 
-/* Hover shadow applied directly — no transition.
-   CSS transition on the refractive element OR its pseudo-elements creates
-   a compositor layer in Chrome, which breaks backdrop-filter: url().
-   Instant shadow change preserves the liquid glass effect. */
+/* Image area — fills card, gradient placeholder, clip-path reveal */
+.project-card__image {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  will-change: clip-path;
+}
+
+/* Hover shadow — no CSS transition (breaks backdrop-filter in Chrome) */
 .project-card:hover {
   box-shadow:
     inset 0 0.5px 0 rgba(255, 255, 255, 0.12),
@@ -428,7 +462,7 @@ html.cursor-hidden * {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 1;
+  z-index: 2;
   opacity: 0;
   transition: opacity 0.3s ease, background 0.4s ease;
   --al: 14px;
@@ -444,10 +478,18 @@ html.cursor-hidden * {
     linear-gradient(to top, var(--bracket-color) var(--al), transparent 0) calc(100% - 0px) calc(100% - var(--ag)) / 1px var(--al) no-repeat;
 }
 
-/* ── OLD ::before brackets removed — replaced by .project-card__brackets div ── */
-/* project-card::before is no longer used — GSAP controls bracket visibility */
-
-/* Brackets now controlled by GSAP via .project-card__brackets div */
+/* Text overlay — sits at bottom of card over the image */
+.project-card__info {
+  position: relative;
+  z-index: 1;
+  padding: 28px 24px;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0.3) 60%,
+    transparent 100%
+  );
+}
 
 .project-card__num {
   font-size: 10px;
@@ -472,11 +514,12 @@ html.cursor-hidden * {
 
 .project-card__arrow {
   position: absolute;
-  bottom: 20px;
-  right: 20px;
+  bottom: 28px;
+  right: 24px;
   font-size: 14px;
   color: rgba(255, 255, 255, 0.5);
   transition: color 0.2s ease, transform 0.2s ease;
+  z-index: 3;
 }
 
 .project-card:hover .project-card__arrow {
@@ -1109,13 +1152,6 @@ html.cursor-hidden * {
     padding: 80px 24px;
   }
 
-  /* Work grid: flex container, not CSS grid (avoids Chrome backdrop-filter bug).
-     Switch to column layout so cards stack full-width. */
-  .work-grid {
-    flex-direction: column;
-    max-width: 100%;
-  }
-
   .glass-panel {
     padding: 28px;
   }
@@ -1196,6 +1232,30 @@ html.cursor-hidden * {
     font-size: 8px;
     padding: 2px 6px;
   }
+
+  /* Work section: fall back to vertical stack on mobile */
+  .section--work-horizontal {
+    height: auto;
+    overflow: visible;
+    padding: 80px 24px;
+  }
+  .work-track {
+    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 24px;
+    height: auto;
+    padding: 0;
+  }
+  .work-track__label {
+    padding: 0;
+    padding-bottom: 16px;
+    justify-content: flex-start;
+  }
+  .project-card {
+    flex: 0 0 auto;
+    width: 100%;
+    min-height: 300px;
+  }
 }
 
 /* ── Extra small phones ── */
@@ -1215,10 +1275,6 @@ html.cursor-hidden * {
 
   .exp-item__role {
     font-size: 14px;
-  }
-
-  .project-card {
-    flex: 0 0 100%;
   }
 
   .hud--tl { left: 12px; top: 44px; }

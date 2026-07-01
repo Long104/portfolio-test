@@ -52,21 +52,28 @@ export function GlassPanel({ children }: { children: ReactNode }) {
   );
 }
 
-// ── Project Card (medium — Work section) ──
+// ── Project Card (large — Work horizontal scroll) ──
+// Full-refractive card with image area + text info.
+// Image uses a gradient placeholder with clip-path reveal on scroll enter.
 // GSAP micro-interaction: scale bump + arrow nudge + bracket fade on hover.
 export function ProjectCard({
   project,
+  cardRef,          // forwarded ref for the parent track
+  imageRef,         // forwarded ref for clip-path reveal on the image
 }: {
   project: (typeof PROJECTS)[number];
+  cardRef?: React.Ref<HTMLDivElement>;
+  imageRef?: React.Ref<HTMLDivElement>;
 }) {
   const specularAngle = useDeviceOrientation();
-  const cardRef = useRef<HTMLDivElement>(null);
+  const localCardRef = useRef<HTMLDivElement>(null);
   const arrowRef = useRef<HTMLDivElement>(null);
   const bracketRef = useRef<HTMLDivElement>(null);
   const tweenRef = useRef<gsap.core.Timeline | null>(null);
+  const mergedCardRef = cardRef || localCardRef;
 
   useEffect(() => {
-    const card = cardRef.current;
+    const card = (mergedCardRef as React.RefObject<HTMLDivElement>).current;
     const arrow = arrowRef.current;
     const bracket = bracketRef.current;
     if (!card) return;
@@ -102,19 +109,30 @@ export function ProjectCard({
       card.removeEventListener("mouseleave", onLeave);
       tweenRef.current?.kill();
     };
-  }, []);
+  }, [mergedCardRef]);
 
   return (
     <RefractiveDiv
-      ref={cardRef as never}
+      ref={mergedCardRef as never}
       refraction={buildNavConfig(specularAngle)}
       className="project-card"
     >
+      {/* ── Image area with gradient placeholder ── */}
+      <div
+        ref={imageRef}
+        className="project-card__image"
+        style={{ background: project.image }}
+      />
+
       {/* ── Corner brackets (animated by GSAP on hover) ── */}
       <div ref={bracketRef} className="project-card__brackets" />
-      <div className="project-card__num">{project.num}</div>
-      <div className="project-card__title">{project.title}</div>
-      <div className="project-card__stack">{project.stack}</div>
+
+      {/* ── Text overlay ── */}
+      <div className="project-card__info">
+        <div className="project-card__num">{project.num}</div>
+        <div className="project-card__title">{project.title}</div>
+        <div className="project-card__stack">{project.stack}</div>
+      </div>
       <div ref={arrowRef} className="project-card__arrow">{"→"}</div>
     </RefractiveDiv>
   );

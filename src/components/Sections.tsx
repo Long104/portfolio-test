@@ -8,9 +8,10 @@ import { GlassPanel, ProjectCard } from "./Glass";
 import { PROJECTS } from "./projects";
 import { EXPERIENCE, CURRENT_STATUS } from "./experience";
 import { useScrollReveal } from "../hooks/useScrollReveal";
+import { useHorizontalScroll } from "../hooks/useHorizontalScroll";
 import { useRef, useEffect } from "react";
 import { useGSAP } from "@gsap/react";
-import { gsap, SplitText, PREFERS_REDUCED_MOTION } from "../lib/gsap";
+import { gsap, SplitText, ScrollTrigger, PREFERS_REDUCED_MOTION } from "../lib/gsap";
 
 // ── Hero (section 0) ──
 // Line reveal triggered by LAUNCH click.
@@ -310,7 +311,12 @@ export function ExperienceSection() {
 }
 
 // ── Work (section 3) ──
-export function WorkSection() {
+// ── Work (section 3) — Pinned horizontal scroll ──
+// When you scroll into this section, it pins and cards scroll
+// horizontally. Each card has an image with clip-path reveal.
+export function WorkSection({ started }: { started: boolean }) {
+  const containerRef = useRef<HTMLElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const labelRef = useScrollReveal<HTMLDivElement>({
     split: "chars",
     stagger: 0.02,
@@ -322,12 +328,77 @@ export function WorkSection() {
     ease: "power2.out",
   });
 
+  // ── Pinned horizontal scroll hook ──
+  useHorizontalScroll(containerRef, trackRef, started);
+
+  // ── Refs for each card's image ──
+  const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const revealTrigger = useRef<ScrollTrigger | null>(null);
+
+  useEffect(() => {
+    if (!started || !trackRef.current || !containerRef.current) return;
+    const container = containerRef.current;
+    const track = trackRef.current;
+
+    // Kill any previous trigger
+    revealTrigger.current?.kill();
+    revealTrigger.current = null;
+
+    const totalScroll = track.scrollWidth - container.clientWidth;
+    if (totalScroll <= 0) return;
+
+    // Set all images to hidden initially
+    imageRefs.current.forEach((img) => {
+      if (img) gsap.set(img, { clipPath: "inset(0 100% 0 0)" });
+    });
+
+    // Single ScrollTrigger with onUpdate — each card reveals as it enters view
+    const st = ScrollTrigger.create({
+      trigger: container,
+      start: "top top",
+      end: "+=" + totalScroll,
+      scrub: 0.5,
+      invalidateOnRefresh: true,
+      onUpdate: (self) => {
+        const progress = self.progress;
+        imageRefs.current.forEach((imgEl) => {
+          if (!imgEl) return;
+          const card = imgEl.closest(".project-card") as HTMLElement;
+          if (!card) return;
+          const cardLeft = card.offsetLeft;
+          const cardW = card.offsetWidth;
+          const startFrac = Math.max(0, (cardLeft + cardW - container.clientWidth + 80) / totalScroll);
+          const endFrac = Math.min(1, (cardLeft + cardW * 0.3) / totalScroll);
+          const range = endFrac - startFrac;
+          if (range <= 0) return;
+          const cardProgress = Math.min(1, Math.max(0, (progress - startFrac) / range));
+          const pct = (1 - cardProgress) * 100;
+          imgEl.style.clipPath = `inset(0 ${pct}% 0 0)`;
+        });
+      },
+    });
+
+    revealTrigger.current = st;
+
+    return () => {
+      st.kill();
+    };
+  }, [started]);
+
   return (
-    <section className="section" data-section-index={3}>
-      <div ref={labelRef} className="section-label">// selected work</div>
-      <div className="work-grid">
-        {PROJECTS.map((project) => (
-          <ProjectCard key={project.num} project={project} />
+    <section ref={containerRef} className="section section--work-horizontal" data-section-index={3}>
+      <div ref={trackRef} className="work-track">
+        {/* Label lives in the track as the first visible element */}
+        <div className="work-track__label">
+          <div ref={labelRef} className="section-label">// selected work</div>
+        </div>
+
+        {PROJECTS.map((project, i) => (
+          <ProjectCard
+            key={project.num}
+            project={project}
+            imageRef={(el: HTMLDivElement | null) => { imageRefs.current[i] = el; }}
+          />
         ))}
       </div>
     </section>
