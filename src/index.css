@@ -283,6 +283,7 @@ html.cursor-hidden * {
 .exp-item__desc,
 .project-card__num,
 .project-card__title,
+.project-card__desc,
 .project-card__stack {
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
 }
@@ -399,7 +400,7 @@ html.cursor-hidden * {
 .section--work-horizontal {
   position: relative;
   overflow: hidden;
-  height: max(70vh, 600px);
+  height: 100vh;
   width: 100%;
   padding: 0;
   display: flex;
@@ -507,6 +508,13 @@ html.cursor-hidden * {
   font-weight: 600;
   color: rgba(255, 255, 255, 1);
   margin-bottom: 8px;
+}
+
+.project-card__desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 12px;
 }
 
 .project-card__stack {
