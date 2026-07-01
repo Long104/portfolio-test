@@ -1,6 +1,7 @@
 import {
   CanvasTexture,
   LinearFilter,
+  NearestFilter,
   SRGBColorSpace,
   Texture,
 } from "three";
@@ -167,8 +168,8 @@ export function createFlareColorLUT(): Texture {
   }
 
   const tex = new CanvasTexture(canvas);
-  tex.minFilter = LinearFilter;
-  tex.magFilter = LinearFilter;
+  tex.minFilter = NearestFilter;
+  tex.magFilter = NearestFilter;
   tex.colorSpace = SRGBColorSpace;
   tex.needsUpdate = true;
   return tex;

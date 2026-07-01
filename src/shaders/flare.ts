@@ -22,8 +22,7 @@ export const flareVertex = /* glsl */ `
     pos.z = mod(pos.z + 60.0, 70.0) - 60.0;
 
     float r = length(pos.xy);
-    float minR = 4.0 + aRandoms.x * 2.0;
-    pos.xy = normalize(pos.xy + 0.001) * max(r, minR);
+    if (r < 4.0) pos.xy = normalize(pos.xy + 0.001) * (4.0 + aRandoms.x * 2.0);
 
     vDepth = clamp((pos.z + 60.0) / 65.0, 0.0, 1.0);
     // ~65% reactive flares scale up on treble
@@ -55,7 +54,7 @@ export const flareFragment = /* glsl */ `
   void main() {
      vec4 texColor = texture2D(uTexStar, vUv);
 
-    vec3 glow = texture2D(uColorLUT, vec2((vColorMix * 0.9 + 0.05), 0.5)).rgb;
+    vec3 glow = texture2D(uColorLUT, vec2(vColorMix, 0.5)).rgb;
 
     // Near-dark at rest (×0.12). Reactive flares explode on treble.
     float reactive = smoothstep(0.3, 0.6, vColorMix);

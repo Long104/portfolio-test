@@ -26,8 +26,7 @@ export const particleVertex = /* glsl */ `
 
     // Center clearance — keep the glowing core visible
     float r = length(pos.xy);
-    float minR = 5.0 + aRandoms.x * 3.0;
-    pos.xy = normalize(pos.xy + 0.001) * max(r, minR);
+    if (r < 5.0) pos.xy = normalize(pos.xy + 0.001) * (5.0 + aRandoms.x * 3.0);
 
     // Liquid water-flow math — constant amplitude, no audio
     float wave = sin(pos.z * 0.8 + uTime + aRandoms.y * 6.28) * 0.5;
