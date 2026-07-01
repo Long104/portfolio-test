@@ -419,7 +419,7 @@ html.cursor-hidden * {
   align-items: stretch;
   gap: 60px;
   flex: 1 1 auto;
-  padding: 0 40px;
+  padding: 0 40px 80px;
   will-change: transform;
 }
 
