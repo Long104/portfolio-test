@@ -454,6 +454,14 @@ html.cursor-hidden * {
   position: absolute;
   inset: 0;
   z-index: 0;
+  overflow: hidden;
+}
+
+.project-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
 }
 
 /* Hover shadow — no CSS transition (breaks backdrop-filter in Chrome) */

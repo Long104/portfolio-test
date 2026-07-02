@@ -86,12 +86,10 @@ export function ProjectCard({
       refraction={refraction}
       className="project-card"
     >
-      {/* ── Image area with gradient placeholder ── */}
-      <div
-        ref={imageRef}
-        className="project-card__image"
-        style={{ background: project.image }}
-      />
+      {/* ── Project screenshot ── */}
+      <div ref={imageRef} className="project-card__image">
+        <img src={project.image} alt={project.title} loading="lazy" />
+      </div>
 
       {/* ── Corner brackets (animated by GSAP on hover) ── */}
       <div ref={bracketRef} className="project-card__brackets" />

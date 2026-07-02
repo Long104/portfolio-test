@@ -100,9 +100,9 @@ export function HeroSection({ started }: { started: boolean }) {
 
 // ── About (section 1) ──
 const STACK = {
-  languages: ["typescript", "python", "glsl", "rust"],
-  frameworks: ["react", "three.js", "node", "vite"],
-  tools: ["git", "docker", "cloudflare", "aws", "postgres"],
+  languages: ["go", "typescript", "python", "lua"],
+  frameworks: ["react", "next.js", "node", "three.js"],
+  tools: ["docker", "kubernetes", "cloudflare", "postgresql", "neovim"],
 };
 
 export const AboutSection = memo(function AboutSection() {
@@ -165,11 +165,11 @@ export const AboutSection = memo(function AboutSection() {
       <div ref={labelRef} className="section-label">// about</div>
       <GlassPanel>
         <p ref={textRef} className="about__text">
-          i build software at the intersection of <br />
-          engineering and visual art. <br />
+          i'm a software developer from thailand. <br />
+          i build things i want to use myself. <br />
           <span>
-            currently obsessed with webgl, audio reactivity, and shaders that
-            shouldn't run at 60fps but do.
+            currently exploring ai integration, webgl, and optimizing
+            web apps for performance. in my free time, chess and rubik's cubes.
           </span>
         </p>
 
@@ -457,14 +457,17 @@ export const ContactSection = memo(function ContactSection() {
     <section className="section section--centered" data-section-index={4}>
       <div ref={labelRef} className="section-label section-label--center">// let's talk</div>
       <div ref={linksRef} className="contact">
-        <a className="contact__link" href="https://github.com" target="_blank" rel="noreferrer">
+        <a className="contact__link" href="https://github.com/Long104" target="_blank" rel="noreferrer">
           github →
         </a>
-        <a className="contact__link" href="https://linkedin.com" target="_blank" rel="noreferrer">
+        <a className="contact__link" href="https://www.linkedin.com/in/pantorn-chuavallee-99a51a341/" target="_blank" rel="noreferrer">
           linkedin →
         </a>
-        <a className="contact__link" href="mailto:hello@pantorn.dev">
+        <a className="contact__link" href="mailto:longpantorn@gmail.com">
           email →
+        </a>
+        <a className="contact__link" href="https://resume.pantorn.me/resume.pdf" target="_blank" rel="noreferrer">
+          resume →
         </a>
       </div>
       <div ref={footerRef} className="contact__footer">© 2026 Pantorn Chuavallee — built with webgl & liquid glass</div>

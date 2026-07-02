@@ -2,17 +2,17 @@
 
 export const EXPERIENCE = [
   {
-    period: "2023 — 2024",
-    role: "software engineer",
-    company: "company one",
-    description: "built and maintained full-stack web applications. focused on performance, developer experience, and shipping features that matter.",
+    period: "2025",
+    role: "software developer",
+    company: "freelance",
+    description: "Building web applications with a focus on performance, AI integration, and immersive user experiences. Currently exploring WebGL, audio reactivity, and edge computing.",
   },
   {
-    period: "2021 — 2023",
-    role: "junior developer",
-    company: "company two",
-    description: "developed client-facing interfaces, integrated apis, and learned the craft of writing clean, maintainable code under real constraints.",
+    period: "2022 — 2024",
+    role: "full-stack developer",
+    company: "Stamford International University",
+    description: "Developed full-stack applications using Go, Next.js, and TypeScript. Built real-time collaborative tools and AI-powered features using Cloudflare Workers.",
   },
 ] as const;
 
-export const CURRENT_STATUS = "open to work — looking for software engineering roles";
+export const CURRENT_STATUS = "computer science student — open to internships & freelance";
