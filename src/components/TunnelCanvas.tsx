@@ -109,7 +109,6 @@ const TunnelCanvas = memo(function TunnelCanvas({ phase }: Props) {
     let raf = 0;
 
     const frame = (t: number) => {
-      raf = requestAnimationFrame(frame);
       const dt = Math.min((t - lastT) / 1000, 0.05);
       lastT = t;
       elapsed += dt;
@@ -119,7 +118,7 @@ const TunnelCanvas = memo(function TunnelCanvas({ phase }: Props) {
         tunnelAlpha = Math.max(tunnelAlpha - dt * 2, 0);
         if (tunnelAlpha <= 0.005) {
           ctx.clearRect(0, 0, w, h);
-          return;
+          return; // rAF loop ends — no more frames
         }
       }
 
@@ -207,6 +206,8 @@ const TunnelCanvas = memo(function TunnelCanvas({ phase }: Props) {
       ctx.globalCompositeOperation = "source-over";
 
       ctx.globalAlpha = 1;
+
+      raf = requestAnimationFrame(frame);
     };
 
     raf = requestAnimationFrame(frame);

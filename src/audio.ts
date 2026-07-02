@@ -9,6 +9,7 @@ export interface AudioData {
 }
 
 const NUM_BINS = 256; // AnalyserNode fftSize=512 → 256 frequency bins
+const FRAME_CACHE_MS = 16; // cache getData() for ~16ms — 5 consumers share 1 hardware read
 
 export class AudioEngine {
   private ctx: AudioContext | null = null;
@@ -26,6 +27,7 @@ export class AudioEngine {
   private _offset = 0;
 
   private _cache: AudioData = { bass: 0, mid: 0, treble: 0, level: 0 };
+  private _lastReadTime = 0;
 
   get isPlaying() {
     return this._isPlaying;
@@ -162,7 +164,12 @@ export class AudioEngine {
     this._isPlaying = false;
   }
 
-  // ── Per-frame data extraction ──────────────────────────────
+  // ── Per-frame data extraction (frame-cached) ─────────────────
+  // Multiple rAF consumers (PsycommuWaveform, CursorOverlay, TunnelCanvas,
+  // ScrollProgress, KiraKiraVortex) all call getData() at different rates.
+  // Without caching, every call hits the AnalyserNode hardware blocking read.
+  // Frame cache: only read from hardware once per ~16ms window.
+  // All callers within the same window share the cached result — zero waste.
 
   getData(): AudioData {
     if (!this.analyser || !this._isPlaying) {
@@ -172,6 +179,13 @@ export class AudioEngine {
       this._cache.level = 0;
       return this._cache;
     }
+
+    // Frame cache: skip hardware read if we already read within ~16ms
+    const now = performance.now();
+    if (now - this._lastReadTime < FRAME_CACHE_MS) {
+      return this._cache;
+    }
+    this._lastReadTime = now;
 
     this.analyser.getByteFrequencyData(this.freqData);
 
