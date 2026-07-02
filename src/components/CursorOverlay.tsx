@@ -427,9 +427,8 @@ export function CursorOverlay() {
       const dt = Math.min((t - lastT) / 1000, 0.05);
       lastT = t;
 
-      // 30fps base throttle (33ms). Idle drops further to ~15fps (IDLE_FRAME_MS).
-      const minInterval = t - lastMoveTime > IDLE_CUTOFF_MS ? IDLE_FRAME_MS : 33;
-      if (t - lastFrameTime < minInterval) {
+      // 30fps throttle (33ms)
+      if (t - lastFrameTime < 33) {
         // Keep rotation smooth during skipped frames — prevents snap on resume
         const targetRotSpeed = hover ? 0 : 0.3;
         rotSpeed += (targetRotSpeed - rotSpeed) * 0.08;
