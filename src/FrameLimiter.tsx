@@ -3,20 +3,18 @@ import { useThree } from "@react-three/fiber";
 import { getScrollState } from "./scrollStore";
 
 // ==========================================
-// FRAME LIMITER — adaptive fps with idle & section-aware throttling
+// FRAME LIMITER — adaptive fps with idle throttling
 // ==========================================
 //
-// Three-tier frame rate:
+// Two-tier frame rate:
 //   ACTIVE (scrolling, any section)  → 30fps
-//   IDLE (sections 0-3, 2s no scroll) → 15fps  — subtle tunnel animation
-//   LAST SECTION (section 4, 2s no scroll) → 5fps  — contact is mostly static bg
+//   IDLE (2s no scroll)              → 15fps  — subtle tunnel animation, saves GPU
 //
 // Any scroll input immediately restores 30fps.
 // In frameloop="demand" mode, R3F only renders when invalidate() is called.
 
 const ACTIVE_FPS = 30;
 const IDLE_FPS = 15;
-const LAST_SECTION_IDLE_FPS = 5; // contact section — tunnel is just static bg, save GPU
 const IDLE_TIMEOUT_MS = 2000;  // 2 seconds of no scroll → idle
 
 export default function FrameLimiter() {
@@ -29,14 +27,13 @@ export default function FrameLimiter() {
   // Watch scroll velocity — if near-zero for IDLE_TIMEOUT_MS, switch to idle fps
   useEffect(() => {
     function checkIdle() {
-      const { velocity, sectionIndex } = getScrollState();
+      const { velocity } = getScrollState();
       if (velocity < 0.5) {
         // User has stopped scrolling — start idle timer
         if (!idleTimerRef.current) {
-          const idleFps = sectionIndex >= 4 ? LAST_SECTION_IDLE_FPS : IDLE_FPS;
           idleTimerRef.current = setTimeout(() => {
             idleTimerRef.current = null;
-            fpsRef.current = idleFps;
+            fpsRef.current = IDLE_FPS;
           }, IDLE_TIMEOUT_MS);
         }
       } else {
