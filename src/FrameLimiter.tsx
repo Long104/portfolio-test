@@ -1,33 +1,54 @@
 import { useEffect, useRef } from "react";
 import { useThree } from "@react-three/fiber";
-import { PERF_TIER } from "./perf";
+import { getScrollState } from "./scrollStore";
 
 // ==========================================
-// FRAME LIMITER — adaptive fps with runtime fallback
+// FRAME LIMITER — adaptive fps with idle throttling
 // ==========================================
-
+//
 // All tiers start at 30fps to reduce thermal throttling during scroll.
-// The GPU bottleneck is particle count, not frame rate — fewer frames
-// with the same draw calls = same visual with less heat.
+// When the user stops scrolling (velocity drops to 0 for 2s), drops to 15fps
+// to let the GPU rest while keeping the tunnel visible with subtle animation.
+// Any scroll input immediately restores full 30fps.
 //
 // In frameloop="demand" mode, R3F only renders when invalidate() is called.
-// rAF auto-pauses when the tab is hidden — no manual visibility handling needed.
 
-const INITIAL_FPS = 30;
-const FALLBACK_FPS = 30;
-const SAMPLE_FRAMES = 120;       // ~2 sec at 60fps, ~4 sec at 30fps
-const MIN_ACCEPTABLE_FPS = 45;   // below this → drop to 30
+const ACTIVE_FPS = 30;
+const IDLE_FPS = 15;
+const IDLE_TIMEOUT_MS = 2000;  // 2 seconds of no scroll → idle
 
 export default function FrameLimiter() {
   const invalidate = useThree((state) => state.invalidate);
   const rafRef = useRef<number | null>(null);
   const lastTimeRef = useRef(0);
-  const fpsRef = useRef(INITIAL_FPS);
+  const fpsRef = useRef<number>(ACTIVE_FPS);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Runtime benchmark state
-  const sampleCountRef = useRef(0);
-  const totalDeltaRef = useRef(0);
-  const downgradedRef = useRef(INITIAL_FPS === FALLBACK_FPS);
+  // Watch scroll velocity — if near-zero for IDLE_TIMEOUT_MS, switch to idle fps
+  useEffect(() => {
+    function checkIdle() {
+      const velocity = getScrollState().velocity;
+      if (velocity < 0.5) {
+        // User has stopped scrolling — start idle timer
+        if (!idleTimerRef.current) {
+          idleTimerRef.current = setTimeout(() => {
+            idleTimerRef.current = null;
+            fpsRef.current = IDLE_FPS;
+          }, IDLE_TIMEOUT_MS);
+        }
+      } else {
+        // User is scrolling — cancel idle timer, restore active fps
+        if (idleTimerRef.current) {
+          clearTimeout(idleTimerRef.current);
+          idleTimerRef.current = null;
+          fpsRef.current = ACTIVE_FPS;
+        }
+      }
+    }
+
+    const interval = setInterval(checkIdle, 200); // check every 200ms
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     function loop(now: number) {
@@ -39,23 +60,6 @@ export default function FrameLimiter() {
       if (elapsed >= interval) {
         lastTimeRef.current = now - (elapsed % interval);
         invalidate();
-
-        // Benchmark: measure actual frame times on high tier
-        if (!downgradedRef.current && sampleCountRef.current < SAMPLE_FRAMES) {
-          if (sampleCountRef.current > 0) {
-            totalDeltaRef.current += elapsed;
-          }
-          sampleCountRef.current++;
-
-          if (sampleCountRef.current >= SAMPLE_FRAMES) {
-            const avgDelta = totalDeltaRef.current / (SAMPLE_FRAMES - 1);
-            const avgFps = 1000 / avgDelta;
-            if (avgFps < MIN_ACCEPTABLE_FPS) {
-              fpsRef.current = FALLBACK_FPS;
-              downgradedRef.current = true;
-            }
-          }
-        }
       }
     }
 

@@ -71,7 +71,7 @@ export function ProjectCard({
       }
     }
 
-    // ── Click: cinematic fade before opening project ──
+    // ── Click: cinematic fade then navigate (same tab) ──
     function onClick(e: Event) {
       e.preventDefault();
       const overlay = document.createElement("div");
@@ -80,16 +80,9 @@ export function ProjectCard({
         background: "#01314a", pointerEvents: "none", opacity: "0",
       });
       document.body.appendChild(overlay);
-      gsap.to(overlay, {
-        opacity: 1, duration: 0.15, ease: "power2.in",
-        onComplete: () => {
-          window.open(project.url, "_blank", "noopener,noreferrer");
-          gsap.to(overlay, {
-            opacity: 0, duration: 0.3, delay: 0.1,
-            onComplete: () => overlay.remove(),
-          });
-        },
-      });
+      gsap.timeline()
+        .to(overlay, { opacity: 1, duration: 0.3, ease: "power2.in" })
+        .call(() => { window.location.href = project.url; });
     }
 
     card.addEventListener("mouseenter", onEnter);

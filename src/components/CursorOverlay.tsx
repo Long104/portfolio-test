@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { getAudioData } from "../useAudioEngine";
 import { MAX_DPR } from "../perf";
 import { PREFERS_REDUCED_MOTION } from "../lib/gsap";
+import { getScrollState } from "../scrollStore";
 
 // ── Palette (discrete, matches shaders) ──────────────────
 const PALETTE = [
@@ -249,6 +250,27 @@ export function CursorOverlay() {
     return window.matchMedia("(pointer: fine)").matches;
   }, []);
 
+  // ── Hide canvas during scroll to save GPU, show when idle ──
+  useEffect(() => {
+    if (!enabled) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const SCROLL_HIDE_THRESHOLD = 2; // px/frame — above this = scrolling
+    const CHECK_INTERVAL_MS = 150;
+
+    const interval = setInterval(() => {
+      const v = getScrollState().velocity;
+      if (v > SCROLL_HIDE_THRESHOLD) {
+        canvas.style.opacity = "0";
+      } else {
+        canvas.style.opacity = "1";
+      }
+    }, CHECK_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [enabled]);
+
   useEffect(() => {
     if (!enabled) return;
     const canvas = canvasRef.current;
@@ -341,7 +363,6 @@ export function CursorOverlay() {
       target.x = e.clientX;
       target.y = e.clientY;
       lastMoveTime = performance.now();
-      resume(); // wake up from deep idle if paused
     };
     const onOver = (e: MouseEvent): void => {
       const el = e.target;
@@ -422,34 +443,15 @@ export function CursorOverlay() {
     let rafId = 0;
     let lastT = performance.now();
     let lastFrameTime = 0; // for idle throttle
-    let paused = false; // deep idle: rAF cancelled entirely
-
-    const IDLE_PAUSE_MS = 4000; // 4s no movement → pause rAF entirely
-
-    function resume() {
-      if (!paused) return;
-      paused = false;
-      lastT = performance.now();
-      lastFrameTime = 0;
-      rafId = requestAnimationFrame(frame);
-    }
 
     const frame = (t: number): void => {
       rafId = requestAnimationFrame(frame);
       const dt = Math.min((t - lastT) / 1000, 0.05);
       lastT = t;
 
-      // ── Two-stage idle: throttle at IDLE_CUTOFF_MS, pause at IDLE_PAUSE_MS ──
-      if (t - lastMoveTime > IDLE_PAUSE_MS) {
-        // Deep idle: cancel rAF entirely to free CPU for the 3D scene.
-        // Canvas will be redrawn on next pointermove via resume().
-        if (!paused) {
-          paused = true;
-          cancelAnimationFrame(rafId);
-          rafId = 0;
-        }
-        return;
-      }
+      // ── Idle throttle: drop to ~15fps (66ms between frames) when cursor
+      // hasn't moved for IDLE_CUTOFF_MS. Frees CPU for the 3D loop.
+      // On next pointermove, full 60fps resumes within 1 frame (~16ms).
       if (t - lastMoveTime > IDLE_CUTOFF_MS) {
         if (t - lastFrameTime < IDLE_FRAME_MS) {
           // Still need to update rotation or it'll snap when resuming
