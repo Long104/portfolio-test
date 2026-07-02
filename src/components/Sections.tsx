@@ -333,45 +333,65 @@ export function WorkSection({ started }: { started: boolean }) {
   useHorizontalScroll(containerRef, trackRef, started, horizontalTween);
 
   // ── Per-card clip-path reveal ──
-  // Each card gets its own ScrollTrigger that wipes the image gradient
-  // from right-to-left as the card enters the pinned viewport.
-  // Uses `containerAnimation` to tie to the horizontal scroll tween.
+  // Desktop (≥769px): wipes as card scrolls horizontally via containerAnimation.
+  // Mobile (≤768px): wipes as card scrolls vertically via standard ScrollTrigger.
+  // Same visual (right→left clip-path wipe), different trigger mechanism.
   const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
   const revealTriggers = useRef<ScrollTrigger[]>([]);
 
   useEffect(() => {
-    if (!started || !horizontalTween.current) return;
+    if (!started) return;
 
     // Kill any previous triggers
     revealTriggers.current.forEach((st) => st.kill());
     revealTriggers.current = [];
-
-    const containerAnim = horizontalTween.current;
 
     // Set all images to hidden initially
     imageRefs.current.forEach((img) => {
       if (img) gsap.set(img, { clipPath: "inset(0 100% 0 0)" });
     });
 
-    // Per-card trigger: wipes clip-path as card crosses into viewport
-    imageRefs.current.forEach((imgEl) => {
-      if (!imgEl) return;
-      const card = imgEl.closest(".project-card") as HTMLElement;
-      if (!card) return;
+    if (horizontalTween.current) {
+      // ── Desktop: horizontal scroll wipe ──
+      const containerAnim = horizontalTween.current;
+      imageRefs.current.forEach((imgEl) => {
+        if (!imgEl) return;
+        const card = imgEl.closest(".project-card") as HTMLElement;
+        if (!card) return;
 
-      const st = ScrollTrigger.create({
-        trigger: card,
-        containerAnimation: containerAnim,
-        start: "left right",
-        end: "left 60%",
-        scrub: 0.6,
-        onUpdate: (self) => {
-          imgEl.style.clipPath = `inset(0 ${100 - self.progress * 100}% 0 0)`;
-        },
+        const st = ScrollTrigger.create({
+          trigger: card,
+          containerAnimation: containerAnim,
+          start: "left right",
+          end: "left 60%",
+          scrub: 0.6,
+          onUpdate: (self) => {
+            imgEl.style.clipPath = `inset(0 ${100 - self.progress * 100}% 0 0)`;
+          },
+        });
+
+        revealTriggers.current.push(st);
       });
+    } else {
+      // ── Mobile: vertical scroll wipe ──
+      imageRefs.current.forEach((imgEl) => {
+        if (!imgEl) return;
+        const card = imgEl.closest(".project-card") as HTMLElement;
+        if (!card) return;
 
-      revealTriggers.current.push(st);
-    });
+        const st = ScrollTrigger.create({
+          trigger: card,
+          start: "top 85%",
+          end: "top 55%",
+          scrub: 0.6,
+          onUpdate: (self) => {
+            imgEl.style.clipPath = `inset(0 ${100 - self.progress * 100}% 0 0)`;
+          },
+        });
+
+        revealTriggers.current.push(st);
+      });
+    }
 
     return () => {
       revealTriggers.current.forEach((st) => st.kill());
