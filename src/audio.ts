@@ -42,7 +42,7 @@ export class AudioEngine {
     this.analyser.fftSize = NUM_BINS * 2; // 512
     this.analyser.smoothingTimeConstant = 0.5; // light analyser smoothing; per-layer smoothing happens in component
     this.gainNode = this.ctx.createGain();
-    this.gainNode.gain.value = 0.5;
+    this.gainNode.gain.value = 0.3;
 
     // analyser → gain → destination
     this.analyser.connect(this.gainNode);
