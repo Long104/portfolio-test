@@ -1168,7 +1168,161 @@ html.cursor-hidden * {
   color: rgba(255, 255, 255, 1);
 }
 
+/* ── NavOverlay — Hamburger trigger + Fullscreen menu ── */
+/* Mobile/tablet alternative to NavPill. CSS toggles visibility at 1024px. */
+
+/* Hamburger trigger button — fixed top-right */
+.nav-trigger {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+  display: none; /* shown via @media (max-width: 1023px) */
+}
+
+.nav-trigger__btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-end;
+}
+
+.nav-trigger__icon {
+  width: 22px;
+  height: 16px;
+  position: relative;
+}
+
+.nav-trigger__line {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 1.5px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 2px;
+  transform-origin: center;
+}
+.nav-trigger__line:nth-child(1) { top: 0; }
+.nav-trigger__line:nth-child(2) { top: calc(50% - 0.75px); }
+.nav-trigger__line:nth-child(3) { bottom: 0; }
+
+/* Fullscreen overlay */
+.nav-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.nav-overlay--open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.nav-overlay__links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-overlay__link {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  text-decoration: none;
+  cursor: pointer;
+  padding: 6px 0;
+}
+
+.nav-overlay__num {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--theme-accent);
+  opacity: 0.6;
+  letter-spacing: 0.05em;
+}
+
+.nav-overlay__name {
+  font-family: var(--mono);
+  font-size: clamp(28px, 6vw, 48px);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.2s ease;
+}
+
+.nav-overlay__link--active .nav-overlay__name,
+.nav-overlay__link:active .nav-overlay__name {
+  color: rgba(255, 255, 255, 1);
+}
+
+/* Hover only on devices that support it */
+@media (hover: hover) {
+  .nav-overlay__link:hover .nav-overlay__name {
+    color: rgba(255, 255, 255, 1);
+  }
+}
+
+.nav-overlay__footer {
+  display: flex;
+  gap: 28px;
+  opacity: 0.5;
+}
+
+.nav-overlay__footer a {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: color 0.2s ease;
+}
+
+@media (hover: hover) {
+  .nav-overlay__footer a:hover {
+    color: rgba(255, 255, 255, 1);
+  }
+}
+
 /* ── Responsive ── */
+
+/* ── Nav + HUD breakpoint: hamburger at <1024px (SOTD standard) ── */
+@media (max-width: 1023px) {
+  /* Hide desktop NavPill */
+  .nav-pill { display: none; }
+
+  /* Show hamburger trigger */
+  .nav-trigger { display: flex; }
+
+  /* HUD: hide audio status (top-right) and tagline (bottom-left) */
+  .hud--tr { display: none; }
+  .hud--bl { display: none; }
+}
+
+@media (min-width: 1024px) {
+  /* Desktop: hide hamburger + overlay entirely */
+  .nav-trigger { display: none; }
+  .nav-overlay { display: none; }
+}
 
 /* ── Tablet / iPad (768–1023px) ── */
 @media (min-width: 769px) and (max-width: 1023px) {

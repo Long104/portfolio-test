@@ -13,7 +13,8 @@ import { PERF_TIER } from "./perf";
 // In frameloop="demand" mode, R3F only renders when invalidate() is called.
 // rAF auto-pauses when the tab is hidden — no manual visibility handling needed.
 
-const INITIAL_FPS = PERF_TIER === "high" ? 60 : 30;
+const INITIAL_FPS =
+  PERF_TIER === "high" || PERF_TIER === "tablet" ? 60 : 30;
 const FALLBACK_FPS = 30;
 const SAMPLE_FRAMES = 120;       // ~2 sec at 60fps, ~4 sec at 30fps
 const MIN_ACCEPTABLE_FPS = 45;   // below this → drop to 30

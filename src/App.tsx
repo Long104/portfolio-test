@@ -17,6 +17,7 @@ import { useAudioEngine, TRACKS } from "./useAudioEngine";
 import { HUD } from "./components/HUD";
 import { PsycommuBoot } from "./components/PsycommuBoot";
 import { NavPill } from "./components/NavPill";
+import { NavOverlay } from "./components/NavOverlay";
 import { ScrollProgress } from "./components/ScrollProgress";
 import { AudioBar } from "./components/AudioBar";
 import { CursorOverlay } from "./components/CursorOverlay";
@@ -190,6 +191,10 @@ function App() {
       {started && (
         <>
           <NavPill
+            activeIndex={activeSection}
+            onNavigate={(i) => scrollRef.current?.scrollToSection(i)}
+          />
+          <NavOverlay
             activeIndex={activeSection}
             onNavigate={(i) => scrollRef.current?.scrollToSection(i)}
           />
