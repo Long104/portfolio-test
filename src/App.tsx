@@ -22,6 +22,8 @@ import { NavOverlay } from "./components/NavOverlay";
 import { ScrollProgress } from "./components/ScrollProgress";
 import { AudioBar } from "./components/AudioBar";
 import { CursorOverlay } from "./components/CursorOverlay";
+import { ProjectDetail } from "./components/ProjectDetail";
+import type { Project } from "./components/projects";
 
 import {
   HeroSection,
@@ -44,6 +46,7 @@ function App() {
   const [theme, setTheme] = useState<Theme>(
     () => (localStorage.getItem("kira-theme") as Theme) || "gquuuuuux",
   );
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const scrollRef = useRef<ScrollContainerHandle>(null);
 
   // ── Apply theme to root element ──
@@ -169,6 +172,14 @@ function App() {
     setScrollState({ sectionIndex: index });
   }, []);
 
+  const handleOpenProject = useCallback((project: Project) => {
+    setSelectedProject(project);
+  }, []);
+
+  const handleCloseProject = useCallback(() => {
+    setSelectedProject(null);
+  }, []);
+
   const activeTrackName = TRACKS.find((t) => t.url === currentTrack)?.name ?? "";
   const bootPhaseNarrowed: "enter" | "exit" = bootPhase === "gone" ? "exit" : bootPhase;
 
@@ -200,7 +211,7 @@ function App() {
             <HeroSection started={started} />
             <AboutSection />
             <ExperienceSection />
-            <WorkSection started={started} />
+            <WorkSection started={started} onOpenProject={handleOpenProject} />
             <ContactSection />
           </ScrollContainer>
         </Suspense>
@@ -242,6 +253,9 @@ function App() {
 
       {/* ── Layer 3: Cursor overlay (desktop only, self-gated) ── */}
       <CursorOverlay />
+
+      {/* ── Project detail overlay ── */}
+      <ProjectDetail project={selectedProject} onClose={handleCloseProject} />
 
       {/* ── Audio control bar ── */}
       {started && (

@@ -24,10 +24,12 @@ export function ProjectCard({
   project,
   cardRef,          // forwarded ref for the parent track
   imageRef,         // forwarded ref for clip-path reveal on the image
+  onOpen,           // callback to open project detail overlay
 }: {
   project: (typeof PROJECTS)[number];
   cardRef?: React.Ref<HTMLDivElement>;
   imageRef?: React.Ref<HTMLDivElement>;
+  onOpen?: (project: (typeof PROJECTS)[number]) => void;
 }) {
   const specularAngle = useDeviceOrientation();
   const localCardRef = useRef<HTMLDivElement>(null);
@@ -71,18 +73,11 @@ export function ProjectCard({
       }
     }
 
-    // ── Click: cinematic fade then navigate (same tab) ──
+    // ── Click: open project detail overlay ──
     function onClick(e: Event) {
       e.preventDefault();
-      const overlay = document.createElement("div");
-      Object.assign(overlay.style, {
-        position: "fixed", inset: "0", zIndex: "200",
-        background: "#01314a", pointerEvents: "none", opacity: "0",
-      });
-      document.body.appendChild(overlay);
-      gsap.timeline()
-        .to(overlay, { opacity: 1, duration: 0.3, ease: "power2.in" })
-        .call(() => { window.location.href = project.url; });
+      e.stopPropagation();
+      onOpen?.(project);
     }
 
     card.addEventListener("mouseenter", onEnter);
@@ -94,7 +89,7 @@ export function ProjectCard({
       card.removeEventListener("click", onClick);
       tweenRef.current?.kill();
     };
-  }, [mergedCardRef]);
+  }, [mergedCardRef, onOpen, project]);
 
   return (
     <RefractiveDiv
