@@ -453,6 +453,40 @@ export const ContactSection = memo(function ContactSection() {
     ease: "power2.out",
   });
 
+  // ── Magnetic hover on contact links ──
+  useEffect(() => {
+    if (PREFERS_REDUCED_MOTION) return;
+    if (window.matchMedia("(hover: none)").matches) return;
+
+    const links = linksRef.current?.querySelectorAll<HTMLAnchorElement>(".contact__link");
+    if (!links) return;
+
+    const cleanups: (() => void)[] = [];
+
+    links.forEach((link) => {
+      function onMove(e: MouseEvent) {
+        const rect = link.getBoundingClientRect();
+        gsap.to(link, {
+          x: (e.clientX - (rect.left + rect.width / 2)) * 0.25,
+          y: (e.clientY - (rect.top + rect.height / 2)) * 0.25,
+          duration: 0.4,
+          ease: "power3.out",
+        });
+      }
+      function onLeave() {
+        gsap.to(link, { x: 0, y: 0, duration: 0.6, ease: "elastic.out(1, 0.3)" });
+      }
+      link.addEventListener("mousemove", onMove);
+      link.addEventListener("mouseleave", onLeave);
+      cleanups.push(() => {
+        link.removeEventListener("mousemove", onMove);
+        link.removeEventListener("mouseleave", onLeave);
+      });
+    });
+
+    return () => cleanups.forEach((fn) => fn());
+  }, []);
+
   return (
     <section className="section section--centered" data-section-index={4}>
       <div ref={labelRef} className="section-label section-label--center">// let's talk</div>

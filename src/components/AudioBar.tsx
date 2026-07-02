@@ -32,20 +32,41 @@ export function AudioBar({
   const initialised = useRef(false);
   const playBtnRef = useRef<HTMLButtonElement>(null);
 
-  // ── Play button press micro-interaction ──
+  // ── Play button: press micro-interaction + magnetic hover ──
   useEffect(() => {
     const btn = playBtnRef.current;
     if (!btn) return;
-    // pointerdown/pointerup cover both mouse and touch reliably
-    function onDown() { gsap.to(btn, { scale: 0.85, duration: 0.1, ease: "power2.out" }); }
-    function onUp() { gsap.to(btn, { scale: 1, duration: 0.3, ease: "back.out(3)" }); }
-    btn.addEventListener("pointerdown", onDown);
-    btn.addEventListener("pointerup", onUp);
-    btn.addEventListener("pointerleave", onUp);
+    const el = btn;
+    const canHover = window.matchMedia("(hover: hover)").matches;
+
+    function onDown() { gsap.to(el, { scale: 0.85, duration: 0.1, ease: "power2.out" }); }
+    function onUp() { gsap.to(el, { scale: 1, duration: 0.3, ease: "back.out(3)" }); }
+
+    function onMove(e: MouseEvent) {
+      if (!canHover) return;
+      const rect = el.getBoundingClientRect();
+      gsap.to(el, {
+        x: (e.clientX - (rect.left + rect.width / 2)) * 0.3,
+        y: (e.clientY - (rect.top + rect.height / 2)) * 0.3,
+        duration: 0.4,
+        ease: "power3.out",
+      });
+    }
+    function onLeave() {
+      gsap.to(el, { x: 0, y: 0, duration: 0.6, ease: "elastic.out(1, 0.3)" });
+    }
+
+    el.addEventListener("pointerdown", onDown);
+    el.addEventListener("pointerup", onUp);
+    el.addEventListener("pointerleave", onUp);
+    el.addEventListener("mousemove", onMove);
+    el.addEventListener("mouseleave", onLeave);
     return () => {
-      btn.removeEventListener("pointerdown", onDown);
-      btn.removeEventListener("pointerup", onUp);
-      btn.removeEventListener("pointerleave", onUp);
+      el.removeEventListener("pointerdown", onDown);
+      el.removeEventListener("pointerup", onUp);
+      el.removeEventListener("pointerleave", onUp);
+      el.removeEventListener("mousemove", onMove);
+      el.removeEventListener("mouseleave", onLeave);
     };
   }, []);
 

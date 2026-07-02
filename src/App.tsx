@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef, lazy, Suspense } from "react"
 import "./fonts.css";
 import type { ScrollContainerHandle } from "./components/ScrollContainer";
 import { setScrollState } from "./scrollStore";
+import { setMouseState } from "./mouseStore";
 import { SectionTransition } from "./components/SectionTransition";
 import { ScrollTrigger } from "./lib/gsap";
 import { useParallax } from "./hooks/useParallax";
@@ -113,6 +114,24 @@ function App() {
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, [started]);
+
+  // ── Mouse parallax tracking (rAF-throttled — writes to mouseStore for R3F) ──
+  useEffect(() => {
+    if (!started) return;
+    let ticking = false;
+    function onMouseMove(e: MouseEvent) {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const x = (e.clientX / window.innerWidth) * 2 - 1;   // -1 (left) to 1 (right)
+        const y = -(e.clientY / window.innerHeight) * 2 + 1;  // 1 (top) to -1 (bottom)
+        setMouseState({ x, y });
+        ticking = false;
+      });
+    }
+    window.addEventListener("mousemove", onMouseMove, { passive: true });
+    return () => window.removeEventListener("mousemove", onMouseMove);
   }, [started]);
 
   const handleStart = useCallback(async () => {

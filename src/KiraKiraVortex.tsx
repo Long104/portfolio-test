@@ -16,6 +16,7 @@ import { glowVertex, glowFragment } from "./shaders/glow";
 import { PAINT_COUNT, FLARE_COUNT } from "./perf";
 import { useAudioEngine } from "./useAudioEngine";
 import { getScrollState } from "./scrollStore";
+import { getMouseState } from "./mouseStore";
 
 // ==========================================
 // 3. SCENE COMPONENT
@@ -197,13 +198,14 @@ export default function KiraKiraVortex() {
   const camLookAt = useRef(new Vector3(0, 0, 0));
   const currentLookAt = useRef(new Vector3(0, 0, 0));
 
-  // Per-section camera positions — sun stays centered, subtle z-depth shift only
+  // Per-section camera positions — each section has a distinct angle + zoom
+  // Mouse parallax adds on top of these base positions
   const SECTION_CAMERAS: { pos: [number, number, number]; look: [number, number, number] }[] = useMemo(() => [
-    { pos: [0, 0, 5],   look: [0, 0, 0] },  // 0: hero
-    { pos: [0, 0, 4.8], look: [0, 0, 0] },  // 1: about — barely closer
-    { pos: [0, 0, 5],   look: [0, 0, 0] },  // 2: experience
-    { pos: [0, 0, 5.2], look: [0, 0, 0] },  // 3: work — barely farther
-    { pos: [0, 0, 5],   look: [0, 0, 0] },  // 4: contact
+    { pos: [0,    0,    6.0], look: [0, 0, 0] },  // 0: hero — pulled back, full vortex
+    { pos: [0.3,  0.2,  5.0], look: [0, 0, 0] },  // 1: about — drift right, sun shifts
+    { pos: [-0.2, 0.1,  4.5], look: [0, 0, 0] },  // 2: experience — closer, intimate
+    { pos: [0,   -0.2,  5.5], look: [0, 0, 0] },  // 3: work — pulled back for h-scroll
+    { pos: [0.5,  0.3,  3.5], look: [0, 0, 0] },  // 4: contact — zoomed in, dramatic
   ], []);
 
   // --- Animation loop ---
@@ -266,7 +268,6 @@ export default function KiraKiraVortex() {
 
     // ── Scroll-linked camera ──
     // Lerp between section camera positions based on scroll progress.
-    // No orbit drift — sun stays dead centered as a calm backdrop.
     const p = scroll.progress;
     const segCount = SECTION_CAMERAS.length - 1;
     const segP = Math.min(p * segCount, segCount - 0.001);
@@ -275,24 +276,28 @@ export default function KiraKiraVortex() {
     const cur = SECTION_CAMERAS[segIdx];
     const nxt = SECTION_CAMERAS[segIdx + 1] ?? cur;
 
-    // Interpolate camera position — subtle z-depth shift only
+    // Mouse parallax — vortex shifts toward cursor, feels alive
+    const mouse = getMouseState();
+
+    // Interpolate camera position + mouse offset
     camTarget.current.set(
-      cur.pos[0] + (nxt.pos[0] - cur.pos[0]) * segT,
-      cur.pos[1] + (nxt.pos[1] - cur.pos[1]) * segT,
+      cur.pos[0] + (nxt.pos[0] - cur.pos[0]) * segT + mouse.x * 0.3,
+      cur.pos[1] + (nxt.pos[1] - cur.pos[1]) * segT + mouse.y * 0.2,
       cur.pos[2] + (nxt.pos[2] - cur.pos[2]) * segT,
     );
-    // Skip lerp when camera has converged (sub-pixel — saves CPU)
-    if (camera.position.distanceTo(camTarget.current) > 0.0001) {
-      camera.position.lerp(camTarget.current, 0.04);
-      currentLookAt.current.lerp(camLookAt.current.set(0, 0, 0), 0.04);
-      camera.lookAt(currentLookAt.current);
-    }
+    camera.position.lerp(camTarget.current, 0.05);
+
+    // Look-at shifts subtly with mouse — sun drifts, not locked to center
+    camLookAt.current.set(mouse.x * 0.1, mouse.y * 0.08, 0);
+    currentLookAt.current.lerp(camLookAt.current, 0.05);
+    camera.lookAt(currentLookAt.current);
 
     // ── Scroll-reactive particle speed ──
-    // Particle speed increases with scroll — vortex feels more intense deeper
-    const speedBoost = 0.15 + p * 0.25; // 0.15 at top → 0.40 at bottom
+    // Particle speed increases with scroll depth + scroll velocity (momentum feel)
+    const velBoost = Math.min(Math.abs(scroll.velocity) / 50, 1.5);
+    const speedBoost = 0.15 + p * 0.25 + velBoost * 0.3;
     paintMat.uniforms.uSpeed.value = speedBoost;
-    flareMat.uniforms.uSpeed.value = speedBoost * 1.2;
+    flareMat.uniforms.uSpeed.value = speedBoost * 1.2 + velBoost * 0.4;
   });
 
   return (

@@ -6,6 +6,7 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef, type ReactNode } from "react";
 import Lenis from "lenis";
 import { gsap, ScrollTrigger } from "../lib/gsap";
+import { setScrollState, getScrollState } from "../scrollStore";
 
 export interface ScrollContainerHandle {
   scrollToSection: (index: number) => void;
@@ -91,11 +92,19 @@ export const ScrollContainer = forwardRef<ScrollContainerHandle, ScrollContainer
       // and drive Lenis from GSAP's ticker (single rAF source).
       lenis.on("scroll", () => {
         throttledSectionUpdate();
+        setScrollState({ velocity: lenis.velocity });
         ScrollTrigger.update();
       });
 
       // GSAP ticker drives Lenis — single rAF source of truth.
-      const tickerCb = (time: number) => lenis.raf(time * 1000);
+      // Also decays scroll velocity when not scrolling.
+      const tickerCb = (time: number) => {
+        lenis.raf(time * 1000);
+        const s = getScrollState();
+        if (Math.abs(s.velocity) > 0.01) {
+          setScrollState({ velocity: s.velocity * 0.92 });
+        }
+      };
       gsap.ticker.add(tickerCb);
       gsap.ticker.lagSmoothing(0);
 
