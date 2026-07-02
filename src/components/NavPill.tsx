@@ -5,6 +5,7 @@ import { useRef, useEffect, useMemo } from "react";
 import { RefractiveDiv, buildNavConfig } from "./glass-configs";
 import { useDeviceOrientation } from "../useDeviceOrientation";
 import { gsap } from "../lib/gsap";
+import { playHoverSound, playClickSound } from "../lib/audio-ui";
 
 const SECTIONS = ["pilot", "about", "experience", "work", "contact"] as const;
 
@@ -31,6 +32,7 @@ export function NavPill({ activeIndex, onNavigate }: NavPillProps) {
     itemsRef.current.forEach((btn, i) => {
       if (!btn) return;
       function onEnter() {
+        playHoverSound();
         const tw = gsap.to(btn, { scale: 1.08, duration: 0.25, ease: "back.out(2)" });
         hoverTweens.current.set(i, tw);
       }
@@ -110,7 +112,7 @@ export function NavPill({ activeIndex, onNavigate }: NavPillProps) {
               "nav-pill__item" +
               (i === activeIndex ? " nav-pill__item--active" : "")
             }
-            onClick={() => onNavigate(i)}
+            onClick={() => { playClickSound(); onNavigate(i); }}
           >
             {name}
           </button>

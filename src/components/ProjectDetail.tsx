@@ -8,6 +8,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { gsap, PREFERS_REDUCED_MOTION } from "../lib/gsap";
 import type { Project } from "./projects";
+import { playCloseSound } from "../lib/audio-ui";
 
 interface ProjectDetailProps {
   project: Project | null;
@@ -97,6 +98,7 @@ export function ProjectDetail({ project, onClose }: ProjectDetailProps) {
 
   // ── Close animation: fast reverse ──
   const animateClose = useCallback(() => {
+    playCloseSound();
     const overlay = overlayRef.current;
     const backdrop = backdropRef.current;
     const panel = panelRef.current;

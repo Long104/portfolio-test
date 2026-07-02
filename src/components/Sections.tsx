@@ -12,6 +12,7 @@ import { useHorizontalScroll } from "../hooks/useHorizontalScroll";
 import { useRef, useEffect, memo } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap, SplitText, ScrollTrigger, PREFERS_REDUCED_MOTION } from "../lib/gsap";
+import { playHoverSound } from "../lib/audio-ui";
 
 // ── Hero (section 0) ──
 // Line reveal triggered by LAUNCH click.
@@ -468,6 +469,9 @@ export const ContactSection = memo(function ContactSection() {
     const cleanups: (() => void)[] = [];
 
     links.forEach((link) => {
+      function onEnter() {
+        playHoverSound();
+      }
       function onMove(e: MouseEvent) {
         const rect = link.getBoundingClientRect();
         gsap.to(link, {
@@ -480,9 +484,11 @@ export const ContactSection = memo(function ContactSection() {
       function onLeave() {
         gsap.to(link, { x: 0, y: 0, duration: 0.6, ease: "elastic.out(1, 0.3)" });
       }
+      link.addEventListener("mouseenter", onEnter);
       link.addEventListener("mousemove", onMove);
       link.addEventListener("mouseleave", onLeave);
       cleanups.push(() => {
+        link.removeEventListener("mouseenter", onEnter);
         link.removeEventListener("mousemove", onMove);
         link.removeEventListener("mouseleave", onLeave);
       });

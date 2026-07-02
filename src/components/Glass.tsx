@@ -4,6 +4,7 @@ import { gsap } from "../lib/gsap";
 import { PROJECTS } from "./projects";
 import { useDeviceOrientation } from "../useDeviceOrientation";
 import { RefractiveDiv, buildPanelConfig, buildNavConfig } from "./glass-configs";
+import { playHoverSound, playOpenSound } from "../lib/audio-ui";
 
 // ── Glass Panel (large — About/Experience sections) ──
 export function GlassPanel({ children }: { children: ReactNode }) {
@@ -50,6 +51,7 @@ export function ProjectCard({
     if (!canHover) return;
 
     function onEnter() {
+      playHoverSound();
       if (tweenRef.current) tweenRef.current.kill();
       tweenRef.current = gsap.timeline()
         .to(card, { scale: 1.03, duration: 0.3, ease: "power2.out" }, 0);
@@ -77,6 +79,7 @@ export function ProjectCard({
     function onClick(e: Event) {
       e.preventDefault();
       e.stopPropagation();
+      playOpenSound();
       onOpen?.(project);
     }
 
