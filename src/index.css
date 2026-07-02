@@ -10,6 +10,7 @@
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-border-hover: rgba(255, 255, 255, 0.25);
   --mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
+  --display: "Space Grotesk Variable", "Space Grotesk", system-ui, sans-serif;
 
   /* GQuuuuuuX theme (default) */
   --theme-bg: #01314a;
@@ -181,7 +182,7 @@ html.cursor-hidden * {
 
 /* ── Section label (// about, // work) ── */
 .section-label {
-  font-family: var(--mono);
+  font-family: var(--display);
   font-size: 12px;
   color: rgba(255, 255, 255, 0.85);
   text-transform: uppercase;
@@ -200,6 +201,7 @@ html.cursor-hidden * {
 }
 
 .hero__tagline {
+  font-family: var(--display);
   font-size: clamp(28px, 5vw, 56px);
   font-weight: 600;
   line-height: 1.1;
@@ -549,7 +551,7 @@ html.cursor-hidden * {
 }
 
 .contact__link {
-  font-family: var(--mono);
+  font-family: var(--display);
   font-size: clamp(24px, 4vw, 42px);
   font-weight: 600;
   color: rgba(255, 255, 255, 0.9);

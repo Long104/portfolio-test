@@ -97,7 +97,7 @@ export function useHorizontalScroll(
       }
     }
 
-    function handleChange(_e: MediaQueryListEvent) {
+    function handleChange() {
       syncTween();
     }
 

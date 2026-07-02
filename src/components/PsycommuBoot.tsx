@@ -165,6 +165,15 @@ export function PsycommuBoot({
     });
   }, [boot.phase, phase, onWarmUp]);
 
+  // ── Escape key → skip boot (judge/keyboard-friendly) ──
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") handleOverlayClick();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [handleOverlayClick]);
+
   // ── Engage (after boot complete) ──
   const handleEngage = useCallback(() => {
     if (isLoading || startedRef.current) return;
