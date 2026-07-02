@@ -293,11 +293,14 @@ export default function KiraKiraVortex() {
     camera.lookAt(currentLookAt.current);
 
     // ── Scroll-reactive particle speed ──
-    // Particle speed increases with scroll depth + scroll velocity (momentum feel)
+    // Smooth uSpeed toward target — prevents position jumps when speed changes.
+    // (Shader computes pos = uTime * uSpeed, so sudden speed changes teleport
+    // all particles. Lerp the uniform at 5%/frame for gradual acceleration.)
     const velBoost = Math.min(Math.abs(scroll.velocity) / 200, 0.6);
-    const speedBoost = 0.15 + p * 0.25 + velBoost * 0.15;
-    paintMat.uniforms.uSpeed.value = speedBoost;
-    flareMat.uniforms.uSpeed.value = speedBoost * 1.2 + velBoost * 0.2;
+    const targetSpeed = 0.15 + p * 0.25 + velBoost * 0.15;
+    paintMat.uniforms.uSpeed.value += (targetSpeed - paintMat.uniforms.uSpeed.value) * 0.05;
+    const targetFlareSpeed = targetSpeed * 1.2 + velBoost * 0.2;
+    flareMat.uniforms.uSpeed.value += (targetFlareSpeed - flareMat.uniforms.uSpeed.value) * 0.05;
   });
 
   return (
