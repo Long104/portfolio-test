@@ -5,10 +5,11 @@
 
 import { useEffect, useRef } from "react";
 import { getAudioData } from "../useAudioEngine";
+import { MAX_DPR } from "../perf";
 
 const W = 100;
 const H = 24;
-const DPR = 2;
+const DPR = Math.min(2, MAX_DPR);
 
 export function PsycommuWaveform() {
   const canvasRef = useRef<HTMLCanvasElement>(null);

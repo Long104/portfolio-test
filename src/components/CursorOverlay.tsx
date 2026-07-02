@@ -7,6 +7,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { getAudioData } from "../useAudioEngine";
 import { MAX_DPR } from "../perf";
+import { PREFERS_REDUCED_MOTION } from "../lib/gsap";
 
 // ── Palette (discrete, matches shaders) ──────────────────
 const PALETTE = [
@@ -272,6 +273,41 @@ export function CursorOverlay() {
     };
     resize();
     window.addEventListener("resize", resize);
+
+    // ── Reduced motion: static dot cursor, no animation loop ──
+    if (PREFERS_REDUCED_MOTION) {
+      // Narrow ctx for closure-safe access
+      const c = ctx;
+      const target = { x: w / 2, y: h / 2 };
+      let rafId = 0;
+
+      function drawDot(mx: number, my: number) {
+        target.x += (mx - target.x) * 0.5;
+        target.y += (my - target.y) * 0.5;
+        c.clearRect(0, 0, w * dpr, h * dpr);
+        c.beginPath();
+        c.arc(target.x * dpr, target.y * dpr, 3 * dpr, 0, Math.PI * 2);
+        c.fillStyle = "rgba(255, 255, 255, 0.8)";
+        c.fill();
+      }
+
+      function onMove(e: PointerEvent) {
+        cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => drawDot(e.clientX, e.clientY));
+      }
+
+      // Draw initial dot
+      drawDot(w / 2, h / 2);
+
+      window.addEventListener("pointermove", onMove);
+      document.documentElement.classList.add("cursor-hidden");
+      return () => {
+        cancelAnimationFrame(rafId);
+        window.removeEventListener("resize", resize);
+        window.removeEventListener("pointermove", onMove);
+        document.documentElement.classList.remove("cursor-hidden");
+      };
+    }
 
     // ── Sprite cache ──
     const sprites: Record<string, HTMLCanvasElement> = {};

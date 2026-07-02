@@ -5,7 +5,7 @@
 // Four tiers:
 //   mobile — phones (30fps, 1.0 DPR, 2000 particles, no blur, quantized orientation)
 //   tablet — iPads, Android tablets (60fps, 1.25 DPR, 4500 particles, blur, smooth)
-//   low    — low-end desktops (60fps, 1.25 DPR, 3500 particles, blur, smooth)
+//   low    — low-end desktops (30fps, 1.25 DPR, 3500 particles, blur, smooth)
 //   high   — high-end desktops (60fps, 1.5 DPR, 5500 particles, blur, smooth)
 export type PerfTier = "mobile" | "tablet" | "low" | "high";
 
