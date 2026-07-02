@@ -1,6 +1,7 @@
 // ── Project Detail Overlay ──
 // Full-screen case study overlay triggered by clicking a project card.
-// GSAP animation: backdrop fade + content scale-up on open; reverse on close.
+// GSAP animation: staggered entrance (image → header → desc → tags → highlights → links)
+// on open; fast reverse on close.
 // Close on: Escape key, click outside, close button.
 // Lenis scroll lock when open.
 
@@ -20,7 +21,8 @@ export function ProjectDetail({ project, onClose }: ProjectDetailProps) {
   const tlRef = useRef<gsap.core.Timeline | null>(null);
   const wasBodyOverflow = useRef<string>("");
 
-  // ── Open animation ──
+  // ── Open animation: staggered entrance ──
+  // Sequence: backdrop → panel → image → header → desc → techs stagger → highlights stagger → links
   useEffect(() => {
     if (!project) return;
 
@@ -29,7 +31,7 @@ export function ProjectDetail({ project, onClose }: ProjectDetailProps) {
     const panel = panelRef.current;
     if (!overlay || !backdrop || !panel) return;
 
-    // Show overlay immediately (JS visibility, not CSS)
+    // Show overlay
     gsap.set(overlay, { display: "flex" });
 
     if (PREFERS_REDUCED_MOTION) {
@@ -37,16 +39,55 @@ export function ProjectDetail({ project, onClose }: ProjectDetailProps) {
       return;
     }
 
+    // Scope: panel for class-based queries
+    const q = gsap.utils.selector(panel);
+
+    // Gather animated sections
+    const imageWrap = q(".project-detail__image-wrap");
+    const header = q(".project-detail__header");
+    const desc = q(".project-detail__desc");
+    const techTags = q(".project-detail__tech");
+    const highlights = q(".project-detail__highlight");
+    const links = q(".project-detail__links");
+
+    // Set initial states
+    gsap.set(imageWrap, { x: -36, opacity: 0 });
+    gsap.set([header, desc], { y: 18, opacity: 0 });
+    gsap.set(techTags, { y: 12, opacity: 0 });
+    gsap.set(highlights, { y: 12, opacity: 0 });
+    gsap.set(links, { y: 10, opacity: 0 });
+
     const tl = gsap.timeline();
     tlRef.current = tl;
 
-    tl.fromTo(backdrop, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out" });
+    // 1. Backdrop fades in
+    tl.fromTo(backdrop, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power2.out" });
+
+    // 2. Panel scales up
     tl.fromTo(
       panel,
       { opacity: 0, scale: 0.92, y: 24 },
-      { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: "power3.out" },
-      "-=0.2",
+      { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "power3.out" },
+      "-=0.1",
     );
+
+    // 3. Image slides in from left
+    tl.to(imageWrap, { x: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, "-=0.2");
+
+    // 4. Header fades up
+    tl.to(header, { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" }, "-=0.25");
+
+    // 5. Description fades up
+    tl.to(desc, { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" }, "-=0.2");
+
+    // 6. Tech tags stagger in with a bounce
+    tl.to(techTags, { y: 0, opacity: 1, stagger: 0.04, duration: 0.3, ease: "back.out(1.3)" }, "-=0.15");
+
+    // 7. Highlights stagger in
+    tl.to(highlights, { y: 0, opacity: 1, stagger: 0.05, duration: 0.3, ease: "power2.out" }, "-=0.1");
+
+    // 8. Links fade up
+    tl.to(links, { y: 0, opacity: 1, duration: 0.3, ease: "power2.out" }, "-=0.08");
 
     return () => {
       tl.kill();
@@ -54,7 +95,7 @@ export function ProjectDetail({ project, onClose }: ProjectDetailProps) {
     };
   }, [project]);
 
-  // ── Close animation ──
+  // ── Close animation: fast reverse ──
   const animateClose = useCallback(() => {
     const overlay = overlayRef.current;
     const backdrop = backdropRef.current;
@@ -69,6 +110,14 @@ export function ProjectDetail({ project, onClose }: ProjectDetailProps) {
 
     if (tlRef.current) tlRef.current.kill();
 
+    const q = gsap.utils.selector(panel);
+    const imageWrap = q(".project-detail__image-wrap");
+    const header = q(".project-detail__header");
+    const desc = q(".project-detail__desc");
+    const techs = q(".project-detail__techs");
+    const highlights = q(".project-detail__highlights");
+    const links = q(".project-detail__links");
+
     const tl = gsap.timeline({
       onComplete: () => {
         gsap.set(overlay, { display: "none" });
@@ -77,8 +126,15 @@ export function ProjectDetail({ project, onClose }: ProjectDetailProps) {
     });
     tlRef.current = tl;
 
-    tl.to(panel, { opacity: 0, scale: 0.95, y: 16, duration: 0.25, ease: "power2.in" });
-    tl.to(backdrop, { opacity: 0, duration: 0.2, ease: "power2.in" }, 0);
+    // Fast exit: content out first
+    tl.to(links, { y: 8, opacity: 0, duration: 0.15, ease: "power2.in" }, 0);
+    tl.to(highlights, { y: 8, opacity: 0, duration: 0.12, ease: "power2.in" }, 0);
+    tl.to(techs, { y: 8, opacity: 0, duration: 0.1, ease: "power2.in" }, 0);
+    tl.to([header, desc, imageWrap], { y: 10, opacity: 0, duration: 0.12, ease: "power2.in" }, 0);
+
+    // Panel + backdrop out
+    tl.to(panel, { opacity: 0, scale: 0.95, duration: 0.2, ease: "power2.in" }, "-=0.05");
+    tl.to(backdrop, { opacity: 0, duration: 0.15, ease: "power2.in" }, "-=0.1");
   }, [onClose]);
 
   // ── Scroll lock when open ──
